@@ -1,7 +1,10 @@
 <?php
 
+use App\Exceptions\ActiveCropCycleExistsException;
 use App\Exceptions\Auth\InactiveAccountException;
 use App\Exceptions\Auth\InvalidCredentialsException;
+use App\Exceptions\InvalidTransitionException;
+use App\Exceptions\LastOrganizationAdminRequiredException;
 use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\SetLocale;
 use App\Support\ApiErrorResponse;
@@ -13,6 +16,8 @@ use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -26,6 +31,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [AttachRequestId::class, SetLocale::class]);
+        $middleware->alias([
+            'abilities' => CheckAbilities::class,
+            'ability' => CheckForAnyAbility::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontReportDuplicates();
@@ -34,13 +43,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 || $request->expectsJson(),
         );
 
-        $exceptions->render(fn (ValidationException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
-            $request,
-            'Validation failed.',
-            'validation_failed',
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-            $exception->errors(),
-        ));
+        $exceptions->render(function (ValidationException $exception, Request $request): JsonResponse {
+            $errors = $exception->errors();
+            $errorCode = array_key_exists('referral_code', $errors)
+                ? 'referral_code_invalid'
+                : 'validation_failed';
+
+            return ApiErrorResponse::make(
+                $request,
+                'Validation failed.',
+                $errorCode,
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                $errors,
+            );
+        });
 
         $exceptions->render(fn (AuthenticationException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
             $request,
@@ -77,6 +93,27 @@ return Application::configure(basePath: dirname(__DIR__))
             'This account is not active.',
             'account_suspended',
             Response::HTTP_FORBIDDEN,
+        ));
+
+        $exceptions->render(fn (ActiveCropCycleExistsException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
+            $request,
+            $exception->getMessage(),
+            'active_cycle_exists',
+            Response::HTTP_CONFLICT,
+        ));
+
+        $exceptions->render(fn (InvalidTransitionException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
+            $request,
+            $exception->getMessage(),
+            'invalid_transition',
+            Response::HTTP_CONFLICT,
+        ));
+
+        $exceptions->render(fn (LastOrganizationAdminRequiredException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
+            $request,
+            $exception->getMessage(),
+            'last_admin_required',
+            Response::HTTP_CONFLICT,
         ));
 
         $exceptions->render(fn (ThrottleRequestsException $exception, Request $request): JsonResponse => ApiErrorResponse::make(

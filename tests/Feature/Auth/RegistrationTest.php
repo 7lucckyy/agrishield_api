@@ -81,7 +81,7 @@ test('an invalid referral code fails registration', function () {
 
     $response
         ->assertUnprocessable()
-        ->assertJsonPath('error_code', 'validation_failed')
+        ->assertJsonPath('error_code', 'referral_code_invalid')
         ->assertJsonValidationErrors('referral_code');
 
     expect(User::query()->count())->toBe(0);

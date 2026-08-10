@@ -54,7 +54,7 @@ test('farmers receive a forbidden response for organization management', functio
         ->and($response->status())->toBeNull();
 });
 
-test('organization admins and agronomists receive their documented abilities', function () {
+test('organization admins and agronomists receive their respective documented abilities', function () {
     $organization = Organization::factory()->create();
     $admin = User::factory()->create();
     $agronomist = User::factory()->create();
@@ -75,7 +75,7 @@ test('organization admins and agronomists receive their documented abilities', f
         ->and($admin->can('viewMembers', $organization))->toBeTrue()
         ->and($admin->can('updateMemberRole', $organization))->toBeTrue()
         ->and($agronomist->can('view', $organization))->toBeTrue()
-        ->and($agronomist->can('viewMembers', $organization))->toBeTrue()
+        ->and($agronomist->cannot('viewMembers', $organization))->toBeTrue()
         ->and($agronomist->can('viewFarms', $organization))->toBeTrue()
         ->and($agronomist->cannot('update', $organization))->toBeTrue()
         ->and($agronomist->cannot('updateMemberRole', $organization))->toBeTrue();

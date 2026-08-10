@@ -1,17 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\V1\Farm;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Resources\Api\V1\FarmResource;
+use App\Models\Farm;
+use Illuminate\Support\Facades\Gate;
 
-class ShowFarmController extends Controller
+final class ShowFarmController extends Controller
 {
-    /**
-     * Handle the incoming request.
-     */
-    public function __invoke(Request $request)
+    public function __invoke(Farm $farm): FarmResource
     {
-        //
+        Gate::authorize('view', $farm);
+
+        return new FarmResource($farm->load([
+            'owner:id,name',
+            'organization:id,name',
+            'activeCropCycle.farm:id,uuid',
+            'activeCropCycle.crop',
+        ]));
     }
 }

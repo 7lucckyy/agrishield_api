@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\OrganizationMembershipStatus;
@@ -22,6 +24,8 @@ class OrganizationMembership extends Pivot
      * @var bool
      */
     public $incrementing = true;
+
+    protected $table = 'organization_user';
 
     /** @return array<string, string> */
     protected function casts(): array

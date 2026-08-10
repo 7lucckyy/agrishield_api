@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Farm;
 
-class DeleteFarm
+use App\Models\Farm;
+
+final class DeleteFarm
 {
-    /**
-     * Create a new class instance.
-     */
-    public function __construct()
+    public function execute(Farm $farm): void
     {
-        //
+        $farm->delete();
     }
 }

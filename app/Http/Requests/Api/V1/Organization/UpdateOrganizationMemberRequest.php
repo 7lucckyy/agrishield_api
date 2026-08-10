@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Api\V1\Organization;
+
+use App\Enums\OrganizationRole;
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+
+final class UpdateOrganizationMemberRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        $actor = $this->user();
+        $organization = $this->route('organization');
+        if (! $actor instanceof User || ! $organization instanceof Organization) {
+            return false;
+        }
+
+        Gate::forUser($actor)->authorize('updateMemberRole', $organization);
+
+        return true;
+    }
+
+    /** @return array<string, ValidationRule|array<mixed>|string> */
+    public function rules(): array
+    {
+        return [
+            'role' => ['required', Rule::enum(OrganizationRole::class)],
+        ];
+    }
+
+    public function role(): OrganizationRole
+    {
+        return OrganizationRole::from($this->string('role')->toString());
+    }
+}

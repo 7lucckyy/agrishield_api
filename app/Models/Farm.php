@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\CropCycleStatus;
 use App\Enums\FarmStatus;
 use App\Enums\GlobalRole;
 use App\Enums\OrganizationRole;
@@ -11,11 +12,15 @@ use App\Enums\ProviderStatus;
 use Database\Factories\FarmFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -25,10 +30,10 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property array{type: 'Polygon'|'MultiPolygon', coordinates: array<mixed>} $boundary_geojson
  * @property string $boundary_hash
- * @property string|null $centroid_latitude
- * @property string|null $centroid_longitude
- * @property string|null $area_hectares
- * @property string|null $area_acres
+ * @property string|float|null $centroid_latitude
+ * @property string|float|null $centroid_longitude
+ * @property string|float|null $area_hectares
+ * @property string|float|null $area_acres
  * @property string|null $locality
  * @property string|null $state
  * @property string|null $country
@@ -38,6 +43,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property-read User $owner
  * @property-read Organization|null $organization
+ * @property-read Collection<int, CropCycle> $cropCycles
+ * @property-read CropCycle|null $activeCropCycle
  */
 #[Fillable(['name', 'boundary_geojson', 'locality', 'state', 'country', 'status'])]
 final class Farm extends Model
@@ -61,6 +68,18 @@ final class Farm extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /** @return HasMany<CropCycle, $this> */
+    public function cropCycles(): HasMany
+    {
+        return $this->hasMany(CropCycle::class);
+    }
+
+    /** @return HasOne<CropCycle, $this> */
+    public function activeCropCycle(): HasOne
+    {
+        return $this->hasOne(CropCycle::class)->where('status', CropCycleStatus::Active);
     }
 
     /**
@@ -87,6 +106,20 @@ final class Farm extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    /**
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        $routeField = $field ?? $this->getRouteKeyName();
+        if ($routeField === 'uuid' && (! is_string($value) || ! Str::isUuid($value))) {
+            return null;
+        }
+
+        return parent::resolveRouteBinding($value, $field);
     }
 
     /** @return array<string, string> */

@@ -66,10 +66,7 @@ final class OrganizationPolicy
 
     public function viewMembers(User $user, Organization $organization): Response
     {
-        return $this->authorizeMember($user, $organization, [
-            OrganizationRole::OrganizationAdmin,
-            OrganizationRole::Agronomist,
-        ]);
+        return $this->authorizeMember($user, $organization, [OrganizationRole::OrganizationAdmin]);
     }
 
     public function updateMemberRole(User $user, Organization $organization): Response

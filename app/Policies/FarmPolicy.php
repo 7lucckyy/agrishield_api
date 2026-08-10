@@ -1,66 +1,74 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
+use App\Enums\GlobalRole;
+use App\Enums\OrganizationRole;
 use App\Models\Farm;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class FarmPolicy
+final class FarmPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
+    public function before(User $user): ?bool
+    {
+        return $user->hasRole(GlobalRole::PlatformAdmin->value) ? true : null;
+    }
+
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Farm $farm): bool
+    public function view(User $user, Farm $farm): Response
     {
-        return false;
+        return $this->canView($user, $farm)
+            ? Response::allow()
+            : Response::denyAsNotFound();
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Farm $farm): bool
+    public function update(User $user, Farm $farm): Response
     {
-        return false;
+        if (! $this->canView($user, $farm)) {
+            return Response::denyAsNotFound();
+        }
+
+        return $farm->owner_user_id === $user->getKey()
+            || ($farm->organization_id !== null && $user->hasOrganizationRole(
+                $farm->organization_id,
+                OrganizationRole::OrganizationAdmin,
+            ))
+                ? Response::allow()
+                : Response::deny('You may view this farm but cannot update it.');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Farm $farm): bool
+    public function delete(User $user, Farm $farm): Response
     {
-        return false;
+        if (! $this->canView($user, $farm)) {
+            return Response::denyAsNotFound();
+        }
+
+        return $farm->owner_user_id === $user->getKey()
+            ? Response::allow()
+            : Response::deny('Only the farm owner may delete it.');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Farm $farm): bool
+    private function canView(User $user, Farm $farm): bool
     {
-        return false;
-    }
+        if ($farm->owner_user_id === $user->getKey()) {
+            return true;
+        }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Farm $farm): bool
-    {
-        return false;
+        return $farm->organization_id !== null && $user->hasOrganizationRole(
+            $farm->organization_id,
+            [OrganizationRole::OrganizationAdmin, OrganizationRole::Agronomist],
+        );
     }
 }

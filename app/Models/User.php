@@ -32,6 +32,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property-read Collection<int, Organization> $organizations
  * @property-read Collection<int, Farm> $farms
+ * @property-read OrganizationMembership $membership
  */
 #[Fillable(['name', 'email', 'phone', 'password', 'locale'])]
 #[Hidden(['password', 'remember_token'])]
