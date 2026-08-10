@@ -5,7 +5,6 @@ use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\SetLocale;
 use App\Support\ApiErrorResponse;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,7 +14,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -49,12 +49,21 @@ return Application::configure(basePath: dirname(__DIR__))
             Response::HTTP_UNAUTHORIZED,
         ));
 
-        $exceptions->render(fn (AuthorizationException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
+        $exceptions->render(fn (AccessDeniedHttpException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
             $request,
             'This action is unauthorized.',
             'forbidden',
             Response::HTTP_FORBIDDEN,
         ));
+
+        $exceptions->render(fn (HttpException $exception, Request $request): ?JsonResponse => $exception->getStatusCode() === Response::HTTP_NOT_FOUND
+            ? ApiErrorResponse::make(
+                $request,
+                'Resource not found.',
+                'not_found',
+                Response::HTTP_NOT_FOUND,
+            )
+            : null);
 
         $exceptions->render(fn (InvalidCredentialsException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
             $request,
@@ -78,10 +87,4 @@ return Application::configure(basePath: dirname(__DIR__))
             headers: $exception->getHeaders(),
         ));
 
-        $exceptions->render(fn (NotFoundHttpException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
-            $request,
-            'Resource not found.',
-            'not_found',
-            Response::HTTP_NOT_FOUND,
-        ));
     })->create();
