@@ -99,6 +99,20 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        'pgsql_testing' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_TEST_HOST', '127.0.0.1'),
+            'port' => env('DB_TEST_PORT', '5432'),
+            'database' => env('DB_TEST_DATABASE', 'agrishield_testing'),
+            'username' => env('DB_TEST_USERNAME', 'agrishield'),
+            'password' => env('DB_TEST_PASSWORD', 'agrishield'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_TEST_SSLMODE', 'prefer'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

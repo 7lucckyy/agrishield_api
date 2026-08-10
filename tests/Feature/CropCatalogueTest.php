@@ -80,16 +80,20 @@ test('inactive crops can be requested explicitly', function () {
         ->assertJsonPath('data.0.id', $inactiveCrop->getKey());
 });
 
-test('the active crop catalogue is served from cache', function () {
+test('the seeded active crop catalogue is returned and served from cache', function () {
     Cache::flush();
 
     $user = User::factory()->create();
-    Crop::factory()->count(3)->create();
+    $this->seed(CropSeeder::class);
 
     DB::flushQueryLog();
     DB::enableQueryLog();
 
-    $this->actingAs($user)->getJson('/api/v1/crops')->assertSuccessful();
+    $this->actingAs($user)
+        ->getJson('/api/v1/crops?per_page=100')
+        ->assertSuccessful()
+        ->assertJsonCount(41, 'data')
+        ->assertJsonPath('data.0.active', true);
     $this->actingAs($user)->getJson('/api/v1/crops')->assertSuccessful();
 
     $cropSelects = collect(DB::getQueryLog())
@@ -118,7 +122,8 @@ test('non platform admins cannot mutate crops', function (string $method, string
 
     $response
         ->assertForbidden()
-        ->assertJsonPath('error_code', 'forbidden');
+        ->assertJsonPath('error_code', 'forbidden')
+        ->assertJsonStructure(['message', 'error_code', 'request_id']);
 })->with([
     'create' => ['POST', '/api/v1/crops'],
     'update' => ['PATCH', '/api/v1/crops/{crop}'],

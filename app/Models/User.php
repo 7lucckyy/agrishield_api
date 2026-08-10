@@ -31,6 +31,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  * @property-read Collection<int, Organization> $organizations
+ * @property-read Collection<int, Farm> $farms
  */
 #[Fillable(['name', 'email', 'phone', 'password', 'locale'])]
 #[Hidden(['password', 'remember_token'])]
@@ -59,6 +60,12 @@ class User extends Authenticatable
     public function referralRedemptions(): HasMany
     {
         return $this->hasMany(ReferralRedemption::class);
+    }
+
+    /** @return HasMany<Farm, $this> */
+    public function farms(): HasMany
+    {
+        return $this->hasMany(Farm::class, 'owner_user_id');
     }
 
     public function belongsToOrganization(Organization|int $organization): bool

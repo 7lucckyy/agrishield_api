@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property OrganizationStatus $status
  * @property-read OrganizationMembership $membership
  * @property-read Collection<int, User> $users
+ * @property-read Collection<int, Farm> $farms
  */
 #[Fillable(['name', 'slug', 'referral_code', 'referral_code_expires_at', 'status', 'contact_email', 'contact_phone', 'country', 'metadata'])]
 class Organization extends Model
@@ -45,6 +46,12 @@ class Organization extends Model
     public function referralRedemptions(): HasMany
     {
         return $this->hasMany(ReferralRedemption::class);
+    }
+
+    /** @return HasMany<Farm, $this> */
+    public function farms(): HasMany
+    {
+        return $this->hasMany(Farm::class);
     }
 
     /** @return array<string, string> */

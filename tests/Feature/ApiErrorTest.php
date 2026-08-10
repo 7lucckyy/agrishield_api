@@ -51,5 +51,6 @@ test('authentication endpoints are rate limited by IP address', function () {
     $response
         ->assertTooManyRequests()
         ->assertHeader('Retry-After')
-        ->assertJsonPath('error_code', 'rate_limited');
+        ->assertJsonPath('error_code', 'rate_limited')
+        ->assertJsonStructure(['message', 'error_code', 'request_id']);
 });
