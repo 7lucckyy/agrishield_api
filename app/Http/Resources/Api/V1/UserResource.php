@@ -37,8 +37,8 @@ class UserResource extends JsonResource
                     'id' => $organization->getKey(),
                     'name' => $organization->name,
                     'slug' => $organization->slug,
-                    'role' => $organization->membership->role,
-                    'status' => $organization->membership->status,
+                    'role' => $organization->membership->role->value,
+                    'status' => $organization->membership->status->value,
                 ])
                 ->values()),
             'created_at' => $user->created_at,

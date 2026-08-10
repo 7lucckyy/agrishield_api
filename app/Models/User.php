@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\OrganizationMembershipStatus;
+use App\Enums\OrganizationRole;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -57,6 +59,77 @@ class User extends Authenticatable
     public function referralRedemptions(): HasMany
     {
         return $this->hasMany(ReferralRedemption::class);
+    }
+
+    public function belongsToOrganization(Organization|int $organization): bool
+    {
+        $organizationId = $organization instanceof Organization
+            ? $organization->getKey()
+            : $organization;
+
+        return in_array(
+            $organizationId,
+            $this->organizationIdsWhereRoleIn(OrganizationRole::cases()),
+            true,
+        );
+    }
+
+    /** @param OrganizationRole|array<array-key, OrganizationRole> $roles */
+    public function hasOrganizationRole(
+        Organization|int $organization,
+        OrganizationRole|array $roles,
+    ): bool {
+        $organizationId = $organization instanceof Organization
+            ? $organization->getKey()
+            : $organization;
+
+        return in_array(
+            $organizationId,
+            $this->organizationIdsWhereRoleIn(is_array($roles) ? $roles : [$roles]),
+            true,
+        );
+    }
+
+    /**
+     * @param  array<array-key, OrganizationRole>  $roles
+     * @return list<int>
+     */
+    public function organizationIdsWhereRoleIn(array $roles): array
+    {
+        $roleValues = collect($roles)
+            ->map(fn (OrganizationRole $role): string => $role->value)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        if ($roleValues === []) {
+            return [];
+        }
+
+        return once(function () use ($roleValues): array {
+            $organizations = $this->organizations();
+            $qualifiedOrganizationKey = $organizations->getRelated()
+                ->qualifyColumn($organizations->getRelated()->getKeyName());
+
+            return $organizations
+                ->wherePivot('status', OrganizationMembershipStatus::Active->value)
+                ->wherePivotIn('role', $roleValues)
+                ->pluck($qualifiedOrganizationKey)
+                ->map(fn (mixed $organizationId): int => (int) $organizationId)
+                ->all();
+        });
+    }
+
+    public function primaryOrganizationId(): ?int
+    {
+        $organization = $this->organizations()
+            ->wherePivot('status', OrganizationMembershipStatus::Active->value)
+            ->orderByPivot('joined_at')
+            ->orderByPivot('id')
+            ->first();
+
+        return $organization?->getKey();
     }
 
     /**

@@ -27,7 +27,7 @@ class AuthenticationResource extends JsonResource
                 'id' => $organization->getKey(),
                 'name' => $organization->name,
                 'slug' => $organization->slug,
-                'role' => $organization->membership->role,
+                'role' => $organization->membership->role->value,
             ])
             ->values();
 

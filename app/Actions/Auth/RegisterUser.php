@@ -3,6 +3,7 @@
 namespace App\Actions\Auth;
 
 use App\Data\Auth\AuthenticationResult;
+use App\Enums\OrganizationMembershipStatus;
 use App\Enums\OrganizationRole;
 use App\Models\User;
 use App\Services\Referral\ReferralCodeResolver;
@@ -37,7 +38,7 @@ class RegisterUser
             if ($organization !== null) {
                 $user->organizations()->attach($organization->getKey(), [
                     'role' => OrganizationRole::Farmer->value,
-                    'status' => 'active',
+                    'status' => OrganizationMembershipStatus::Active->value,
                     'joined_at' => now(),
                 ]);
 

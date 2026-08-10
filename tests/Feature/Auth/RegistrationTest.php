@@ -65,7 +65,7 @@ test('a referral code binds a new user as a farmer and records redemption', func
     $redemption = ReferralRedemption::query()->sole();
 
     expect($user->organizations)->toHaveCount(1);
-    expect($user->organizations->first()->membership->role)->toBe(OrganizationRole::Farmer->value);
+    expect($user->organizations->first()->membership->role)->toBe(OrganizationRole::Farmer);
     expect($redemption->organization_id)->toBe($organization->getKey());
     expect($redemption->user_id)->toBe($user->getKey());
 });
