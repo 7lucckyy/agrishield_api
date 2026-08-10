@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(GlobalRoleSeeder::class);
         $this->call(CropSeeder::class);
+        $this->call(IntegrationAccountSeeder::class);
 
         // User::factory(10)->create();
 

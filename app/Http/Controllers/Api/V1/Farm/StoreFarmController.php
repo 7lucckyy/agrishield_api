@@ -20,13 +20,14 @@ final class StoreFarmController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $response = (new FarmResource($this->createFarm->execute(
+        $result = $this->createFarm->execute(
             $user,
             $request->validated(),
             $request->processedGeometry(),
-        )))->additional(['meta' => [
+        );
+        $response = (new FarmResource($result->farm))->additional(['meta' => [
             'message' => 'Farm created. Satellite registration is in progress.',
-            'sync_run_id' => null,
+            'sync_run_id' => $result->registrationRun->uuid,
         ]])->response();
         $response->setStatusCode(Response::HTTP_CREATED);
 

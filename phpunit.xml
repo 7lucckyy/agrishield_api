@@ -33,6 +33,7 @@
         <env name="FARMING_PROVIDER" value="fake"/>
         <env name="FAKE_PROVIDER_SEED" value="1337"/>
         <env name="FAKE_PROVIDER_FAILURE_RATE" value="0"/>
+        <env name="FARMING_CIRCUIT_STORE" value="array"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

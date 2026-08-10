@@ -45,6 +45,8 @@ use Illuminate\Support\Str;
  * @property-read Organization|null $organization
  * @property-read Collection<int, CropCycle> $cropCycles
  * @property-read CropCycle|null $activeCropCycle
+ * @property-read Collection<int, FarmProviderLink> $providerLinks
+ * @property-read Collection<int, SyncRun> $syncRuns
  */
 #[Fillable(['name', 'boundary_geojson', 'locality', 'state', 'country', 'status'])]
 final class Farm extends Model
@@ -80,6 +82,18 @@ final class Farm extends Model
     public function activeCropCycle(): HasOne
     {
         return $this->hasOne(CropCycle::class)->where('status', CropCycleStatus::Active);
+    }
+
+    /** @return HasMany<FarmProviderLink, $this> */
+    public function providerLinks(): HasMany
+    {
+        return $this->hasMany(FarmProviderLink::class);
+    }
+
+    /** @return HasMany<SyncRun, $this> */
+    public function syncRuns(): HasMany
+    {
+        return $this->hasMany(SyncRun::class);
     }
 
     /**
