@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Actions\Audit\RecordAuditLog;
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\OrganizationRole;
 use App\Exceptions\LastOrganizationAdminRequiredException;
@@ -14,14 +15,18 @@ use Illuminate\Support\Facades\DB;
 
 final class UpdateOrganizationMemberRole
 {
+    public function __construct(private RecordAuditLog $recordAuditLog) {}
+
     public function execute(Organization $organization, User $member, OrganizationRole $role): User
     {
-        DB::transaction(function () use ($organization, $member, $role): void {
+        $beforeRole = null;
+        DB::transaction(function () use ($organization, $member, $role, &$beforeRole): void {
             $membership = OrganizationMembership::query()
                 ->where('organization_id', $organization->getKey())
                 ->where('user_id', $member->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+            $beforeRole = $membership->role->value;
 
             if ($membership->status === OrganizationMembershipStatus::Active
                 && $membership->role === OrganizationRole::OrganizationAdmin
@@ -32,6 +37,11 @@ final class UpdateOrganizationMemberRole
             $membership->role = $role;
             $membership->save();
         });
+        $this->recordAuditLog->execute('member.role_changed', $organization, [
+            'member_id' => $member->getKey(),
+            'before' => ['role' => $beforeRole],
+            'after' => ['role' => $role->value],
+        ]);
 
         return $organization->users()->whereKey($member->getKey())->firstOrFail();
     }

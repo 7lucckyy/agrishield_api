@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Organization;
 
+use App\Actions\Audit\RecordAuditLog;
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\OrganizationRole;
 use App\Exceptions\LastOrganizationAdminRequiredException;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 final class RemoveOrganizationMember
 {
+    public function __construct(private RecordAuditLog $recordAuditLog) {}
+
     public function execute(Organization $organization, User $member): void
     {
         DB::transaction(function () use ($organization, $member): void {
@@ -41,5 +44,9 @@ final class RemoveOrganizationMember
             $membership->status = OrganizationMembershipStatus::Removed;
             $membership->save();
         });
+        $this->recordAuditLog->execute('member.removed', $organization, [
+            'member_id' => $member->getKey(),
+            'after' => ['status' => OrganizationMembershipStatus::Removed->value],
+        ]);
     }
 }

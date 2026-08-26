@@ -1,0 +1,1 @@
+<section class="contact-block"><div><p class="eyebrow light"><span></span> Let’s build what agriculture needs next</p><h2>Ready to turn data into durable impact?</h2></div><div><p>Bring your programme, partnership or agricultural challenge to our team.</p><a class="button button-orange" href="{{ route('contact') }}">Start a conversation <span>↗</span></a></div></section>

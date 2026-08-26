@@ -11,12 +11,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
  * @property string $slug
  * @property OrganizationStatus $status
+ * @property string|null $contact_email
+ * @property string|null $contact_phone
+ * @property string|null $country
+ * @property string|null $referral_code
+ * @property Carbon|null $referral_code_expires_at
+ * @property Carbon|null $created_at
  * @property-read OrganizationMembership $membership
  * @property-read Collection<int, User> $users
  * @property-read Collection<int, Farm> $farms

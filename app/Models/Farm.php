@@ -47,6 +47,10 @@ use Illuminate\Support\Str;
  * @property-read CropCycle|null $activeCropCycle
  * @property-read Collection<int, FarmProviderLink> $providerLinks
  * @property-read Collection<int, SyncRun> $syncRuns
+ * @property-read Collection<int, SatelliteObservation> $satelliteObservations
+ * @property-read Collection<int, WeatherForecast> $weatherForecasts
+ * @property-read Collection<int, Advisory> $advisories
+ * @property-read Collection<int, DiagnosisRequest> $diagnosisRequests
  */
 #[Fillable(['name', 'boundary_geojson', 'locality', 'state', 'country', 'status'])]
 final class Farm extends Model
@@ -94,6 +98,36 @@ final class Farm extends Model
     public function syncRuns(): HasMany
     {
         return $this->hasMany(SyncRun::class);
+    }
+
+    /** @return HasMany<SatelliteObservation, $this> */
+    public function satelliteObservations(): HasMany
+    {
+        return $this->hasMany(SatelliteObservation::class);
+    }
+
+    /** @return HasMany<WeatherForecast, $this> */
+    public function weatherForecasts(): HasMany
+    {
+        return $this->hasMany(WeatherForecast::class);
+    }
+
+    /** @return HasMany<Advisory, $this> */
+    public function advisories(): HasMany
+    {
+        return $this->hasMany(Advisory::class);
+    }
+
+    /** @return HasMany<DiagnosisRequest, $this> */
+    public function diagnosisRequests(): HasMany
+    {
+        return $this->hasMany(DiagnosisRequest::class);
+    }
+
+    /** @return HasMany<DiagnosisRequest, $this> */
+    public function diagnoses(): HasMany
+    {
+        return $this->diagnosisRequests();
     }
 
     /**

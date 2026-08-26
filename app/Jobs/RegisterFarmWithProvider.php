@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Actions\Sync\QueueInsightSync;
 use App\Actions\Sync\RecordSyncRun;
 use App\Enums\FarmProviderLinkStatus;
 use App\Enums\IntegrationStatus;
 use App\Enums\ProviderStatus;
+use App\Enums\SyncTrigger;
+use App\Enums\SyncType;
 use App\Exceptions\Provider\ProviderException;
 use App\Exceptions\Provider\ProviderRejected;
 use App\Exceptions\Provider\ProviderTimeout;
@@ -55,6 +58,7 @@ final class RegisterFarmWithProvider implements ShouldBeUnique, ShouldQueue
         FarmingInsightsProvider $provider,
         CircuitBreaker $circuitBreaker,
         RecordSyncRun $recordSyncRun,
+        ?QueueInsightSync $queueInsightSync = null,
     ): void {
         $farm = Farm::query()->findOrFail($this->farmId);
         $syncRun = SyncRun::query()->findOrFail($this->syncRunId);
@@ -124,6 +128,15 @@ final class RegisterFarmWithProvider implements ShouldBeUnique, ShouldQueue
             $circuitBreaker->recordSuccess($provider->name());
             if ($registered) {
                 $recordSyncRun->succeed($syncRun, recordsWritten: 1);
+                $queueInsightSync ??= app(QueueInsightSync::class);
+                foreach ($this->initialSyncTypes($farm) as $type) {
+                    $queueInsightSync->execute(
+                        $farm,
+                        $type,
+                        SyncTrigger::Event,
+                        idempotencyKey: 'initial:'.$farm->getKey().':'.$this->boundaryHash.':'.$type->value,
+                    );
+                }
             } else {
                 $recordSyncRun->fail($syncRun, 'boundary_changed', 'The farm boundary changed during registration.');
             }
@@ -176,5 +189,18 @@ final class RegisterFarmWithProvider implements ShouldBeUnique, ShouldQueue
                 'error_message' => mb_substr($exception->getMessage(), 0, 2000),
                 'completed_at' => now(),
             ]);
+    }
+
+    /** @return list<SyncType> */
+    private function initialSyncTypes(Farm $farm): array
+    {
+        $types = [SyncType::SoilHealth, SyncType::Weather, SyncType::CropHealth, SyncType::WaterStress,
+            SyncType::SoilMoisture, SyncType::IrrigationAdvisory, SyncType::PestForewarning];
+
+        if ($farm->activeCropCycle()->exists()) {
+            $types[] = SyncType::CropPractices;
+        }
+
+        return $types;
     }
 }

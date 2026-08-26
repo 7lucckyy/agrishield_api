@@ -66,6 +66,11 @@ final class SyncRun extends Model
         return $this->morphTo();
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

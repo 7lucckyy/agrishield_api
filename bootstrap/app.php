@@ -5,6 +5,7 @@ use App\Exceptions\Auth\InactiveAccountException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Exceptions\InvalidTransitionException;
 use App\Exceptions\LastOrganizationAdminRequiredException;
+use App\Exceptions\SyncAlreadyRunningException;
 use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\SetLocale;
 use App\Support\ApiErrorResponse;
@@ -43,7 +44,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 || $request->expectsJson(),
         );
 
-        $exceptions->render(function (ValidationException $exception, Request $request): JsonResponse {
+        $exceptions->render(function (ValidationException $exception, Request $request): ?JsonResponse {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
             $errors = $exception->errors();
             $errorCode = array_key_exists('referral_code', $errors)
                 ? 'referral_code_invalid'
@@ -58,21 +63,25 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         });
 
-        $exceptions->render(fn (AuthenticationException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
-            $request,
-            'Unauthenticated.',
-            'unauthenticated',
-            Response::HTTP_UNAUTHORIZED,
-        ));
+        $exceptions->render(fn (AuthenticationException $exception, Request $request): ?JsonResponse => $request->is('api/*') || $request->expectsJson()
+            ? ApiErrorResponse::make(
+                $request,
+                'Unauthenticated.',
+                'unauthenticated',
+                Response::HTTP_UNAUTHORIZED,
+            )
+            : null);
 
-        $exceptions->render(fn (AccessDeniedHttpException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
-            $request,
-            'This action is unauthorized.',
-            'forbidden',
-            Response::HTTP_FORBIDDEN,
-        ));
+        $exceptions->render(fn (AccessDeniedHttpException $exception, Request $request): ?JsonResponse => $request->is('api/*') || $request->expectsJson()
+            ? ApiErrorResponse::make(
+                $request,
+                'This action is unauthorized.',
+                'forbidden',
+                Response::HTTP_FORBIDDEN,
+            )
+            : null);
 
-        $exceptions->render(fn (HttpException $exception, Request $request): ?JsonResponse => $exception->getStatusCode() === Response::HTTP_NOT_FOUND
+        $exceptions->render(fn (HttpException $exception, Request $request): ?JsonResponse => ($request->is('api/*') || $request->expectsJson()) && $exception->getStatusCode() === Response::HTTP_NOT_FOUND
             ? ApiErrorResponse::make(
                 $request,
                 'Resource not found.',
@@ -113,6 +122,13 @@ return Application::configure(basePath: dirname(__DIR__))
             $request,
             $exception->getMessage(),
             'last_admin_required',
+            Response::HTTP_CONFLICT,
+        ));
+
+        $exceptions->render(fn (SyncAlreadyRunningException $exception, Request $request): JsonResponse => ApiErrorResponse::make(
+            $request,
+            $exception->getMessage(),
+            'sync_already_running',
             Response::HTTP_CONFLICT,
         ));
 

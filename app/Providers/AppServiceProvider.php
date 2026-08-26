@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use App\Enums\GlobalRole;
 use App\Integrations\Contracts\FarmingInsightsProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -34,6 +37,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('viewDetailedHealth', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
+        Gate::define('manageIntegrations', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
+        Gate::define('accessPlatform', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
+
         Password::defaults(function (): Password {
             $rule = Password::min(8);
 
@@ -49,6 +56,18 @@ class AppServiceProvider extends ServiceProvider
             ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
         RateLimiter::for('writes', fn (Request $request): Limit => Limit::perMinute(30)
+            ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        RateLimiter::for('sync', function (Request $request): Limit {
+            $farm = $request->route('farm');
+            $key = is_object($farm) && method_exists($farm, 'getRouteKey')
+                ? $farm->getRouteKey()
+                : $farm;
+
+            return Limit::perHour(6)->by((string) ($key ?? $request->ip()));
+        });
+
+        RateLimiter::for('diagnosis', fn (Request $request): Limit => Limit::perHour(10)
             ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
     }
 }
