@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\DiagnosisStatus;
 use App\Enums\OrganizationRole;
-use App\Integrations\Contracts\FarmingInsightsProvider;
+use App\Integrations\Contracts\CropDiagnosisProvider;
 use App\Jobs\PollDiagnosisResult;
 use App\Jobs\SubmitDiagnosisToProvider;
 use App\Models\AuditLog;
@@ -37,10 +37,10 @@ test('a farm viewer uploads a sanitised private image and completes diagnosis wi
         ->and($response->json('data.image.url'))->toContain('/api/v1/media/diagnosis/');
     Queue::assertPushed(SubmitDiagnosisToProvider::class);
 
-    (new SubmitDiagnosisToProvider($diagnosis->getKey()))->handle(app(FarmingInsightsProvider::class));
+    (new SubmitDiagnosisToProvider($diagnosis->getKey()))->handle(app(CropDiagnosisProvider::class));
     expect($diagnosis->refresh()->status)->toBe(DiagnosisStatus::Submitted);
 
-    (new PollDiagnosisResult($diagnosis->getKey()))->handle(app(FarmingInsightsProvider::class));
+    (new PollDiagnosisResult($diagnosis->getKey()))->handle(app(CropDiagnosisProvider::class));
     expect($diagnosis->refresh()->status)->toBe(DiagnosisStatus::Completed)
         ->and($diagnosis->confidence)->toBe('0.8200');
 });
@@ -64,7 +64,7 @@ test('diagnosis requests become expired after the provider SLA', function () {
         'expires_at' => now()->subMinute(),
     ]);
 
-    (new PollDiagnosisResult($diagnosis->getKey()))->handle(app(FarmingInsightsProvider::class));
+    (new PollDiagnosisResult($diagnosis->getKey()))->handle(app(CropDiagnosisProvider::class));
 
     expect($diagnosis->refresh()->status)->toBe(DiagnosisStatus::Expired);
 });
@@ -90,4 +90,28 @@ test('organization agronomists override completed diagnoses with an audit trail'
         ->assertJsonPath('data.reviewed_by', $agronomist->getKey());
 
     expect(AuditLog::query()->sole()->action)->toBe('diagnosis.overridden');
+});
+
+test('an organization agronomist can submit a crop photo from the farm workspace', function () {
+    $organization = Organization::factory()->create();
+    $agronomist = User::factory()->create();
+    attachOrganizationRole($agronomist, $organization, OrganizationRole::Agronomist);
+    $farm = Farm::factory()->for($organization)->for($agronomist, 'owner')->create(['name' => 'Kano Maize Plot']);
+
+    $this->actingAs($agronomist)->get(route('organization.farms.show', [$organization, $farm]))
+        ->assertSuccessful()
+        ->assertSee('Check visible crop symptoms.')
+        ->assertSee('No crop screenings yet.');
+
+    $this->actingAs($agronomist)->post(route('organization.farms.diagnoses.store', [$organization, $farm]), [
+        'image' => UploadedFile::fake()->image('maize-leaf.jpg', 640, 480),
+        'note' => 'Yellow marks on the lower leaves',
+    ])->assertRedirect(route('organization.farms.show', [$organization, $farm]));
+
+    $this->assertDatabaseHas('diagnosis_requests', [
+        'farm_id' => $farm->id,
+        'requested_by_user_id' => $agronomist->id,
+        'note' => 'Yellow marks on the lower leaves',
+    ]);
+    Queue::assertPushed(SubmitDiagnosisToProvider::class);
 });

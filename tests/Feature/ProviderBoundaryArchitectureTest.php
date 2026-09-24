@@ -2,22 +2,32 @@
 
 declare(strict_types=1);
 
+use App\Integrations\Contracts\CropDiagnosisProvider;
+use App\Integrations\Contracts\FarmerVoiceProvider;
 use App\Integrations\Contracts\FarmingInsightsProvider;
+use App\Integrations\Contracts\VoiceTranscriptionProvider;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\File;
 
 test('provider contract never returns arrays or http responses', function () {
-    $contract = new ReflectionClass(FarmingInsightsProvider::class);
+    $contracts = [
+        FarmingInsightsProvider::class,
+        CropDiagnosisProvider::class,
+        FarmerVoiceProvider::class,
+        VoiceTranscriptionProvider::class,
+    ];
 
-    foreach ($contract->getMethods() as $method) {
-        $returnType = $method->getReturnType();
+    foreach ($contracts as $contract) {
+        foreach ((new ReflectionClass($contract))->getMethods() as $method) {
+            $returnType = $method->getReturnType();
 
-        expect($returnType)->toBeInstanceOf(ReflectionNamedType::class);
-        if ($returnType instanceof ReflectionNamedType) {
-            expect($returnType->getName())
-                ->not->toBe('array')
-                ->not->toContain('Illuminate\\Http');
+            expect($returnType)->toBeInstanceOf(ReflectionNamedType::class);
+            if ($returnType instanceof ReflectionNamedType) {
+                expect($returnType->getName())
+                    ->not->toBe('array')
+                    ->not->toContain('Illuminate\\Http');
+            }
         }
     }
 });

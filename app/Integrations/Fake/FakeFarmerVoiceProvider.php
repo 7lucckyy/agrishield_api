@@ -14,7 +14,7 @@ final class FakeFarmerVoiceProvider implements FarmerVoiceProvider
         return new VoiceAssistanceResult(
             transcript: 'Voice note received. Connect the production voice provider to generate a transcript.',
             translatedTranscript: 'Voice note received. Connect the production voice provider to generate a translation.',
-            guidance: 'Your question has been saved for an extension officer. Add an OpenAI API key and set VOICE_ASSISTANCE_PROVIDER=openai to enable automatic field guidance.',
+            guidance: 'Your question has been saved for an extension officer. Configure OpenAI transcription and N-ATLaS, then set VOICE_ASSISTANCE_PROVIDER=n_atlas to enable automatic field guidance.',
             safetyNote: 'Do not use this development response for pesticide dosage or emergency decisions.',
             reference: 'local-'.hash_file('sha256', $absoluteAudioPath),
         );

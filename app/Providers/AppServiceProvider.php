@@ -3,11 +3,15 @@
 namespace App\Providers;
 
 use App\Enums\GlobalRole;
+use App\Integrations\Contracts\CropDiagnosisProvider;
 use App\Integrations\Contracts\FarmerVoiceProvider;
 use App\Integrations\Contracts\FarmingInsightsProvider;
+use App\Integrations\Contracts\VoiceTranscriptionProvider;
 use App\Integrations\Fake\FakeFarmerVoiceProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
-use App\Integrations\OpenAI\OpenAIFarmerVoiceProvider;
+use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
+use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
+use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(VoiceTranscriptionProvider::class, OpenAIVoiceTranscriptionProvider::class);
+
         $this->app->bind(FarmingInsightsProvider::class, function (Application $application): FarmingInsightsProvider {
             return match ((string) config('farming.provider')) {
                 'fake' => $application->make(FakeInsightsProvider::class),
@@ -34,10 +40,19 @@ class AppServiceProvider extends ServiceProvider
             };
         });
 
+        $this->app->bind(CropDiagnosisProvider::class, function (Application $application): CropDiagnosisProvider {
+            return match ((string) config('diagnosis.provider')) {
+                'fake' => $application->make(FakeInsightsProvider::class),
+                'openai' => $application->make(OpenAICropDiagnosisProvider::class),
+                'satyukt' => $application->make(SatyuktInsightsProvider::class),
+                default => throw new InvalidArgumentException('Unknown crop diagnosis provider: '.config('diagnosis.provider')),
+            };
+        });
+
         $this->app->bind(FarmerVoiceProvider::class, function (Application $application): FarmerVoiceProvider {
             return match ((string) config('voice-assistance.provider')) {
                 'fake' => $application->make(FakeFarmerVoiceProvider::class),
-                'openai' => $application->make(OpenAIFarmerVoiceProvider::class),
+                'n_atlas' => $application->make(NAtlasFarmerVoiceProvider::class),
                 default => throw new InvalidArgumentException('Unknown voice assistance provider: '.config('voice-assistance.provider')),
             };
         });

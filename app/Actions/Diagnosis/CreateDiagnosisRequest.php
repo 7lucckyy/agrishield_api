@@ -31,19 +31,19 @@ final class CreateDiagnosisRequest
             return $existing;
         }
 
-        [$contents, $extension] = $this->sanitise($original, (string) $upload->getMimeType());
+        [$contents, $extension, $mime] = $this->sanitise($original, (string) $upload->getMimeType());
         $path = 'diagnosis/'.$farm->uuid.'/'.Str::ulid().'.'.$extension;
         Storage::disk('private')->put($path, $contents, ['visibility' => 'private']);
 
         try {
-            $diagnosis = DB::transaction(function () use ($farm, $user, $data, $upload, $checksum, $path, $contents): DiagnosisRequest {
+            $diagnosis = DB::transaction(function () use ($farm, $user, $data, $mime, $checksum, $path, $contents): DiagnosisRequest {
                 $diagnosis = new DiagnosisRequest;
                 $diagnosis->fill([
                     'uuid' => (string) Str::uuid(),
                     'farm_crop_cycle_id' => $data['farm_crop_cycle_id'] ?? null,
                     'image_disk' => 'private',
                     'image_path' => $path,
-                    'image_mime' => $upload->getMimeType(),
+                    'image_mime' => $mime,
                     'image_size_bytes' => strlen($contents),
                     'image_checksum' => $checksum,
                     'note' => $data['note'] ?? null,
@@ -65,14 +65,14 @@ final class CreateDiagnosisRequest
         return $diagnosis;
     }
 
-    /** @return array{string, string} */
+    /** @return array{string, string, string} */
     private function sanitise(string $contents, string $mime): array
     {
         $format = match ($mime) {
             'image/jpeg' => 'jpeg',
             'image/png' => 'png',
             'image/webp' => 'webp',
-            'image/heic', 'image/heif' => 'heic',
+            'image/heic', 'image/heif' => 'jpeg',
             default => throw new \InvalidArgumentException('Unsupported image type.'),
         };
 
@@ -85,6 +85,10 @@ final class CreateDiagnosisRequest
         $sanitised = $image->getImageBlob();
         $image->clear();
 
-        return [$sanitised, $format === 'jpeg' ? 'jpg' : $format];
+        return [
+            $sanitised,
+            $format === 'jpeg' ? 'jpg' : $format,
+            $format === 'jpeg' ? 'image/jpeg' : 'image/'.$format,
+        ];
     }
 }

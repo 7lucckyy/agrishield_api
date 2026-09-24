@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\VoiceAssistance;
 
-use App\Enums\VoiceAssistanceStatus;
 use App\Integrations\Contracts\FarmerVoiceProvider;
+use App\Jobs\ProcessVoiceAssistanceRequest;
 use App\Models\Farm;
 use App\Models\Organization;
 use App\Models\User;
@@ -13,7 +13,6 @@ use App\Models\VoiceAssistanceRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Throwable;
 
 final readonly class CreateVoiceAssistanceRequest
 {
@@ -47,28 +46,7 @@ final readonly class CreateVoiceAssistanceRequest
         $request->farm()->associate($farm);
         $request->save();
 
-        try {
-            $result = $this->provider->assist(
-                Storage::disk('private')->path($path),
-                $request->audio_mime,
-                $sourceLanguage,
-                $responseLanguage,
-                $farm === null ? null : collect([$farm->name, $farm->locality, $farm->state])->filter()->join(', '),
-            );
-
-            $request->update([
-                'status' => VoiceAssistanceStatus::Completed,
-                'transcript' => $result->transcript,
-                'translated_transcript' => $result->translatedTranscript,
-                'guidance' => $result->guidance,
-                'safety_note' => $result->safetyNote,
-                'provider_reference' => $result->reference,
-                'completed_at' => now(),
-            ]);
-        } catch (Throwable $exception) {
-            $request->update(['status' => VoiceAssistanceStatus::Failed, 'failure_reason' => 'Guidance could not be generated. Please try again or contact an extension officer.']);
-            report($exception);
-        }
+        ProcessVoiceAssistanceRequest::dispatch($request->getKey())->afterCommit();
 
         return $request->fresh(['farm:id,uuid,name']);
     }

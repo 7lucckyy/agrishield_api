@@ -55,6 +55,16 @@ test('voice intake validates language and audio content type', function () {
     ])->assertUnprocessable()->assertInvalid(['audio', 'source_language', 'response_language']);
 });
 
+test('voice intake limits generated replies to N-ATLaS languages', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('question.webm', 100, 'audio/webm'),
+        'source_language' => 'ff',
+        'response_language' => 'ff',
+    ])->assertUnprocessable()->assertInvalid(['response_language']);
+});
+
 test('an organization member can use the field voice workspace', function () {
     Storage::fake('private');
     $user = User::factory()->create();

@@ -10,8 +10,33 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $user_id
+ * @property int|null $organization_id
+ * @property int|null $farm_id
+ * @property string $source_language
+ * @property string $response_language
+ * @property string $audio_disk
+ * @property string $audio_path
+ * @property string $audio_mime
+ * @property VoiceAssistanceStatus $status
+ * @property string|null $transcript
+ * @property string|null $translated_transcript
+ * @property string|null $guidance
+ * @property string|null $safety_note
+ * @property string $provider
+ * @property string|null $provider_reference
+ * @property string|null $failure_reason
+ * @property Carbon|null $completed_at
+ * @property-read User $user
+ * @property-read Farm|null $farm
+ * @property-read Organization|null $organization
+ */
 #[Fillable(['uuid', 'source_language', 'response_language', 'audio_disk', 'audio_path', 'audio_mime', 'audio_size_bytes', 'audio_checksum', 'status', 'transcript', 'translated_transcript', 'guidance', 'safety_note', 'provider', 'provider_reference', 'failure_reason', 'completed_at'])]
 final class VoiceAssistanceRequest extends Model
 {

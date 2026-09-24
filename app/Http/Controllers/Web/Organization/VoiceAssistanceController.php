@@ -25,6 +25,7 @@ final class VoiceAssistanceController extends Controller
         return view('organization.voice-assistance', [
             'organization' => $organization,
             'languages' => config('voice-assistance.languages'),
+            'responseLanguages' => config('voice-assistance.response_languages'),
             'farms' => $organization->farms()->orderBy('name')->get(['id', 'uuid', 'name']),
             'voiceRequests' => VoiceAssistanceRequest::query()
                 ->whereBelongsTo($organization)
@@ -44,6 +45,6 @@ final class VoiceAssistanceController extends Controller
         $voiceRequest = $create->execute($user, $audio, $request->string('source_language')->toString(), $request->string('response_language')->toString(), $farm, $organization);
 
         return to_route('organization.voice-assistance.index', $organization)
-            ->with('status', $voiceRequest->status->value === 'completed' ? 'Voice note translated and guidance prepared.' : 'Voice note saved. Automatic guidance is currently unavailable.');
+            ->with('status', $voiceRequest->status->value === 'completed' ? 'Voice note translated and guidance prepared.' : 'Voice note received. Translation and guidance are being prepared.');
     }
 }

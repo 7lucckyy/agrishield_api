@@ -2,39 +2,29 @@
 
 declare(strict_types=1);
 
-use App\Integrations\OpenAI\OpenAIFarmerVoiceProvider;
+use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 uses(TestCase::class);
 
-test('the OpenAI voice provider transcribes and returns structured field guidance', function () {
+test('the OpenAI voice provider is limited to transcription', function () {
     config()->set('voice-assistance.openai.api_key', 'test-key');
     $audioPath = tempnam(sys_get_temp_dir(), 'voice-test-');
     file_put_contents($audioPath, 'test audio');
 
     Http::fake([
-        '*/audio/transcriptions' => Http::response(['text' => 'My maize leaves are yellow.']),
-        '*/responses' => Http::response([
-            'id' => 'resp_123',
-            'output' => [[
-                'content' => [[
-                    'type' => 'output_text',
-                    'text' => json_encode([
-                        'translated_transcript' => 'My maize leaves are yellow.',
-                        'guidance' => 'Check where the yellowing starts and compare soil moisture.',
-                        'safety_note' => 'Confirm any treatment with an extension officer.',
-                    ], JSON_THROW_ON_ERROR),
-                ]],
-            ]],
-        ]),
+        '*/audio/transcriptions' => Http::response(
+            ['text' => 'My maize leaves are yellow.'],
+            headers: ['x-request-id' => 'asr_123'],
+        ),
     ]);
 
-    $result = app(OpenAIFarmerVoiceProvider::class)->assist($audioPath, 'audio/webm', 'en', 'ha', 'North Field, Borno');
+    $result = app(OpenAIVoiceTranscriptionProvider::class)->transcribe($audioPath, 'audio/webm', 'en');
 
     expect($result->transcript)->toBe('My maize leaves are yellow.')
-        ->and($result->reference)->toBe('resp_123')
-        ->and($result->guidance)->toContain('soil moisture');
-    Http::assertSentCount(2);
+        ->and($result->reference)->toBe('asr_123');
+    Http::assertSentCount(1);
+    Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/audio/transcriptions'));
     unlink($audioPath);
 });

@@ -18,5 +18,6 @@ final readonly class DiagnosisResult
         public ?array $detectedLabels = null,
         public ?CarbonInterface $completedAt = null,
         public ?string $failureReason = null,
+        public ?string $providerRequestId = null,
     ) {}
 }

@@ -6,7 +6,7 @@ namespace App\Jobs;
 
 use App\Enums\DiagnosisStatus;
 use App\Exceptions\Provider\ProviderException;
-use App\Integrations\Contracts\FarmingInsightsProvider;
+use App\Integrations\Contracts\CropDiagnosisProvider;
 use App\Models\DiagnosisRequest;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,7 +28,7 @@ final class SubmitDiagnosisToProvider implements ShouldBeUnique, ShouldQueue
         return (string) $this->diagnosisRequestId;
     }
 
-    public function handle(FarmingInsightsProvider $provider): void
+    public function handle(CropDiagnosisProvider $provider): void
     {
         $diagnosis = DiagnosisRequest::query()->findOrFail($this->diagnosisRequestId);
         if ($diagnosis->status !== DiagnosisStatus::Queued) {
@@ -45,7 +45,10 @@ final class SubmitDiagnosisToProvider implements ShouldBeUnique, ShouldQueue
                 'failure_reason' => null,
             ])->save();
 
-            PollDiagnosisResult::dispatch($diagnosis->getKey())->delay(now()->addMinute());
+            $pollAt = $submission->expectedBy?->isFuture() === true
+                ? $submission->expectedBy
+                : now();
+            PollDiagnosisResult::dispatch($diagnosis->getKey())->delay($pollAt);
         } catch (ProviderException $exception) {
             if (! $exception->retryable) {
                 $diagnosis->fill(['status' => DiagnosisStatus::Failed, 'failure_reason' => $exception->errorCode])->save();

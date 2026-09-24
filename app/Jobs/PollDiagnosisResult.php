@@ -6,7 +6,7 @@ namespace App\Jobs;
 
 use App\Enums\DiagnosisResultStatus;
 use App\Enums\DiagnosisStatus;
-use App\Integrations\Contracts\FarmingInsightsProvider;
+use App\Integrations\Contracts\CropDiagnosisProvider;
 use App\Models\DiagnosisRequest;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,7 +28,7 @@ final class PollDiagnosisResult implements ShouldBeUnique, ShouldQueue
         return (string) $this->diagnosisRequestId;
     }
 
-    public function handle(FarmingInsightsProvider $provider): void
+    public function handle(CropDiagnosisProvider $provider): void
     {
         $diagnosis = DiagnosisRequest::query()->findOrFail($this->diagnosisRequestId);
         if (! in_array($diagnosis->status, [DiagnosisStatus::Submitted, DiagnosisStatus::Processing], true)) {
@@ -49,6 +49,7 @@ final class PollDiagnosisResult implements ShouldBeUnique, ShouldQueue
                 'recommendation' => $result->recommendation,
                 'confidence' => $result->confidence,
                 'detected_labels' => $result->detectedLabels,
+                'external_reference' => $result->providerRequestId ?? $diagnosis->external_reference,
                 'completed_at' => $result->completedAt ?? now(),
                 'failure_reason' => null,
             ])->save();

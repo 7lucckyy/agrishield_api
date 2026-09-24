@@ -6,8 +6,6 @@ namespace App\Integrations\Contracts;
 
 use App\DTOs\Provider\AdvisoryCollection;
 use App\DTOs\Provider\CropHealthData;
-use App\DTOs\Provider\DiagnosisResult;
-use App\DTOs\Provider\DiagnosisSubmission;
 use App\DTOs\Provider\ProviderFarmReference;
 use App\DTOs\Provider\ProviderHealth;
 use App\DTOs\Provider\SoilHealthData;
@@ -15,11 +13,10 @@ use App\DTOs\Provider\SoilMoistureData;
 use App\DTOs\Provider\WaterStressData;
 use App\DTOs\Provider\WeatherData;
 use App\Models\CropCycle;
-use App\Models\DiagnosisRequest;
 use App\Models\Farm;
 use Carbon\CarbonInterface;
 
-interface FarmingInsightsProvider
+interface FarmingInsightsProvider extends CropDiagnosisProvider
 {
     public function name(): string;
 
@@ -42,10 +39,6 @@ interface FarmingInsightsProvider
     public function fetchPestForewarning(Farm $farm): AdvisoryCollection;
 
     public function fetchCropPractices(CropCycle $cycle): AdvisoryCollection;
-
-    public function submitDiagnosis(DiagnosisRequest $request, string $idempotencyKey): DiagnosisSubmission;
-
-    public function fetchDiagnosisResult(DiagnosisRequest $request): DiagnosisResult;
 
     public function healthCheck(): ProviderHealth;
 }

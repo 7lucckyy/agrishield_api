@@ -28,7 +28,7 @@ final class StoreVoiceAssistanceRequest extends FormRequest
         return [
             'audio' => ['required', 'file', 'max:20480', 'mimetypes:audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg,audio/webm,video/webm'],
             'source_language' => ['required', 'string', Rule::in(array_keys(config('voice-assistance.languages')))],
-            'response_language' => ['required', 'string', Rule::in(array_keys(config('voice-assistance.languages'))), Rule::notIn(['auto'])],
+            'response_language' => ['required', 'string', Rule::in(array_keys(config('voice-assistance.response_languages')))],
             'farm_id' => ['nullable', 'integer', Rule::exists('farms', 'id')->where('organization_id', $this->organizationId())],
         ];
     }

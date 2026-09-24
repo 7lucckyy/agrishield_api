@@ -45,6 +45,7 @@ Route::prefix('organization/{organization}')->name('organization.')->middleware(
     Route::get('/', OrganizationDashboardController::class)->name('dashboard');
     Route::get('/farms', [OrganizationFarmController::class, 'index'])->name('farms.index');
     Route::get('/farms/{farm}', [OrganizationFarmController::class, 'show'])->name('farms.show');
+    Route::post('/farms/{farm}/crop-screenings', [OrganizationFarmController::class, 'storeDiagnosis'])->middleware('throttle:diagnosis')->name('farms.diagnoses.store');
     Route::get('/team', OrganizationTeamController::class)->name('team');
     Route::get('/advisories', OrganizationAdvisoryController::class)->name('advisories');
     Route::get('/field-voice', [OrganizationVoiceAssistanceController::class, 'index'])->name('voice-assistance.index');
