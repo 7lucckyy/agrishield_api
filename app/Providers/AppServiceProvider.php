@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use App\Enums\GlobalRole;
+use App\Integrations\Contracts\FarmerVoiceProvider;
 use App\Integrations\Contracts\FarmingInsightsProvider;
+use App\Integrations\Fake\FakeFarmerVoiceProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
+use App\Integrations\OpenAI\OpenAIFarmerVoiceProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -28,6 +31,14 @@ class AppServiceProvider extends ServiceProvider
                 'fake' => $application->make(FakeInsightsProvider::class),
                 'satyukt' => $application->make(SatyuktInsightsProvider::class),
                 default => throw new InvalidArgumentException('Unknown farming provider: '.config('farming.provider')),
+            };
+        });
+
+        $this->app->bind(FarmerVoiceProvider::class, function (Application $application): FarmerVoiceProvider {
+            return match ((string) config('voice-assistance.provider')) {
+                'fake' => $application->make(FakeFarmerVoiceProvider::class),
+                'openai' => $application->make(OpenAIFarmerVoiceProvider::class),
+                default => throw new InvalidArgumentException('Unknown voice assistance provider: '.config('voice-assistance.provider')),
             };
         });
     }
@@ -68,6 +79,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('diagnosis', fn (Request $request): Limit => Limit::perHour(10)
+            ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        RateLimiter::for('voice-assistance', fn (Request $request): Limit => Limit::perHour(12)
             ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
     }
 }

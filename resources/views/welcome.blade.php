@@ -1,52 +1,160 @@
 @extends('layouts.marketing')
-@section('title', 'AgriShield AI Ltd | Agricultural Intelligence for North-East Nigeria')
+@section('title', 'AgriShield AI | Crop support that reaches the field')
+@section('description', 'AgriShield connects farm records, crop seasons, farmer questions and accountable advisory delivery across Northern Nigeria.')
+@push('head')
+    <link rel="preload" as="image" href="{{ asset('images/field/jigawa-farmer.webp') }}" type="image/webp" fetchpriority="high">
+@endpush
 @section('content')
-@if(session('status'))<div class="flash-message">{{ session('status') }}</div>@endif
+@if(session('status'))
+    <div class="flash-message">{{ session('status') }}</div>
+@endif
 
-<section class="operations-hero">
-    <div class="operations-hero-copy">
-        <p class="section-label">Agricultural intelligence for resilient communities</p>
-        <h1>Evidence for the field.<br>Clarity for decisions.</h1>
-        <p class="hero-lede">AgriShield AI helps governments, development partners and agricultural organizations turn farmer, farm, livestock, climate and market data into coordinated action.</p>
-        <div class="hero-actions"><a class="button button-primary" href="{{ route('contact') }}">Request a demonstration</a><a class="text-action" href="{{ route('solutions') }}">Explore our solutions <span>→</span></a></div>
+<section class="photo-hero">
+    <figure class="photo-hero-image">
+        <img src="{{ asset('images/field/jigawa-farmer.webp') }}" alt="A farmer examining a crop in Jigawa, northern Nigeria" width="1800" height="2047" fetchpriority="high" decoding="async">
+        <figcaption><span>Jigawa, Nigeria</span><a href="https://www.pexels.com/photo/nigerian-farmer-examining-crops-in-field-34411658/">Photo by mk_photoz / Pexels</a></figcaption>
+    </figure>
+    <div class="photo-hero-copy">
+        <p class="field-kicker"><span></span> Crop support, connected</p>
+        <h1>From a farmer’s question to the next field action.</h1>
+        <p>AgriShield gives crop programmes one accountable path from farm registration to farmer question, field review and practical advice—without losing context between calls, messages and spreadsheets.</p>
+        <div class="field-actions">
+            <a class="field-button field-button-yellow" href="{{ route('solutions') }}">Explore the platform</a>
+            <a class="field-text-link" href="{{ route('contact') }}">Plan a deployment <span>↗</span></a>
+        </div>
+        <dl class="photo-hero-notes">
+            <div><dt>For farmers</dt><dd>A familiar way to report what they see.</dd></div>
+            <div><dt>For field teams</dt><dd>A clear record of what needs attention.</dd></div>
+            <div><dt>For organisations</dt><dd>One view of farms, cases and follow-through.</dd></div>
+        </dl>
     </div>
-    <aside class="deployment-brief" aria-label="AgriShield AI deployment brief">
-        <div class="brief-heading"><span>Deployment brief</span><small>North-East Nigeria</small></div>
-        <dl><div><dt>Who we serve</dt><dd>Public institutions, development partners and producer networks</dd></div><div><dt>Evidence connected</dt><dd>People, farms, livestock, land, climate and markets</dd></div><div><dt>Delivery model</dt><dd>Field registration through institutional reporting</dd></div><div><dt>Regional focus</dt><dd>Borno, Adamawa, Yobe, Bauchi, Gombe and Taraba</dd></div></dl>
-    </aside>
 </section>
 
-<section class="service-bar" aria-label="Platform strengths"><span>Secure registries</span><span>Geospatial evidence</span><span>Field-ready delivery</span><span>Programme accountability</span></section>
-
-<section class="plain-intro section-pad">
-    <div><p class="section-label">About AgriShield AI</p><h2>Technology grounded in local reality.</h2></div>
-    <div><p class="intro-statement">We build the trusted digital infrastructure North-East Nigeria’s agricultural future deserves.</p><p>Our work connects responsible AI, geospatial science, field knowledge and public programme delivery—so intelligence reaches the people responsible for acting on it.</p><a class="text-action" href="{{ route('about') }}">How we work <span>→</span></a></div>
+<section class="field-promise">
+    <p>AGRISHIELD CONNECTS</p>
+    <div><span>THE FARM</span><i>+</i><span>THE SEASON</span><i>+</i><span>THE QUESTION</span><i>+</i><span>THE RESPONSE</span></div>
 </section>
 
-<section class="solution-index section-pad" id="solutions">
-    <div class="section-intro"><p class="section-label">Connected solutions</p><h2>Systems that work together.</h2><p>Begin with a focused deployment and grow into statewide agricultural infrastructure.</p></div>
-    <div class="solution-rows">
-        <a href="{{ route('solutions') }}#registries"><div><small>Identity and evidence</small><strong>Farmer census and digital registries</strong></div><p>Verified, georeferenced profiles for accountable service delivery.</p><span>View solutions →</span></a>
-        <a href="{{ route('solutions') }}#land"><div><small>Land and production</small><strong>GIS, soil and crop intelligence</strong></div><p>Farm boundaries, satellite signals and land evidence in one decision layer.</p><span>View solutions →</span></a>
-        <a href="{{ route('solutions') }}#risk"><div><small>Risk and resilience</small><strong>Food security and climate monitoring</strong></div><p>Earlier visibility into production gaps, drought, floods and emerging needs.</p><span>View solutions →</span></a>
-        <a href="{{ route('solutions') }}#markets"><div><small>Delivery and opportunity</small><strong>Finance, mechanisation and markets</strong></div><p>Connect verified production to practical services and stronger routes to market.</p><span>View solutions →</span></a>
+<section class="product-story field-section">
+    <div class="product-story-heading">
+        <p class="field-kicker"><span></span> One crop-support workspace</p>
+        <h2>Know the field.<br>Keep the history.<br>Follow through.</h2>
     </div>
-    <a class="text-action catalog-link" href="{{ route('solutions') }}">Explore all twelve solution areas <span>→</span></a>
+    <div class="product-story-list">
+        <article><span>FARMS</span><h3>Build a dependable farm register</h3><p>Keep ownership, location, boundaries and organisation access in one private record.</p></article>
+        <article><span>CROP SEASONS</span><h3>Track what is growing now</h3><p>Connect each farm to its crop, planting period, harvest window and current season.</p></article>
+        <article><span>FIELD VOICE</span><h3>Receive questions in the moment</h3><p>Record or upload a voice note, attach it to a farm and retain the case for review.</p></article>
+        <article><span>CASES & ADVISORIES</span><h3>Turn evidence into accountable action</h3><p>Review crop images, publish practical advice and record whether it was acknowledged.</p></article>
+    </div>
 </section>
 
-<section class="delivery-section section-pad">
-    <div class="section-intro"><p class="section-label">Delivery model</p><h2>A practical route from evidence to outcomes.</h2><p>We connect the operational pieces that often sit apart.</p></div>
-    <ol class="delivery-list"><li><span>01</span><div><strong>Organize producers</strong><p>Build trusted clusters around geography, value chain and production cycle.</p></div></li><li><span>02</span><div><strong>Verify and map</strong><p>Capture farmers, farms, livestock and assets with field-level evidence.</p></div></li><li><span>03</span><div><strong>Coordinate services</strong><p>Connect intelligence to advisory, finance, inputs and mechanisation.</p></div></li><li><span>04</span><div><strong>Measure outcomes</strong><p>Track delivery, learn from the field and connect producers to markets.</p></div></li></ol>
+<section class="record-spine field-section">
+    <header class="record-spine-intro">
+        <div>
+            <p class="field-kicker"><span></span> Field to follow-through</p>
+            <h2>One record.<br>Five responsible handoffs.</h2>
+        </div>
+        <p>Every farmer question stays connected to the farm, current crop season, evidence, reviewer and response. Teams can see both the next action and the history behind it.</p>
+    </header>
+    <div class="record-spine-layout">
+        <ol class="record-steps" aria-label="AgriShield crop support workflow">
+            <li><span>01</span><div><small>FIELD TEAM</small><h3>Register the farm</h3><p>Confirm ownership, organisation access and field boundary.</p></div></li>
+            <li><span>02</span><div><small>FIELD TEAM</small><h3>Open the crop season</h3><p>Record the crop and planting window that shape the case context.</p></div></li>
+            <li><span>03</span><div><small>FARMER + FIELD OFFICER</small><h3>Capture the question</h3><p>Keep the voice note or crop image with the correct farm record.</p></div></li>
+            <li><span>04</span><div><small>REVIEWER</small><h3>Review the evidence</h3><p>Assess what was reported and document the responsible next step.</p></div></li>
+            <li><span>05</span><div><small>PROGRAMME TEAM</small><h3>Close the loop</h3><p>Publish the advisory and retain its reading and acknowledgement trail.</p></div></li>
+        </ol>
+        <article class="field-record-card" aria-label="Illustrative crop support record">
+            <header><span>SAMPLE CASE / MAIZE</span><b>AWAITING REVIEW</b></header>
+            <div class="field-record-context">
+                <div><small>Farm</small><strong>North plot</strong></div>
+                <div><small>Season</small><strong>2026 wet season</strong></div>
+                <div><small>Owner</small><strong>Field team</strong></div>
+            </div>
+            <div class="field-record-question">
+                <small>FARMER QUESTION</small>
+                <blockquote>“The lower leaves are turning yellow. What should I check first?”</blockquote>
+                <span>Voice note retained with case</span>
+            </div>
+            <div class="field-record-history">
+                <div><i></i><p><small>RECEIVED</small><strong>Question linked to farm and active crop season</strong></p></div>
+                <div><i></i><p><small>NEXT</small><strong>Assigned reviewer checks field evidence</strong></p></div>
+                <div class="pending"><i></i><p><small>THEN</small><strong>Advisory published and acknowledgement recorded</strong></p></div>
+            </div>
+            <footer>Illustrative workflow · not live farmer data</footer>
+        </article>
+    </div>
 </section>
 
-<section class="regional-section section-pad">
-    <div><p class="section-label">Geographic focus</p><h2>Built for North-East Nigeria.</h2><p>Serving governments, development partners and farming communities across the region.</p><a class="button button-primary" href="{{ route('contact') }}">Discuss a regional deployment</a></div>
-    <div class="state-directory" aria-label="States in regional focus"><div><span>01</span>Borno</div><div><span>02</span>Adamawa</div><div><span>03</span>Yobe</div><div><span>04</span>Bauchi</div><div><span>05</span>Gombe</div><div><span>06</span>Taraba</div></div>
+<section class="field-documentary">
+    <figure>
+        <img src="{{ asset('images/field/hawul-borno-farmland.webp') }}" alt="People tending crops across farmland in Hawul, Borno State" width="1920" height="1080" loading="lazy" decoding="async">
+        <figcaption>Farmland in Hawul, Borno State · <a href="https://commons.wikimedia.org/wiki/File:Farmland_Hawul_Borno_State_Nigeria._2019.DSC01973.jpg">Ifeatu Nnaobi / CC BY-SA 4.0</a></figcaption>
+    </figure>
+    <div>
+        <p class="field-kicker"><span></span> Designed for field operations</p>
+        <h2>Technology is useful when the person responsible knows what happens next.</h2>
+        <p>AgriShield gives crop programmes a simple operating path: register the farm, open the crop season, capture the question, review the evidence and record the response.</p>
+        <a class="field-text-link" href="{{ route('impact') }}">See how the workflow moves <span>→</span></a>
+    </div>
 </section>
 
-<section class="working-principles section-pad"><div class="section-intro"><p class="section-label">Why AgriShield AI</p><h2>Trust is part of the system.</h2></div><div class="principle-rows"><article><h3>Listen before building</h3><p>Start with institutions, communities and the decisions the system must improve.</p></article><article><h3>Design for the last mile</h3><p>Offline resilience, clear interfaces and practical support are part of the architecture.</p></article><article><h3>Make trust visible</h3><p>Privacy, validation, auditability and responsible AI belong in every workflow.</p></article><article><h3>Measure what matters</h3><p>Connect technology outputs to programme outcomes and community-level impact.</p></article></div></section>
+<section class="voice-feature field-section">
+    <div>
+        <p class="field-kicker"><span></span> Field Voice</p>
+        <h2>The field report starts with the farmer’s own words.</h2>
+        <p>Field Voice securely captures a voice note and keeps it connected to the relevant farm and organisation. Transcription and translation can be enabled with a configured language provider.</p>
+        <a class="field-button field-button-dark" href="{{ route('field-voice') }}">Explore Field Voice</a>
+    </div>
+    <div class="voice-receipt" aria-label="Example Field Voice case">
+        <header><span>FIELD VOICE / CASE</span><b>RECEIVED</b></header>
+        <div><small>QUESTION</small><p>“The lower leaves are turning yellow. What should I check first?”</p></div>
+        <dl><div><dt>Farm</dt><dd>North plot</dd></div><div><dt>Crop</dt><dd>Maize</dd></div><div><dt>Status</dt><dd>Awaiting review</dd></div></dl>
+        <footer>Illustrative record · not live farmer data</footer>
+    </div>
+</section>
 
-<section class="approach-section section-pad"><div class="section-intro"><p class="section-label">Impact approaches</p><h2>What better evidence makes possible.</h2></div><div class="approach-list"><a href="{{ route('impact') }}"><small>Digital public infrastructure</small><strong>A unified farmer registry for evidence-led planning</strong><span>North-East Nigeria →</span></a><a href="{{ route('impact') }}"><small>Livestock intelligence</small><strong>Mapping corridors for safer, smarter services</strong><span>Borno and Yobe →</span></a><a href="{{ route('impact') }}"><small>Climate resilience</small><strong>Turning early climate signals into field action</strong><span>Adamawa and Taraba →</span></a></div></section>
+<section class="deployment-standard field-section">
+    <div class="deployment-standard-heading">
+        <p class="field-kicker"><span></span> Deployment standard</p>
+        <h2>Useful in the field.<br>Accountable at programme level.</h2>
+        <p>AgriShield is designed around the operating controls a crop programme needs before automation becomes useful.</p>
+    </div>
+    <div class="deployment-standard-grid">
+        <article><span>ACCESS</span><h3>Private organisation workspaces</h3><p>Farm, audio and crop-image records remain inside authorised organisation workflows.</p></article>
+        <article><span>CONTEXT</span><h3>Every case starts with a known farm</h3><p>Questions and evidence retain the crop season and ownership context needed for review.</p></article>
+        <article><span>ACCOUNTABILITY</span><h3>Advice has a visible trail</h3><p>Published actions, reading status and acknowledgement remain part of the operating record.</p></article>
+        <article><span>LIMITS</span><h3>Automation is provider-aware</h3><p>Transcription, translation and specialist analysis are enabled only when a deployment configures them.</p></article>
+    </div>
+</section>
 
-<section class="contact-block"><div><p class="section-label">Work with AgriShield AI</p><h2>Bring us the hard agricultural problem.</h2></div><div><p>For project scoping, demonstrations, partnerships or institutional enquiries, our team is ready to listen.</p><a class="button button-light" href="{{ route('contact') }}">Start a conversation</a></div></section>
+<section class="deployment-faq field-section">
+    <header>
+        <p class="field-kicker"><span></span> Before a deployment</p>
+        <h2>Clear answers before field work begins.</h2>
+    </header>
+    <div class="deployment-faq-list">
+        <details>
+            <summary>Who is AgriShield built for?<span aria-hidden="true">+</span></summary>
+            <p>Crop programmes, cooperatives and extension teams that need a shared record of farms, farmer questions, crop cases and follow-through.</p>
+        </details>
+        <details>
+            <summary>Does AgriShield replace the extension officer?<span aria-hidden="true">+</span></summary>
+            <p>No. The current workflow helps the responsible team retain context, review evidence and issue accountable advice. It keeps human ownership visible.</p>
+        </details>
+        <details>
+            <summary>How does Field Voice handle local languages?<span aria-hidden="true">+</span></summary>
+            <p>The platform records or uploads a farmer’s voice note first. Transcription and translation can then be enabled with a configured language provider for the deployment.</p>
+        </details>
+        <details>
+            <summary>Can an organisation begin with one crop programme?<span aria-hidden="true">+</span></summary>
+            <p>Yes. The recommended starting point is one defined crop workflow, a responsible field team and a clear support problem to evaluate.</p>
+        </details>
+    </div>
+</section>
+
+<section class="ledger-closing">
+    <div><span>FOR CROP PROGRAMMES AND EXTENSION TEAMS</span><h2>Start with one clear field workflow.</h2></div>
+    <div><p>Bring one crop programme, a defined field team and a support problem worth solving.</p><a class="field-button field-button-yellow" href="{{ route('contact') }}">Discuss a focused deployment</a></div>
+</section>
 @endsection

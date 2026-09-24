@@ -27,6 +27,7 @@ use Illuminate\Support\Carbon;
  * @property-read OrganizationMembership $membership
  * @property-read Collection<int, User> $users
  * @property-read Collection<int, Farm> $farms
+ * @property-read Collection<int, VoiceAssistanceRequest> $voiceAssistanceRequests
  */
 #[Fillable(['name', 'slug', 'referral_code', 'referral_code_expires_at', 'status', 'contact_email', 'contact_phone', 'country', 'metadata'])]
 class Organization extends Model
@@ -59,6 +60,12 @@ class Organization extends Model
     public function farms(): HasMany
     {
         return $this->hasMany(Farm::class);
+    }
+
+    /** @return HasMany<VoiceAssistanceRequest, $this> */
+    public function voiceAssistanceRequests(): HasMany
+    {
+        return $this->hasMany(VoiceAssistanceRequest::class);
     }
 
     /** @return array<string, string> */

@@ -6,6 +6,7 @@ use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Exceptions\InvalidTransitionException;
 use App\Exceptions\LastOrganizationAdminRequiredException;
 use App\Exceptions\SyncAlreadyRunningException;
+use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\SetLocale;
 use App\Support\ApiErrorResponse;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [AddSecurityHeaders::class]);
         $middleware->api(prepend: [AttachRequestId::class, SetLocale::class]);
         $middleware->alias([
             'abilities' => CheckAbilities::class,

@@ -1,21 +1,25 @@
 @extends('layouts.marketing')
-@section('title', 'Solutions | AgriShield AI Ltd')
+@section('title', 'Platform | AgriShield AI')
+@section('description', 'Explore AgriShield’s connected workspace for farms, crop seasons, farmer questions, crop cases and advisories.')
 @section('content')
-<section class="inner-hero"><p class="eyebrow light"><span></span> Solutions</p><h1>One intelligence layer.<br>Many better decisions.</h1><p>Modular agricultural systems that move confidently from focused pilots to statewide delivery.</p></section>
-@php($solutions = [
-['registries','Farmer Census & Digital Registry','Verified, georeferenced farmer and household profiles for accountable planning.',['Offline-first registration','Identity and duplicate controls','Household and value-chain profiling']],
-['livestock','Livestock Information Management','Animal records, health surveillance, movement patterns and service delivery in one system.',['Traceability and ownership','Disease surveillance','Corridor and market intelligence']],
-['land','Soil Survey & Land Intelligence','Soil observations and land data for productive, sustainable decisions.',['Soil survey workflows','Crop suitability analysis','Restoration monitoring']],
-['gis','Agricultural GIS Mapping','Farm boundaries, earth imagery and infrastructure as a clear spatial decision layer.',['Farm and asset mapping','Satellite change detection','Service coverage analysis']],
-['food-security','Food Security Intelligence','Production, market, climate and vulnerability indicators brought together for earlier action.',['Multi-source dashboards','Threshold-based warning','Scenario analysis']],
-['risk','Climate Risk Monitoring','Climate signals translated into practical monitoring and response workflows.',['Forecast integration','Risk thresholds','Field-ready advisories']],
-['meal','Agricultural MEAL Systems','Monitoring, evaluation, accountability and learning embedded in programme delivery.',['Indicator frameworks','Field verification','Donor-ready reporting']],
-['ai','AI & Predictive Analytics','Responsible models that forecast risk, reveal patterns and focus human attention.',['Risk and yield forecasting','Anomaly detection','Explainable support']],
-['markets','Market Access & Trade Linkages','Trusted linkages that help farmers aggregate supply and fulfil demand.',['Verified buyer networks','Price intelligence','Order fulfilment']],
-['clusters','Farmer Clustering & Cooperatives','Practical production clusters for extension, inputs, aggregation and bargaining power.',['Geospatial clustering','Group production planning','Cooperative tools']],
-['finance','Input Financing & Credit Enablement','Verified profiles and production histories supporting responsible seasonal finance.',['Eligibility profiles','Digital vouchers','Portfolio monitoring']],
-['mechanisation','Mechanisation & Equipment Access','Transparent scheduling for tractors, irrigation systems and equipment networks.',['Equipment booking','Provider coordination','Utilisation tracking']],
-])
-<section class="solution-catalog section-pad">@foreach($solutions as $index => [$id,$title,$description,$features])<article id="{{ $id }}"><span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span><div><h2>{{ $title }}</h2><p>{{ $description }}</p></div><ul>@foreach($features as $feature)<li>{{ $feature }}</li>@endforeach</ul></article>@endforeach</section>
+<section class="inner-hero">
+    <p class="eyebrow light"><span></span> The AgriShield platform</p>
+    <h1>One crop workflow.<br>Nothing important lost.</h1>
+    <p>Give field teams a shared place to organise farms, understand the current season and follow farmer questions through to action.</p>
+</section>
+
+<section class="platform-catalog section-pad">
+    <article><span>REGISTER</span><div><h2>Farm and organisation records</h2><p>Keep farms, boundaries, ownership and team access together in a secure workspace.</p></div><ul><li>Farm profiles</li><li>Validated boundaries</li><li>Organisation roles</li></ul></article>
+    <article><span>TRACK</span><div><h2>Crop seasons</h2><p>Record what is planted and retain the dates and context needed for ongoing support.</p></div><ul><li>Crop catalogue</li><li>Planting and harvest dates</li><li>Active season history</li></ul></article>
+    <article><span>LISTEN</span><div><h2>Field Voice</h2><p>Receive a farmer’s voice note, connect it to a permitted farm and keep the case visible to the responsible team.</p></div><ul><li>Browser recording</li><li>Private audio</li><li>Case history</li></ul></article>
+    <article><span>REVIEW</span><div><h2>Crop cases</h2><p>Store field observations and crop images while the team reviews what needs to happen next.</p></div><ul><li>Protected image intake</li><li>Review status</li><li>Case notes</li></ul></article>
+    <article><span>ACT</span><div><h2>Advisories</h2><p>Publish a practical farm-level action and retain a record of reading and acknowledgement.</p></div><ul><li>Recommended actions</li><li>Priority and timing</li><li>Acknowledgement history</li></ul></article>
+    <article><span>OPERATE</span><div><h2>Team oversight</h2><p>Give organisation and platform administrators a clear view of farms, users and operations.</p></div><ul><li>Organisation overview</li><li>Member management</li><li>Operational health</li></ul></article>
+</section>
+
+<section class="provider-note field-section">
+    <div><p class="field-kicker"><span></span> Extend when ready</p><h2>Connect specialist services without rebuilding the workflow.</h2></div>
+    <div><p>AgriShield can connect language, crop-analysis and earth-observation providers when a deployment has selected and configured them.</p><p>The core workspace remains useful on its own: farms, crop seasons, private field evidence, cases and advisories stay together.</p></div>
+</section>
 @include('website.partials.cta')
 @endsection

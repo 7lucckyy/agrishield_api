@@ -32,6 +32,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property-read Collection<int, Organization> $organizations
  * @property-read Collection<int, Farm> $farms
+ * @property-read Collection<int, VoiceAssistanceRequest> $voiceAssistanceRequests
  * @property-read OrganizationMembership $membership
  */
 #[Fillable(['name', 'email', 'phone', 'password', 'locale'])]
@@ -67,6 +68,12 @@ class User extends Authenticatable
     public function farms(): HasMany
     {
         return $this->hasMany(Farm::class, 'owner_user_id');
+    }
+
+    /** @return HasMany<VoiceAssistanceRequest, $this> */
+    public function voiceAssistanceRequests(): HasMany
+    {
+        return $this->hasMany(VoiceAssistanceRequest::class);
     }
 
     public function belongsToOrganization(Organization|int $organization): bool

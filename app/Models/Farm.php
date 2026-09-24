@@ -51,6 +51,7 @@ use Illuminate\Support\Str;
  * @property-read Collection<int, WeatherForecast> $weatherForecasts
  * @property-read Collection<int, Advisory> $advisories
  * @property-read Collection<int, DiagnosisRequest> $diagnosisRequests
+ * @property-read Collection<int, VoiceAssistanceRequest> $voiceAssistanceRequests
  */
 #[Fillable(['name', 'boundary_geojson', 'locality', 'state', 'country', 'status'])]
 final class Farm extends Model
@@ -128,6 +129,12 @@ final class Farm extends Model
     public function diagnoses(): HasMany
     {
         return $this->diagnosisRequests();
+    }
+
+    /** @return HasMany<VoiceAssistanceRequest, $this> */
+    public function voiceAssistanceRequests(): HasMany
+    {
+        return $this->hasMany(VoiceAssistanceRequest::class);
     }
 
     /**

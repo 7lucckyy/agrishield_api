@@ -1,8 +1,8 @@
 @extends('layouts.marketing')
-@section('title', 'Team | AgriShield AI Ltd')
+@section('title', 'Team | AgriShield AI')
+@section('description', 'Meet the product, crop programme and field implementation disciplines behind AgriShield AI.')
 @section('content')
-<section class="inner-hero"><p class="eyebrow light"><span></span> Our team</p><h1>Multidisciplinary<br>by design.</h1><p>Agriculture, technology, geospatial science and programme delivery—working as one team.</p></section>
-@php($team = [['DA','Dr. Amina Bello','Chief Executive Officer','Agricultural systems strategist focused on inclusive digital transformation and regional food security.'],['EM','Engr. Musa Ibrahim','Director, Data & AI','Data architect building responsible intelligence platforms for public programmes and field operations.'],['HA','Hauwa Abubakar','Head of Programmes','Programme leader connecting government priorities, development partners and farming communities.'],['YD','Yakubu Daniel','Lead, GIS & Remote Sensing','Geospatial specialist translating earth observation and field data into actionable regional insight.']])
-<section class="team-grid section-pad">@foreach($team as [$initials,$name,$role,$bio])<article><div class="team-portrait"><span>{{ $initials }}</span><i></i></div><small>{{ $role }}</small><h2>{{ $name }}</h2><p>{{ $bio }}</p></article>@endforeach</section>
+<section class="inner-hero"><p class="eyebrow light"><span></span> Team</p><h1>Built across product,<br>crop and field operations.</h1><p>We do not publish placeholder biographies. Verified leadership profiles will appear here when they are ready for public release.</p></section>
+<section class="capability-team section-pad"><div><p class="eyebrow light"><span></span> Current disciplines</p><h2>The capabilities required to deliver the product.</h2></div><div><article><strong>Crop programme design</strong><p>Translates field responsibilities into a workable service path.</p></article><article><strong>Software engineering</strong><p>Owns the secure API, web workspace and operational controls.</p></article><article><strong>Field implementation</strong><p>Supports onboarding, records and responsible workflow adoption.</p></article></div></section>
 @include('website.partials.cta')
 @endsection

@@ -56,6 +56,9 @@ use App\Http\Controllers\Api\V1\Profile\UpdatePasswordController;
 use App\Http\Controllers\Api\V1\Profile\UpdateProfileController;
 use App\Http\Controllers\Api\V1\Sync\ListFarmSyncRunController;
 use App\Http\Controllers\Api\V1\Sync\TriggerFarmSyncController;
+use App\Http\Controllers\Api\V1\VoiceAssistance\ListVoiceAssistanceController;
+use App\Http\Controllers\Api\V1\VoiceAssistance\ShowVoiceAssistanceController;
+use App\Http\Controllers\Api\V1\VoiceAssistance\StoreVoiceAssistanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -75,6 +78,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/me', ShowProfileController::class);
         Route::patch('/me', UpdateProfileController::class);
         Route::patch('/me/password', UpdatePasswordController::class);
+        Route::get('/voice-assistance', ListVoiceAssistanceController::class)->name('voice-assistance.index');
+        Route::post('/voice-assistance', StoreVoiceAssistanceController::class)->middleware('throttle:voice-assistance')->name('voice-assistance.store');
+        Route::get('/voice-assistance/{voiceAssistanceRequest}', ShowVoiceAssistanceController::class)->name('voice-assistance.show');
         Route::get('/health/detailed', ShowDetailedHealthController::class)->name('health.detailed');
         Route::get('/integrations', ListIntegrationController::class)->name('integrations.index');
         Route::patch('/integrations/{integration}', UpdateIntegrationController::class)->middleware('throttle:writes')->name('integrations.update');
