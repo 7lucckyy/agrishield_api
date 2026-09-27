@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "AgriShield AI",
+    "slug": "agrishield-ai",
+    "description": "Crop intelligence, local-language guidance and productive asset access for northern Nigerian farmers.",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/agrishield-icon.png",
+    "scheme": "agrishield",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "ng.agrishield.mobile",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "AgriShield uses your camera to photograph crop symptoms for diagnosis.",
+        "NSMicrophoneUsageDescription": "AgriShield records your question so it can provide guidance in your preferred language.",
+        "NSPhotoLibraryUsageDescription": "AgriShield lets you select crop photos for diagnosis."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#173F2A",
+        "foregroundImage": "./assets/images/agrishield-icon.png",
+        "monochromeImage": "./assets/images/agrishield-icon.png"
+      },
+      "package": "ng.agrishield.mobile",
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/agrishield-icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#173F2A",
+          "image": "./assets/images/agrishield-icon.png",
+          "imageWidth": 132
+        }
+      ],
+      "expo-secure-store",
+      "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow AgriShield to select a crop photo for diagnosis.",
+          "cameraPermission": "Allow AgriShield to photograph crop symptoms."
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
