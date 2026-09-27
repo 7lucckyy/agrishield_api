@@ -137,6 +137,12 @@ final class Farm extends Model
         return $this->hasMany(VoiceAssistanceRequest::class);
     }
 
+    /** @return HasMany<AssetFinanceApplication, $this> */
+    public function assetFinanceApplications(): HasMany
+    {
+        return $this->hasMany(AssetFinanceApplication::class);
+    }
+
     /**
      * @param  Builder<Farm>  $query
      * @return Builder<Farm>

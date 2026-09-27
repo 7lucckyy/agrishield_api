@@ -105,6 +105,24 @@ final class OrganizationPolicy
         ]);
     }
 
+    public function viewAssetFinance(User $user, Organization $organization): Response
+    {
+        return $this->authorizeMember($user, $organization, [
+            OrganizationRole::OrganizationAdmin,
+            OrganizationRole::Agronomist,
+        ]);
+    }
+
+    public function manageAssetFinance(User $user, Organization $organization): Response
+    {
+        return $this->authorizeMember(
+            $user,
+            $organization,
+            [OrganizationRole::OrganizationAdmin],
+            requiresActiveOrganization: true,
+        );
+    }
+
     /** @param array<array-key, OrganizationRole> $roles */
     private function authorizeMember(
         User $user,

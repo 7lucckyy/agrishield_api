@@ -10,19 +10,19 @@
 @endif
 
 <section class="photo-hero">
-    <figure class="photo-hero-image">
-        <img src="{{ asset('images/field/jigawa-farmer.webp') }}" alt="A farmer examining a crop in Jigawa, northern Nigeria" width="1800" height="2047" fetchpriority="high" decoding="async">
+    <figure class="photo-hero-image" data-motion="hero-media">
+        <img src="{{ asset('images/field/jigawa-farmer.webp') }}" alt="A farmer examining a crop in Jigawa, northern Nigeria" width="1800" height="2047" fetchpriority="high" decoding="async" data-parallax-media>
         <figcaption><span>Jigawa, Nigeria</span><a href="https://www.pexels.com/photo/nigerian-farmer-examining-crops-in-field-34411658/">Photo by mk_photoz / Pexels</a></figcaption>
     </figure>
-    <div class="photo-hero-copy">
-        <p class="field-kicker"><span></span> Crop support, connected</p>
-        <h1>From a farmer’s question to the next field action.</h1>
-        <p>AgriShield gives crop programmes one accountable path from farm registration to farmer question, field review and practical advice—without losing context between calls, messages and spreadsheets.</p>
-        <div class="field-actions">
+    <div class="photo-hero-copy" data-motion="hero-copy">
+        <p class="field-kicker" data-motion-item><span></span> Crop support, connected</p>
+        <h1 data-motion-item>From a farmer’s question to the next field action.</h1>
+        <p data-motion-item>AgriShield gives crop programmes one accountable path from farm registration to farmer question, field review and practical advice—without losing context between calls, messages and spreadsheets.</p>
+        <div class="field-actions" data-motion-item>
             <a class="field-button field-button-yellow" href="{{ route('solutions') }}">Explore the platform</a>
             <a class="field-text-link" href="{{ route('contact') }}">Plan a deployment <span>↗</span></a>
         </div>
-        <dl class="photo-hero-notes">
+        <dl class="photo-hero-notes" data-motion-item>
             <div><dt>For farmers</dt><dd>A familiar way to report what they see.</dd></div>
             <div><dt>For field teams</dt><dd>A clear record of what needs attention.</dd></div>
             <div><dt>For organisations</dt><dd>One view of farms, cases and follow-through.</dd></div>
@@ -30,21 +30,37 @@
     </div>
 </section>
 
-<section class="field-promise">
+<section class="field-model-band" data-motion="reveal">
+    <div class="field-model-copy">
+        <p class="field-kicker"><span></span> Field context</p>
+        <h2>See the farm without losing sight of the farmer.</h2>
+        <p>Keep the field boundary, active crop and case context together while the farmer’s evidence remains clear and unobstructed.</p>
+    </div>
+    <div class="field-model-stage">
+        <div class="field-terrain-shell" data-field-terrain aria-hidden="true">
+            <div class="field-terrain-head"><span>FIELD MODEL / JIGAWA</span><b><i></i> LIVE CONTEXT</b></div>
+            <canvas data-field-terrain-canvas></canvas>
+            <div class="field-terrain-fallback"></div>
+            <div class="field-terrain-foot"><span>12.04°N / 8.32°E</span><span>PARCEL CONTEXT</span><span>CROP / MAIZE</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="field-promise" data-motion="reveal">
     <p>AGRISHIELD CONNECTS</p>
     <div><span>THE FARM</span><i>+</i><span>THE SEASON</span><i>+</i><span>THE QUESTION</span><i>+</i><span>THE RESPONSE</span></div>
 </section>
 
 <section class="product-story field-section">
-    <div class="product-story-heading">
+    <div class="product-story-heading" data-motion="reveal">
         <p class="field-kicker"><span></span> One crop-support workspace</p>
         <h2>Know the field.<br>Keep the history.<br>Follow through.</h2>
     </div>
-    <div class="product-story-list">
-        <article><span>FARMS</span><h3>Build a dependable farm register</h3><p>Keep ownership, location, boundaries and organisation access in one private record.</p></article>
-        <article><span>CROP SEASONS</span><h3>Track what is growing now</h3><p>Connect each farm to its crop, planting period, harvest window and current season.</p></article>
-        <article><span>FIELD VOICE</span><h3>Receive questions in the moment</h3><p>Record or upload a voice note, attach it to a farm and retain the case for review.</p></article>
-        <article><span>CASES & ADVISORIES</span><h3>Turn evidence into accountable action</h3><p>Review crop images, publish practical advice and record whether it was acknowledged.</p></article>
+    <div class="product-story-list" data-motion="stagger">
+        <article data-motion-item><span>FARMS</span><h3>Build a dependable farm register</h3><p>Keep ownership, location, boundaries and organisation access in one private record.</p></article>
+        <article data-motion-item><span>CROP SEASONS</span><h3>Track what is growing now</h3><p>Connect each farm to its crop, planting period, harvest window and current season.</p></article>
+        <article data-motion-item><span>FIELD VOICE</span><h3>Receive questions in the moment</h3><p>Record or upload a voice note, attach it to a farm and retain the case for review.</p></article>
+        <article data-motion-item><span>CASES & ADVISORIES</span><h3>Turn evidence into accountable action</h3><p>Review crop images, publish practical advice and record whether it was acknowledged.</p></article>
     </div>
 </section>
 
@@ -64,7 +80,7 @@
             <li><span>04</span><div><small>REVIEWER</small><h3>Review the evidence</h3><p>Assess what was reported and document the responsible next step.</p></div></li>
             <li><span>05</span><div><small>PROGRAMME TEAM</small><h3>Close the loop</h3><p>Publish the advisory and retain its reading and acknowledgement trail.</p></div></li>
         </ol>
-        <article class="field-record-card" aria-label="Illustrative crop support record">
+        <article class="field-record-card" aria-label="Illustrative crop support record" data-motion="depth-card">
             <header><span>SAMPLE CASE / MAIZE</span><b>AWAITING REVIEW</b></header>
             <div class="field-record-context">
                 <div><small>Farm</small><strong>North plot</strong></div>
@@ -87,11 +103,11 @@
 </section>
 
 <section class="field-documentary">
-    <figure>
-        <img src="{{ asset('images/field/hawul-borno-farmland.webp') }}" alt="People tending crops across farmland in Hawul, Borno State" width="1920" height="1080" loading="lazy" decoding="async">
+    <figure data-motion="reveal">
+        <img src="{{ asset('images/field/hawul-borno-farmland.webp') }}" alt="People tending crops across farmland in Hawul, Borno State" width="1920" height="1080" loading="lazy" decoding="async" data-parallax-media>
         <figcaption>Farmland in Hawul, Borno State · <a href="https://commons.wikimedia.org/wiki/File:Farmland_Hawul_Borno_State_Nigeria._2019.DSC01973.jpg">Ifeatu Nnaobi / CC BY-SA 4.0</a></figcaption>
     </figure>
-    <div>
+    <div data-motion="reveal">
         <p class="field-kicker"><span></span> Designed for field operations</p>
         <h2>Technology is useful when the person responsible knows what happens next.</h2>
         <p>AgriShield gives crop programmes a simple operating path: register the farm, open the crop season, capture the question, review the evidence and record the response.</p>
@@ -106,7 +122,7 @@
         <p>Field Voice securely captures a voice note and keeps it connected to the relevant farm and organisation. Transcription and translation can be enabled with a configured language provider.</p>
         <a class="field-button field-button-dark" href="{{ route('field-voice') }}">Explore Field Voice</a>
     </div>
-    <div class="voice-receipt" aria-label="Example Field Voice case">
+    <div class="voice-receipt" aria-label="Example Field Voice case" data-motion="depth-card">
         <header><span>FIELD VOICE / CASE</span><b>RECEIVED</b></header>
         <div><small>QUESTION</small><p>“The lower leaves are turning yellow. What should I check first?”</p></div>
         <dl><div><dt>Farm</dt><dd>North plot</dd></div><div><dt>Crop</dt><dd>Maize</dd></div><div><dt>Status</dt><dd>Awaiting review</dd></div></dl>

@@ -4,6 +4,11 @@ use App\Http\Controllers\Api\V1\Advisory\AcknowledgeAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\ListAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\ShowAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\StoreAdvisoryController;
+use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceApplicationController;
+use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceProductController;
+use App\Http\Controllers\Api\V1\AssetFinance\ShowAssetFinanceApplicationController;
+use App\Http\Controllers\Api\V1\AssetFinance\StoreAssetFinanceApplicationController;
+use App\Http\Controllers\Api\V1\AssetFinance\UpdateAssetFinanceApplicationController;
 use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
@@ -142,6 +147,16 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('abilities:farms:read')->name('organizations.farms.index');
         Route::get('/organizations/{organization}/overview', ShowOrganizationOverviewController::class)
             ->middleware('abilities:farms:read')->name('organizations.overview.show');
+        Route::get('/organizations/{organization}/asset-finance/products', ListAssetFinanceProductController::class)
+            ->middleware('abilities:farms:read')->name('organizations.asset-finance.products.index');
+        Route::get('/organizations/{organization}/asset-finance/applications', ListAssetFinanceApplicationController::class)
+            ->middleware('abilities:farms:read')->name('organizations.asset-finance.applications.index');
+        Route::post('/organizations/{organization}/asset-finance/applications', StoreAssetFinanceApplicationController::class)
+            ->middleware(['abilities:farms:write', 'throttle:writes'])->name('organizations.asset-finance.applications.store');
+        Route::get('/organizations/{organization}/asset-finance/applications/{assetFinanceApplication}', ShowAssetFinanceApplicationController::class)
+            ->middleware('abilities:farms:read')->scopeBindings()->name('organizations.asset-finance.applications.show');
+        Route::patch('/organizations/{organization}/asset-finance/applications/{assetFinanceApplication}', UpdateAssetFinanceApplicationController::class)
+            ->middleware(['abilities:farms:write', 'throttle:writes'])->scopeBindings()->name('organizations.asset-finance.applications.update');
         Route::get('/organizations', ListOrganizationController::class)->name('organizations.index');
         Route::post('/organizations', StoreOrganizationController::class)->middleware('throttle:writes')->name('organizations.store');
         Route::get('/organizations/{organization}', ShowOrganizationController::class)->name('organizations.show');

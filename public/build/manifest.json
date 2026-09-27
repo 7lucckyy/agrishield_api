@@ -27,8 +27,14 @@
     "file": "assets/instrument-sans-600-normal-B9e8oLYv.woff",
     "src": "_instrument-sans-600-normal-B9e8oLYv.woff"
   },
+  "node_modules/three/build/three.module.js": {
+    "file": "assets/three.module-oz7EPIUi.js",
+    "name": "three.module",
+    "src": "node_modules/three/build/three.module.js",
+    "isDynamicEntry": true
+  },
   "resources/css/app.css": {
-    "file": "assets/app-BsfwIDJv.css",
+    "file": "assets/app-0PsQUceB.css",
     "name": "app",
     "names": [
       "app.css"
@@ -37,9 +43,12 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-D-5ZN8Nl.js",
+    "file": "assets/app-ScBGoVkc.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "node_modules/three/build/three.module.js"
+    ]
   }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\Auth\SessionController;
 use App\Http\Controllers\Web\Organization\AdvisoryController as OrganizationAdvisoryController;
+use App\Http\Controllers\Web\Organization\AssetFinanceController as OrganizationAssetFinanceController;
 use App\Http\Controllers\Web\Organization\DashboardController as OrganizationDashboardController;
 use App\Http\Controllers\Web\Organization\FarmController as OrganizationFarmController;
 use App\Http\Controllers\Web\Organization\ShowVoiceAudioController;
@@ -48,6 +49,9 @@ Route::prefix('organization/{organization}')->name('organization.')->middleware(
     Route::post('/farms/{farm}/crop-screenings', [OrganizationFarmController::class, 'storeDiagnosis'])->middleware('throttle:diagnosis')->name('farms.diagnoses.store');
     Route::get('/team', OrganizationTeamController::class)->name('team');
     Route::get('/advisories', OrganizationAdvisoryController::class)->name('advisories');
+    Route::get('/asset-access', [OrganizationAssetFinanceController::class, 'index'])->name('asset-finance.index');
+    Route::post('/asset-access', [OrganizationAssetFinanceController::class, 'store'])->middleware('throttle:writes')->name('asset-finance.store');
+    Route::patch('/asset-access/{assetFinanceApplication}', [OrganizationAssetFinanceController::class, 'update'])->middleware('throttle:writes')->name('asset-finance.update');
     Route::get('/field-voice', [OrganizationVoiceAssistanceController::class, 'index'])->name('voice-assistance.index');
     Route::post('/field-voice', [OrganizationVoiceAssistanceController::class, 'store'])->middleware('throttle:voice-assistance')->name('voice-assistance.store');
     Route::get('/field-voice/{voiceAssistanceRequest}/audio', ShowVoiceAudioController::class)->name('voice-assistance.audio');

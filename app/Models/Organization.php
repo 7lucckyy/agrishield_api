@@ -68,6 +68,12 @@ class Organization extends Model
         return $this->hasMany(VoiceAssistanceRequest::class);
     }
 
+    /** @return HasMany<AssetFinanceApplication, $this> */
+    public function assetFinanceApplications(): HasMany
+    {
+        return $this->hasMany(AssetFinanceApplication::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {
