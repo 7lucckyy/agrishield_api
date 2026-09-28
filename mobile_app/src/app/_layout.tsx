@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors, typography } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { API_BASE_URL } from '@/lib/api';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,7 +16,35 @@ function Navigation() {
   const { isReady } = useAuth();
   const [offline, setOffline] = useState(false);
 
-  useEffect(() => NetInfo.addEventListener((state) => setOffline(state.isConnected === false)), []);
+  useEffect(() => {
+    let isActive = true;
+
+    const unsubscribe = NetInfo.addEventListener(async (state) => {
+      if (state.isConnected !== false) {
+        setOffline(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/health`, {
+          headers: { Accept: 'application/json' },
+        });
+
+        if (isActive) {
+          setOffline(!response.ok);
+        }
+      } catch {
+        if (isActive) {
+          setOffline(true);
+        }
+      }
+    });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, []);
   useEffect(() => { if (isReady) void SplashScreen.hideAsync(); }, [isReady]);
 
   if (!isReady) return null;

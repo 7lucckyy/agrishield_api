@@ -16,7 +16,7 @@ import type {
 } from '@/types/api';
 
 const configuredUrl = process.env.EXPO_PUBLIC_API_URL ?? Constants.expoConfig?.extra?.apiUrl;
-export const API_BASE_URL = String(configuredUrl ?? 'http://127.0.0.1:8013/api/v1').replace(/\/$/, '');
+export const API_BASE_URL = String(configuredUrl ?? 'https://agrishield.ng/api/v1').replace(/\/$/, '');
 
 export class ApiError extends Error {
   constructor(
