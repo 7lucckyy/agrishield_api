@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card, ErrorState, LoadingState, PageHeader, Pill, PrimaryButton, Screen, SectionTitle, TextButton } from '@/components/ui';
 import { colors, radii, spacing, typography } from '@/constants/theme';
-import { api } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import type { Advisory, Farm, WeatherDay } from '@/types/api';
 
 export default function FarmDetailScreen() {
@@ -15,6 +15,7 @@ export default function FarmDetailScreen() {
   const [soil, setSoil] = useState<{ label: string; value?: number | null; unit?: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState('');
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -31,8 +32,18 @@ export default function FarmDetailScreen() {
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   const sync = async () => {
-    setSyncing(true);
-    try { await api.syncFarm(id); await load(); } finally { setSyncing(false); }
+    setSyncing(true); setSyncError('');
+    try {
+      await api.syncFarm(id);
+      await load();
+    } catch (reason) {
+      const isProviderPending = reason instanceof ApiError && reason.message.toLowerCase().includes('not registered');
+      setSyncError(isProviderPending
+        ? 'Farm setup is still finishing. Refresh will be available after satellite registration completes.'
+        : 'The farm could not be refreshed. Check your connection and try again.');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
@@ -44,6 +55,7 @@ export default function FarmDetailScreen() {
           <View style={styles.actions}><View style={styles.button}><PrimaryButton label="Check crop photo" onPress={() => router.push({ pathname: '/diagnosis/new', params: { farmId: id } })} /></View><View style={styles.button}><PrimaryButton label="Ask by voice" onPress={() => router.push({ pathname: '/voice/new', params: { farmId: id } })} tone="secondary" /></View></View>
           <SectionTitle title="7-day weather" action={<TextButton label="Refresh farm" onPress={sync} />} />
           {syncing ? <Text style={styles.syncing}>Starting a fresh farm sync…</Text> : null}
+          {syncError ? <Text accessibilityRole="alert" style={styles.syncError}>{syncError}</Text> : null}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.weatherRow}>
             {weather.slice(0, 7).map((day) => <WeatherCard day={day} key={day.forecast_date} />)}
           </ScrollView>
@@ -65,6 +77,7 @@ function WeatherCard({ day }: { day: WeatherDay }) {
 const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: spacing.sm }, button: { flex: 1 },
   syncing: { fontFamily: typography.body, color: colors.leaf, fontSize: 13 },
+  syncError: { fontFamily: typography.body, color: colors.danger, fontSize: 14, lineHeight: 20 },
   weatherRow: { gap: spacing.sm, paddingVertical: spacing.xs },
   weather: { width: 104, minHeight: 122, borderRadius: radii.md, backgroundColor: colors.sky, padding: spacing.md, justifyContent: 'space-between' },
   weatherDay: { fontFamily: typography.data, fontSize: 11, color: colors.forest, textTransform: 'uppercase', fontWeight: '700' },

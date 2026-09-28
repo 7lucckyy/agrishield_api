@@ -46,7 +46,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       api.setToken(storedToken);
       try {
-        const [profile, availableOrganizations] = await Promise.all([api.me(), api.organizations()]);
+        const profile = await api.me();
+        const availableOrganizations = profile.organizations ?? [];
         setToken(storedToken);
         setUser(profile);
         setOrganizations(availableOrganizations);
@@ -89,7 +90,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
     },
     selectOrganization: setActiveOrganization,
-    refreshProfile: async () => setUser(await api.me()),
+    refreshProfile: async () => {
+      const profile = await api.me();
+      const availableOrganizations = profile.organizations ?? [];
+      setUser(profile);
+      setOrganizations(availableOrganizations);
+      setActiveOrganization((current) => availableOrganizations.find((organization) => organization.id === current?.id) ?? availableOrganizations[0] ?? null);
+    },
   }), [activeOrganization, isReady, organizations, token, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

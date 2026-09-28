@@ -17,6 +17,11 @@ export default function NewDiagnosisScreen() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<Diagnosis | null>(null);
 
+  const returnToAsk = () => {
+    router.dismissAll();
+    router.replace('/(tabs)/assistant');
+  };
+
   const choose = async (camera: boolean) => {
     setError('');
     if (camera) {
@@ -39,7 +44,7 @@ export default function NewDiagnosisScreen() {
     finally { setLoading(false); }
   };
 
-  if (result) return <Screen><TextButton label="Close" onPress={() => router.back()} /><PageHeader eyebrow="Crop check received" title="Analysis has started" description="You can leave this screen. The result will appear in Ask when ready." /><View style={styles.result}><Pill label={result.status} tone="warning" /><Text style={styles.resultTitle}>What happens next</Text><Text style={styles.body}>AgriShield checks the image and farm context, then returns a likely issue, confidence and practical recommendation. An agronomist can review the result.</Text></View><PrimaryButton label="Return to Ask" onPress={() => router.back()} /></Screen>;
+  if (result) return <Screen><TextButton label="Close" onPress={() => router.back()} /><PageHeader eyebrow="Crop check received" title="Analysis has started" description="You can leave this screen. The result will appear in Ask when ready." /><View style={styles.result}><Pill label={result.status} tone="warning" /><Text style={styles.resultTitle}>What happens next</Text><Text style={styles.body}>AgriShield checks the image and farm context, then returns a likely issue, confidence and practical recommendation. An agronomist can review the result.</Text></View><PrimaryButton label="Return to Ask" onPress={returnToAsk} /></Screen>;
 
   return (
     <Screen>

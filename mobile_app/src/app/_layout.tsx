@@ -18,31 +18,31 @@ function Navigation() {
 
   useEffect(() => {
     let isActive = true;
+    let failedChecks = 0;
 
-    const unsubscribe = NetInfo.addEventListener(async (state) => {
-      if (state.isConnected !== false) {
-        setOffline(false);
-        return;
-      }
-
+    const verifyApiConnection = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/health`, {
           headers: { Accept: 'application/json' },
         });
 
-        if (isActive) {
-          setOffline(!response.ok);
-        }
+        if (!response.ok) throw new Error('Health check failed.');
+        failedChecks = 0;
+        if (isActive) setOffline(false);
       } catch {
-        if (isActive) {
-          setOffline(true);
-        }
+        failedChecks += 1;
+        if (isActive && failedChecks >= 2) setOffline(true);
       }
-    });
+    };
+
+    const unsubscribe = NetInfo.addEventListener(() => { void verifyApiConnection(); });
+    const interval = setInterval(() => { void verifyApiConnection(); }, 15_000);
+    void verifyApiConnection();
 
     return () => {
       isActive = false;
       unsubscribe();
+      clearInterval(interval);
     };
   }, []);
   useEffect(() => { if (isReady) void SplashScreen.hideAsync(); }, [isReady]);

@@ -1,4 +1,6 @@
 import Constants from 'expo-constants';
+import { fetch as expoFetch } from 'expo/fetch';
+import { File } from 'expo-file-system';
 
 import type {
   Advisory,
@@ -49,7 +51,8 @@ class AgriShieldApi {
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const isMultipart = init.body instanceof FormData;
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const requestFetch = isMultipart ? expoFetch : fetch;
+    const response = await requestFetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
         Accept: 'application/json',
@@ -72,7 +75,7 @@ class AgriShieldApi {
     Object.entries(fields).forEach(([key, value]) => {
       if (value !== undefined && value !== null) data.append(key, String(value));
     });
-    if (file) data.append(file.field, file.value as unknown as Blob);
+    if (file) data.append(file.field, new File(file.value.uri), file.value.name);
     return data;
   }
 

@@ -27,12 +27,13 @@ export default function NewVoiceScreen() {
   const [sourceLanguage, setSourceLanguage] = useState('auto');
   const [responseLanguage, setResponseLanguage] = useState('ha');
   const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [recordedDuration, setRecordedDuration] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<VoiceRequest | null>(null);
 
   const start = async () => {
-    setError(''); setAudioUri(null);
+    setError(''); setAudioUri(null); setRecordedDuration(0);
     const permission = await requestRecordingPermissionsAsync();
     if (!permission.granted) { setError('Microphone permission is needed to record your question.'); return; }
     await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -42,9 +43,16 @@ export default function NewVoiceScreen() {
   };
 
   const stop = async () => {
+    const duration = Math.max(1, Math.round(recorderState.durationMillis / 1000));
     await recorder.stop();
     setAudioUri(recorder.uri ?? recorderState.url ?? null);
+    setRecordedDuration(duration);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const returnToAsk = () => {
+    router.dismissAll();
+    router.replace('/(tabs)/assistant');
   };
 
   const submit = async () => {
@@ -62,11 +70,11 @@ export default function NewVoiceScreen() {
       <TextButton label="Close" onPress={() => router.back()} />
       <PageHeader eyebrow="Voice question received" title="Your guidance is being prepared" description="AgriShield will keep the question in your history. You can safely leave this screen." />
       <View style={styles.result}><Pill label={result.status} tone={result.status === 'completed' ? 'success' : 'warning'} /><Text style={styles.resultTitle}>{result.translated_transcript ?? result.transcript ?? 'Transcribing your question'}</Text><Text style={styles.body}>{result.guidance ?? 'The response will appear in Ask when processing completes.'}</Text>{result.safety_note ? <Text style={styles.safety}>{result.safety_note}</Text> : null}</View>
-      <PrimaryButton label="Return to Ask" onPress={() => router.back()} />
+      <PrimaryButton label="Return to Ask" onPress={returnToAsk} />
     </Screen>
   );
 
-  const seconds = Math.round(recorderState.durationMillis / 1000);
+  const seconds = recorderState.isRecording ? Math.round(recorderState.durationMillis / 1000) : recordedDuration;
   return (
     <Screen>
       <TextButton label="Cancel" onPress={() => router.back()} />
