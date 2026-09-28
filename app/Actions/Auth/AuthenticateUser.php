@@ -38,7 +38,6 @@ class AuthenticateUser
         $token = $user->createToken(
             (string) Arr::get($credentials, 'device_name', 'mobile'),
             ['*'],
-            now()->addDays(90),
         );
 
         return new AuthenticationResult($user, $token->plainTextToken);

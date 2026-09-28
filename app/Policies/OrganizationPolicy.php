@@ -26,6 +26,7 @@ final class OrganizationPolicy
         return $this->authorizeMember($user, $organization, [
             OrganizationRole::OrganizationAdmin,
             OrganizationRole::Agronomist,
+            OrganizationRole::ClusterLead,
         ]);
     }
 
@@ -94,6 +95,7 @@ final class OrganizationPolicy
         return $this->authorizeMember($user, $organization, [
             OrganizationRole::OrganizationAdmin,
             OrganizationRole::Agronomist,
+            OrganizationRole::ClusterLead,
         ]);
     }
 

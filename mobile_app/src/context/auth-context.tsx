@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 
-import { api } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import { tokenStorage } from '@/lib/storage';
 import type { AuthSession, Organization, User } from '@/types/api';
 
@@ -52,9 +52,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setUser(profile);
         setOrganizations(availableOrganizations);
         setActiveOrganization(availableOrganizations[0] ?? null);
-      } catch {
-        api.setToken(null);
-        await tokenStorage.clear();
+      } catch (reason) {
+        if (reason instanceof ApiError && reason.status === 401) {
+          api.setToken(null);
+          await tokenStorage.clear();
+        } else {
+          setToken(storedToken);
+        }
       } finally {
         setIsReady(true);
       }

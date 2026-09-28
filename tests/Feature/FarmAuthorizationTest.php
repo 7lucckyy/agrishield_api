@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\OrganizationRole;
+use App\Enums\OrganizationMembershipStatus;
 use App\Models\Farm;
 use App\Models\Organization;
 use App\Models\User;
@@ -41,6 +42,36 @@ test('organization agronomists can view but not update farms in their organizati
 
     $this->actingAs($agronomist)->getJson("/api/v1/farms/{$farm->uuid}")->assertSuccessful();
     $this->actingAs($agronomist)->patchJson("/api/v1/farms/{$farm->uuid}", ['name' => 'Nope'])->assertForbidden();
+});
+
+test('a cluster lead sees farms in their assigned cluster only', function () {
+    $organization = Organization::factory()->create();
+    $lead = User::factory()->create();
+    $clusterFarmer = User::factory()->create();
+    $otherFarmer = User::factory()->create();
+    attachOrganizationRole($lead, $organization, OrganizationRole::ClusterLead);
+    attachOrganizationRole($clusterFarmer, $organization, OrganizationRole::Farmer);
+    attachOrganizationRole($otherFarmer, $organization, OrganizationRole::Farmer);
+    $organization->users()->updateExistingPivot($lead, ['cluster_name' => 'Kura Cluster']);
+    $organization->users()->updateExistingPivot($clusterFarmer, ['cluster_name' => 'Kura Cluster']);
+    $organization->users()->updateExistingPivot($otherFarmer, ['cluster_name' => 'Bichi Cluster']);
+    $visibleFarm = Farm::factory()->for($organization)->for($clusterFarmer, 'owner')->create();
+    Farm::factory()->for($organization)->for($otherFarmer, 'owner')->create();
+
+    $this->actingAs($lead)
+        ->getJson("/api/v1/organizations/{$organization->getKey()}/farms")
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $visibleFarm->uuid);
+
+    $organization->users()->updateExistingPivot($clusterFarmer, [
+        'status' => OrganizationMembershipStatus::Removed->value,
+    ]);
+
+    $this->actingAs($lead)
+        ->getJson("/api/v1/organizations/{$organization->getKey()}/farms")
+        ->assertSuccessful()
+        ->assertJsonCount(0, 'data');
 });
 
 test('the visible farm scope and view policy agree over mixed ownership', function () {

@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "AgriShield uses your camera to photograph crop symptoms for diagnosis.",
         "NSMicrophoneUsageDescription": "AgriShield records your question so it can provide guidance in your preferred language.",
-        "NSPhotoLibraryUsageDescription": "AgriShield lets you select crop photos for diagnosis."
+        "NSPhotoLibraryUsageDescription": "AgriShield lets you select crop photos for diagnosis.",
+        "NSLocationWhenInUseUsageDescription": "AgriShield uses your location to place your farm and provide local crop guidance."
       }
     },
     "android": {
@@ -49,7 +50,13 @@
           "cameraPermission": "Allow AgriShield to photograph crop symptoms."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow AgriShield to place your farm and provide local crop guidance."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

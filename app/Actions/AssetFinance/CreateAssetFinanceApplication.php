@@ -19,10 +19,14 @@ use Illuminate\Validation\ValidationException;
 final class CreateAssetFinanceApplication
 {
     /** @param array<string, mixed> $data */
-    public function execute(Organization $organization, Farm $farm, User $applicant, AssetFinanceProduct $product, array $data): AssetFinanceApplication
+    public function execute(?Organization $organization, Farm $farm, User $applicant, AssetFinanceProduct $product, array $data): AssetFinanceApplication
     {
-        if ($farm->organization_id !== $organization->getKey()) {
+        if ($organization !== null && $farm->organization_id !== $organization->getKey()) {
             throw ValidationException::withMessages(['farm_id' => 'Select a farm in this organization.']);
+        }
+
+        if ($organization === null && $farm->owner_user_id !== $applicant->getKey()) {
+            throw ValidationException::withMessages(['farm_id' => 'Select a farm you own.']);
         }
 
         if (! $product->is_active || ! $product->financePartner()->where('is_active', true)->exists()) {
@@ -43,13 +47,15 @@ final class CreateAssetFinanceApplication
                 'quantity' => $data['quantity'],
                 'requested_amount' => $data['requested_amount'],
                 'purpose' => $data['purpose'],
-                'consent_channel' => $data['consent_channel'] ?? 'organization_portal',
+                'consent_channel' => $data['consent_channel'] ?? ($organization === null ? 'farmer_mobile' : 'organization_portal'),
                 'consent_version' => 'asset-access-v1',
                 'consented_at' => now(),
                 'submitted_at' => now(),
                 'repayment_status' => RepaymentStatus::NotStarted,
             ]);
-            $application->organization()->associate($organization);
+            if ($organization !== null) {
+                $application->organization()->associate($organization);
+            }
             $application->farm()->associate($farm);
             $application->applicant()->associate($applicant);
             $application->save();

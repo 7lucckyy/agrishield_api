@@ -78,7 +78,7 @@ final readonly class NAtlasFarmerVoiceProvider implements FarmerVoiceProvider
 
     public function name(): string
     {
-        return 'openai+n-atlas';
+        return 'n-atlas';
     }
 
     /** @return array{translated_transcript: string, guidance: string, safety_note: string} */

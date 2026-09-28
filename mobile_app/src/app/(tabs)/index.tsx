@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { FarmStatusStrip } from '@/components/farm-status-strip';
-import { Card, EmptyState, ErrorState, LoadingState, PageHeader, Pill, Screen, SectionTitle } from '@/components/ui';
+import { Card, EmptyState, ErrorState, LoadingState, PageHeader, Pill, PrimaryButton, Screen, SectionTitle } from '@/components/ui';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { api } from '@/lib/api';
@@ -37,7 +37,7 @@ export default function HomeScreen() {
     <Screen>
       <PageHeader eyebrow={activeOrganization?.name ?? 'My farms'} title={`Good day, ${user?.name.split(' ')[0] ?? 'farmer'}`} description="Here is what needs your attention." />
       {loading ? <LoadingState /> : error ? <ErrorState message={error} retry={load} /> : !farm ? (
-        <EmptyState title="Add your first crop farm" message="Register a field to receive local weather, soil and crop guidance." />
+        <EmptyState action={<PrimaryButton label="Add my farm" onPress={() => router.push('/farms/new')} />} title="Add your first crop farm" message="Use your location to register a field and receive local crop guidance." />
       ) : (
         <>
           <Pressable accessibilityRole="button" onPress={() => router.push(`/farms/${farm.id}`)}><FarmStatusStrip advisory={advisories[0]} farm={farm} weather={weather} /></Pressable>
@@ -55,6 +55,15 @@ export default function HomeScreen() {
           )) : <EmptyState title="No urgent guidance" message="New crop and weather advice will appear here after your farm syncs." />}
         </>
       )}
+      <Pressable accessibilityRole="button" onPress={() => router.push('/finance')} style={({ pressed }) => [styles.accessCard, pressed && styles.pressed]}>
+        <View style={styles.accessMark} />
+        <View style={styles.accessCopy}>
+          <Text style={styles.accessKicker}>ASSET ACCESS</Text>
+          <Text style={styles.accessTitle}>Equipment and farm inputs</Text>
+          <Text style={styles.accessBody}>Explore available programmes and apply with your own farm.</Text>
+        </View>
+        <Text style={styles.accessArrow}>›</Text>
+      </Pressable>
     </Screen>
   );
 }
@@ -74,4 +83,11 @@ const styles = StyleSheet.create({
   source: { fontFamily: typography.body, color: colors.muted, fontSize: 12 },
   cardTitle: { fontFamily: typography.body, color: colors.ink, fontSize: 17, fontWeight: '700' },
   body: { fontFamily: typography.body, color: colors.muted, fontSize: 15, lineHeight: 22 },
+  accessCard: { minHeight: 112, borderRadius: radii.md, backgroundColor: colors.forest, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  accessMark: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.millet, borderWidth: 8, borderColor: colors.milletSoft },
+  accessCopy: { flex: 1, gap: 2 },
+  accessKicker: { fontFamily: typography.data, fontSize: 10, fontWeight: '700', letterSpacing: 1, color: colors.millet },
+  accessTitle: { fontFamily: typography.display, fontSize: 19, fontWeight: '700', color: colors.paper },
+  accessBody: { fontFamily: typography.body, fontSize: 12, lineHeight: 17, color: colors.leafSoft },
+  accessArrow: { fontFamily: typography.display, fontSize: 34, color: colors.paper },
 });

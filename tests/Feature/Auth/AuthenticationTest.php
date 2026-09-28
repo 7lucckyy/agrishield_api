@@ -22,6 +22,21 @@ test('a user can log in with an email address', function () {
 
     expect($user->fresh()->last_login_at)->not->toBeNull();
     expect($user->tokens()->value('name'))->toBe('Amina phone');
+    expect($user->tokens()->value('expires_at'))->toBeNull();
+});
+
+test('a farmer can log in with a phone number', function () {
+    $user = User::factory()->create([
+        'email' => null,
+        'phone' => '+2348012345678',
+        'password' => 'correct-horse-battery-staple',
+    ]);
+
+    $this->postJson('/api/v1/auth/login', [
+        'phone' => '+2348012345678',
+        'password' => 'correct-horse-battery-staple',
+        'device_name' => 'Musa phone',
+    ])->assertSuccessful()->assertJsonPath('data.user.id', $user->getKey());
 });
 
 test('unknown users and wrong passwords return the same error', function (array $credentials) {

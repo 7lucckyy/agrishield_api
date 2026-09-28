@@ -34,11 +34,11 @@ export default function SignInScreen() {
         <View style={styles.hero}>
           <Text style={styles.kicker}>FIELD COMPANION</Text>
           <Text accessibilityRole="header" style={styles.title}>Know what your farm needs next.</Text>
-          <Text style={styles.description}>Weather, crop guidance, photo diagnosis and voice support—designed for northern Nigerian farms.</Text>
+          <Text style={styles.description}>Farm records, crop checks, voice guidance and access to productive assets—in one simple place.</Text>
           <View style={styles.rows}><View style={styles.row} /><View style={[styles.row, styles.rowShort]} /><View style={[styles.row, styles.rowWarm]} /></View>
         </View>
         <View style={styles.form}>
-          <Field autoCapitalize="none" autoComplete="email" keyboardType="email-address" label="Email or phone number" onChangeText={setIdentifier} placeholder="name@example.com or +234…" value={identifier} />
+          <Field autoComplete="tel" keyboardType="phone-pad" label="Phone number" onChangeText={setIdentifier} placeholder="+234 801 234 5678" textContentType="telephoneNumber" value={identifier} />
           <Field autoComplete="password" label="Password" onChangeText={setPassword} placeholder="Your password" secureTextEntry value={password} />
           {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
           <PrimaryButton disabled={!identifier || !password} label="Sign in" loading={loading} onPress={submit} />

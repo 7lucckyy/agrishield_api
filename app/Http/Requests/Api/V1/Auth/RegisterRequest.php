@@ -28,15 +28,9 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
-            'email' => [
-                'nullable',
-                'required_without:phone',
-                'email',
-                Rule::unique('users')->whereNull('deleted_at'),
-            ],
+            'email' => ['prohibited'],
             'phone' => [
-                'nullable',
-                'required_without:email',
+                'required',
                 'regex:/^\+[1-9]\d{7,14}$/',
                 Rule::unique('users')->whereNull('deleted_at'),
             ],
@@ -59,7 +53,6 @@ class RegisterRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'email' => $this->filled('email') ? Str::lower($this->string('email')->trim()) : null,
             'phone' => $this->filled('phone') ? (string) $this->string('phone')->trim() : null,
             'referral_code' => $this->filled('referral_code')
                 ? Str::upper($this->string('referral_code')->trim())

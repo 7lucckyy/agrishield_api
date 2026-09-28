@@ -34,7 +34,7 @@ test('registration never grants a global role', function () {
 
     $response = $this->postJson('/api/v1/auth/register', [
         'name' => 'Independent Farmer',
-        'email' => 'farmer@example.com',
+        'phone' => '+2348012345678',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
     ]);

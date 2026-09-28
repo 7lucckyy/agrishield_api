@@ -29,7 +29,6 @@ class RegisterUser
 
             $user = User::query()->create(Arr::only($data, [
                 'name',
-                'email',
                 'phone',
                 'password',
                 'locale',
@@ -52,7 +51,7 @@ class RegisterUser
             }
 
             $user->load('organizations');
-            $token = $user->createToken('mobile', ['*'], now()->addDays(90));
+            $token = $user->createToken('mobile', ['*']);
 
             return new AuthenticationResult($user, $token->plainTextToken);
         });

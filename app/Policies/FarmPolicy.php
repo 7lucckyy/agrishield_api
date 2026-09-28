@@ -66,9 +66,9 @@ final class FarmPolicy
             return true;
         }
 
-        return $farm->organization_id !== null && $user->hasOrganizationRole(
+        return ($farm->organization_id !== null && $user->hasOrganizationRole(
             $farm->organization_id,
             [OrganizationRole::OrganizationAdmin, OrganizationRole::Agronomist],
-        );
+        )) || $user->leadsFarmCluster($farm);
     }
 }

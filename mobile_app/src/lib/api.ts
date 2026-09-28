@@ -83,10 +83,9 @@ class AgriShieldApi {
   detailedHealth = () => this.request<ApiEnvelope<Record<string, unknown>>>('/health/detailed');
 
   async login(identifier: string, password: string): Promise<AuthSession> {
-    const field = identifier.includes('@') ? 'email' : 'phone';
     const response = await this.request<ApiEnvelope<AuthSession>>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ [field]: identifier.trim(), password, device_name: 'AgriShield mobile' }),
+      body: JSON.stringify({ phone: identifier.trim(), password, device_name: 'AgriShield mobile' }),
     });
     return response.data;
   }
@@ -179,14 +178,14 @@ class AgriShieldApi {
     return (await this.request<ApiEnvelope<VoiceRequest>>('/voice-assistance', { method: 'POST', body })).data;
   }
 
-  async financeProducts(organizationId: number): Promise<FinanceProduct[]> {
-    return (await this.request<Paginated<FinanceProduct>>(`/organizations/${organizationId}/asset-finance/products`)).data;
+  async financeProducts(): Promise<FinanceProduct[]> {
+    return (await this.request<Paginated<FinanceProduct>>('/asset-finance/products')).data;
   }
-  async financeApplications(organizationId: number): Promise<FinanceApplication[]> {
-    return (await this.request<Paginated<FinanceApplication>>(`/organizations/${organizationId}/asset-finance/applications`)).data;
+  async financeApplications(): Promise<FinanceApplication[]> {
+    return (await this.request<Paginated<FinanceApplication>>('/asset-finance/applications')).data;
   }
+  createFinanceApplication = (payload: Record<string, unknown>) => this.request<ApiEnvelope<FinanceApplication>>('/asset-finance/applications', { method: 'POST', body: JSON.stringify(payload) });
   financeApplication = (organizationId: number, id: string) => this.request<ApiEnvelope<FinanceApplication>>(`/organizations/${organizationId}/asset-finance/applications/${id}`);
-  createFinanceApplication = (organizationId: number, payload: Record<string, unknown>) => this.request<ApiEnvelope<FinanceApplication>>(`/organizations/${organizationId}/asset-finance/applications`, { method: 'POST', body: JSON.stringify(payload) });
   updateFinanceApplication = (organizationId: number, id: string, payload: Record<string, unknown>) => this.request<ApiEnvelope<FinanceApplication>>(`/organizations/${organizationId}/asset-finance/applications/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
 
   integrations = () => this.request('/integrations');

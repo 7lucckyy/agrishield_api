@@ -82,6 +82,33 @@ test('an organization administrator can list members change a role and remove a 
         ->toBe(OrganizationMembershipStatus::Removed);
 });
 
+test('an organization administrator can group farmers and assign a cluster lead', function () {
+    $administrator = User::factory()->create();
+    $lead = User::factory()->create();
+    $farmer = User::factory()->create();
+    $organization = Organization::factory()->create();
+    attachOrganizationRole($administrator, $organization, OrganizationRole::OrganizationAdmin);
+    attachOrganizationRole($lead, $organization, OrganizationRole::Farmer);
+    attachOrganizationRole($farmer, $organization, OrganizationRole::Farmer);
+
+    $this->actingAs($administrator)
+        ->patchJson("/api/v1/organizations/{$organization->getKey()}/members/{$lead->getKey()}", [
+            'role' => OrganizationRole::ClusterLead->value,
+            'cluster_name' => 'Dawakin Kudu Maize Cluster',
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.role', OrganizationRole::ClusterLead->value)
+        ->assertJsonPath('data.cluster_name', 'Dawakin Kudu Maize Cluster');
+
+    $this->actingAs($administrator)
+        ->patchJson("/api/v1/organizations/{$organization->getKey()}/members/{$farmer->getKey()}", [
+            'role' => OrganizationRole::Farmer->value,
+            'cluster_name' => 'Dawakin Kudu Maize Cluster',
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.cluster_name', 'Dawakin Kudu Maize Cluster');
+});
+
 test('the final active organization administrator cannot be demoted or removed', function () {
     $administrator = User::factory()->create();
     $organization = Organization::factory()->create();

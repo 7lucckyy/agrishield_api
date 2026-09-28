@@ -54,7 +54,7 @@ class User extends Authenticatable
         return $this->belongsToMany(Organization::class)
             ->using(OrganizationMembership::class)
             ->as('membership')
-            ->withPivot(['role', 'status', 'joined_at'])
+            ->withPivot(['role', 'cluster_name', 'status', 'joined_at'])
             ->withTimestamps();
     }
 
@@ -145,6 +145,31 @@ class User extends Authenticatable
             ->first();
 
         return $organization?->getKey();
+    }
+
+    public function leadsFarmCluster(Farm $farm): bool
+    {
+        if ($farm->organization_id === null) {
+            return false;
+        }
+
+        $leadCluster = OrganizationMembership::query()
+            ->where('organization_id', $farm->organization_id)
+            ->where('user_id', $this->getKey())
+            ->where('status', OrganizationMembershipStatus::Active->value)
+            ->where('role', OrganizationRole::ClusterLead->value)
+            ->value('cluster_name');
+
+        if (! is_string($leadCluster) || $leadCluster === '') {
+            return false;
+        }
+
+        return OrganizationMembership::query()
+            ->where('organization_id', $farm->organization_id)
+            ->where('user_id', $farm->owner_user_id)
+            ->where('status', OrganizationMembershipStatus::Active->value)
+            ->where('cluster_name', $leadCluster)
+            ->exists();
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Enums\CropCycleStatus;
 use App\Enums\FarmStatus;
 use App\Enums\GlobalRole;
 use App\Enums\OrganizationRole;
+use App\Enums\OrganizationMembershipStatus;
 use App\Enums\ProviderStatus;
 use Database\Factories\FarmFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -157,10 +158,27 @@ final class Farm extends Model
             OrganizationRole::OrganizationAdmin,
             OrganizationRole::Agronomist,
         ]);
+        $ledClusters = OrganizationMembership::query()
+            ->where('user_id', $user->getKey())
+            ->where('status', OrganizationMembershipStatus::Active->value)
+            ->where('role', OrganizationRole::ClusterLead->value)
+            ->whereNotNull('cluster_name')
+            ->get(['organization_id', 'cluster_name']);
 
-        return $query->where(function (Builder $visible) use ($user, $organizationIds): void {
+        return $query->where(function (Builder $visible) use ($user, $organizationIds, $ledClusters): void {
             $visible->where('owner_user_id', $user->getKey())
                 ->orWhereIn('organization_id', $organizationIds);
+
+            foreach ($ledClusters as $membership) {
+                $visible->orWhere(function (Builder $clusterFarms) use ($membership): void {
+                    $clusterFarms->where('organization_id', $membership->organization_id)
+                        ->whereIn('owner_user_id', OrganizationMembership::query()
+                            ->select('user_id')
+                            ->where('organization_id', $membership->organization_id)
+                            ->where('status', OrganizationMembershipStatus::Active->value)
+                            ->where('cluster_name', $membership->cluster_name));
+                });
+            }
         });
     }
 

@@ -38,6 +38,7 @@ class UserResource extends JsonResource
                     'name' => $organization->name,
                     'slug' => $organization->slug,
                     'role' => $organization->membership->role->value,
+                    'cluster_name' => $organization->membership->cluster_name,
                     'status' => $organization->membership->status->value,
                 ])
                 ->values()),

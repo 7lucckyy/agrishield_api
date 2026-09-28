@@ -1,4 +1,4 @@
-export type Organization = { id: number; name: string; slug: string; role?: string; status?: string };
+export type Organization = { id: number; name: string; slug: string; role?: string; cluster_name?: string | null; status?: string };
 export type User = { id: number; name: string; email?: string | null; phone?: string | null; locale: string; roles: string[]; organizations?: Organization[] };
 export type AuthSession = { user: User; organizations: Organization[]; token: string; token_type: 'Bearer' };
 

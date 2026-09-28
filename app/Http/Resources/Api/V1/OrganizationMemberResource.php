@@ -26,6 +26,7 @@ final class OrganizationMemberResource extends JsonResource
             'email' => $user->email,
             'phone' => $user->phone,
             'role' => $user->membership->role->value,
+            'cluster_name' => $user->membership->cluster_name,
             'status' => $user->membership->status->value,
             'joined_at' => $user->membership->joined_at?->toISOString(),
         ];

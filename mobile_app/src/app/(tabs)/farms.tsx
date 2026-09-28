@@ -2,7 +2,7 @@ import { useFocusEffect, router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card, EmptyState, ErrorState, LoadingState, PageHeader, Pill, Screen } from '@/components/ui';
+import { Card, EmptyState, ErrorState, LoadingState, PageHeader, Pill, PrimaryButton, Screen, TextButton } from '@/components/ui';
 import { colors, spacing, typography } from '@/constants/theme';
 import { api } from '@/lib/api';
 import type { Farm } from '@/types/api';
@@ -22,9 +22,9 @@ export default function FarmsScreen() {
 
   return (
     <Screen>
-      <PageHeader eyebrow="Fields and crop seasons" title="Your farms" description="Open a farm to see local conditions, guidance and crop history." />
+      <PageHeader action={<TextButton label="Add farm" onPress={() => router.push('/farms/new')} />} eyebrow="Fields and crop seasons" title="Your farms" description="Open a farm to see local conditions, guidance and crop history." />
       {loading ? <LoadingState /> : error ? <ErrorState message={error} retry={load} /> : farms.length === 0 ? (
-        <EmptyState title="No farms registered" message="Your organisation administrator can register a farm and assign it to you." />
+        <EmptyState action={<PrimaryButton label="Add my first farm" onPress={() => router.push('/farms/new')} />} title="Add your first farm" message="Stand on your farm, use your location and start receiving crop guidance." />
       ) : farms.map((farm) => (
         <Pressable accessibilityRole="button" key={farm.id} onPress={() => router.push(`/farms/${farm.id}`)}>
           <Card style={styles.farmCard}>

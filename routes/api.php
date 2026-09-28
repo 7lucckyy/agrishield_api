@@ -6,8 +6,11 @@ use App\Http\Controllers\Api\V1\Advisory\ShowAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\StoreAdvisoryController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceApplicationController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceProductController;
+use App\Http\Controllers\Api\V1\AssetFinance\ListFarmerAssetFinanceApplicationController;
+use App\Http\Controllers\Api\V1\AssetFinance\ListFarmerAssetFinanceProductController;
 use App\Http\Controllers\Api\V1\AssetFinance\ShowAssetFinanceApplicationController;
 use App\Http\Controllers\Api\V1\AssetFinance\StoreAssetFinanceApplicationController;
+use App\Http\Controllers\Api\V1\AssetFinance\StoreFarmerAssetFinanceApplicationController;
 use App\Http\Controllers\Api\V1\AssetFinance\UpdateAssetFinanceApplicationController;
 use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
@@ -79,6 +82,13 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:general'])->group(function (): void {
         Route::post('/auth/logout', LogoutController::class);
         Route::post('/auth/tokens/revoke-all', RevokeAllTokensController::class);
+
+        Route::get('/asset-finance/products', ListFarmerAssetFinanceProductController::class)
+            ->name('asset-finance.products.index');
+        Route::get('/asset-finance/applications', ListFarmerAssetFinanceApplicationController::class)
+            ->name('asset-finance.applications.index');
+        Route::post('/asset-finance/applications', StoreFarmerAssetFinanceApplicationController::class)
+            ->middleware('throttle:writes')->name('asset-finance.applications.store');
 
         Route::get('/me', ShowProfileController::class);
         Route::patch('/me', UpdateProfileController::class);

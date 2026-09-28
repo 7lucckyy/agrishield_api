@@ -13,7 +13,7 @@ test('phase two onboarding works from referral registration through farm crop at
 
     $this->postJson('/api/v1/auth/register', [
         'name' => 'Amina Bello',
-        'email' => 'amina@example.com',
+        'phone' => '+2348012345678',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
         'referral_code' => 'ONBOARD26',

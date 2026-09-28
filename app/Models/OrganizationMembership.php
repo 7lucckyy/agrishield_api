@@ -11,11 +11,14 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $organization_id
+ * @property int $user_id
  * @property OrganizationRole $role
  * @property OrganizationMembershipStatus $status
+ * @property string|null $cluster_name
  * @property Carbon|null $joined_at
  */
-#[Fillable(['role', 'status', 'joined_at'])]
+#[Fillable(['role', 'cluster_name', 'status', 'joined_at'])]
 class OrganizationMembership extends Pivot
 {
     /**

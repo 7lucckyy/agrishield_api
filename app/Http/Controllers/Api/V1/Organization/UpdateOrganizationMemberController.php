@@ -24,6 +24,7 @@ final class UpdateOrganizationMemberController extends Controller
             $organization,
             $user,
             $request->role(),
+            $request->clusterName(),
         ));
     }
 }

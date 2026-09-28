@@ -5,10 +5,10 @@ use App\Models\Organization;
 use App\Models\ReferralRedemption;
 use App\Models\User;
 
-test('a farmer can register with an email address', function () {
+test('a farmer registers with a phone number and receives a persistent device token', function () {
     $response = $this->postJson('/api/v1/auth/register', [
         'name' => 'Amina Bello',
-        'email' => 'AMINA@example.com',
+        'phone' => '+2348012345678',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
     ]);
@@ -16,7 +16,8 @@ test('a farmer can register with an email address', function () {
     $response
         ->assertCreated()
         ->assertHeader('X-Request-Id')
-        ->assertJsonPath('data.user.email', 'amina@example.com')
+        ->assertJsonPath('data.user.email', null)
+        ->assertJsonPath('data.user.phone', '+2348012345678')
         ->assertJsonPath('data.user.status', 'active')
         ->assertJsonPath('data.token_type', 'Bearer')
         ->assertJsonPath('meta.referral_applied', false);
@@ -26,20 +27,16 @@ test('a farmer can register with an email address', function () {
     $this->assertModelExists($user);
     expect($user->password)->not->toBe('correct-horse-battery-staple');
     expect($user->tokens)->toHaveCount(1);
+    expect($user->tokens()->sole()->expires_at)->toBeNull();
 });
 
-test('a farmer can register with a phone number only', function () {
-    $response = $this->postJson('/api/v1/auth/register', [
-        'name' => 'Musa Ibrahim',
-        'phone' => '+2348012345678',
+test('email registration is rejected because farmer identity is phone based', function () {
+    $this->postJson('/api/v1/auth/register', [
+        'name' => 'Amina Bello',
+        'email' => 'amina@example.com',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
-    ]);
-
-    $response
-        ->assertCreated()
-        ->assertJsonPath('data.user.email', null)
-        ->assertJsonPath('data.user.phone', '+2348012345678');
+    ])->assertUnprocessable()->assertJsonValidationErrors(['email', 'phone']);
 });
 
 test('a referral code binds a new user as a farmer and records redemption', function () {
@@ -49,7 +46,7 @@ test('a referral code binds a new user as a farmer and records redemption', func
 
     $response = $this->postJson('/api/v1/auth/register', [
         'name' => 'Amina Bello',
-        'email' => 'amina@example.com',
+        'phone' => '+2348012345679',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
         'referral_code' => 'kano2026',
@@ -73,7 +70,7 @@ test('a referral code binds a new user as a farmer and records redemption', func
 test('an invalid referral code fails registration', function () {
     $response = $this->postJson('/api/v1/auth/register', [
         'name' => 'Amina Bello',
-        'email' => 'amina@example.com',
+        'phone' => '+2348012345680',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
         'referral_code' => 'UNKNOWN',

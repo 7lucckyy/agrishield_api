@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 test('registration login profile and logout work end to end with bearer tokens', function () {
     $credentials = [
         'name' => 'Amina Bello',
-        'email' => 'amina@example.com',
+        'phone' => '+2348012345678',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
     ];
@@ -20,7 +20,7 @@ test('registration login profile and logout work end to end with bearer tokens',
     expect($registrationToken)->toBeString()->not->toBeEmpty();
 
     $loginToken = $this->postJson('/api/v1/auth/login', [
-        'email' => $credentials['email'],
+        'phone' => $credentials['phone'],
         'password' => $credentials['password'],
         'device_name' => 'Phase 1 acceptance test',
     ])
@@ -32,7 +32,8 @@ test('registration login profile and logout work end to end with bearer tokens',
     $this->withToken($loginToken)
         ->getJson('/api/v1/me')
         ->assertSuccessful()
-        ->assertJsonPath('data.email', $credentials['email']);
+        ->assertJsonPath('data.email', null)
+        ->assertJsonPath('data.phone', $credentials['phone']);
 
     $this->withToken($loginToken)
         ->postJson('/api/v1/auth/logout')
@@ -50,7 +51,8 @@ test('registration login profile and logout work end to end with bearer tokens',
     $this->withToken($registrationToken)
         ->getJson('/api/v1/me')
         ->assertSuccessful()
-        ->assertJsonPath('data.email', $credentials['email']);
+        ->assertJsonPath('data.email', null)
+        ->assertJsonPath('data.phone', $credentials['phone']);
 
     expect(User::query()->sole()->tokens)->toHaveCount(1);
 });

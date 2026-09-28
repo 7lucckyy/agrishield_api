@@ -16,7 +16,7 @@ import { ApiError, api } from '@/lib/api';
 import type { VoiceRequest } from '@/types/api';
 
 const sourceLanguages = [
-  ['auto', 'Auto detect'], ['ha', 'Hausa'], ['en', 'English'], ['ff', 'Fulfulde'], ['kr', 'Kanuri'], ['pcm', 'Pidgin'],
+  ['ha', 'Hausa'], ['en', 'English'], ['yo', 'Yoruba'], ['ig', 'Igbo'],
 ] as const;
 const responseLanguages = [['ha', 'Hausa'], ['en', 'English'], ['yo', 'Yoruba'], ['ig', 'Igbo']] as const;
 
@@ -24,7 +24,7 @@ export default function NewVoiceScreen() {
   const { farmId } = useLocalSearchParams<{ farmId?: string }>();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 200);
-  const [sourceLanguage, setSourceLanguage] = useState('auto');
+  const [sourceLanguage, setSourceLanguage] = useState('ha');
   const [responseLanguage, setResponseLanguage] = useState('ha');
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [recordedDuration, setRecordedDuration] = useState(0);
@@ -78,7 +78,7 @@ export default function NewVoiceScreen() {
   return (
     <Screen>
       <TextButton label="Cancel" onPress={() => router.back()} />
-      <PageHeader eyebrow="Voice guidance" title="Ask in your own words" description="Speak for up to two minutes. Mention the crop, what changed and when you first noticed it." />
+      <PageHeader eyebrow="N-ATLaS voice guidance" title="Ask in your own words" description="Choose your language, then mention the crop, what changed and when you first noticed it." />
       <Text style={styles.label}>I am speaking</Text><View style={styles.chips}>{sourceLanguages.map(([code, label]) => <LanguageChip key={code} active={sourceLanguage === code} label={label} onPress={() => setSourceLanguage(code)} />)}</View>
       <Text style={styles.label}>Reply to me in</Text><View style={styles.chips}>{responseLanguages.map(([code, label]) => <LanguageChip key={code} active={responseLanguage === code} label={label} onPress={() => setResponseLanguage(code)} />)}</View>
       <View style={styles.recorder}>

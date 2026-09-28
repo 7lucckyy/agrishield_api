@@ -5,13 +5,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card, Field, LoadingState, PageHeader, Pill, PrimaryButton, Screen, TextButton } from '@/components/ui';
 import { colors, radii, spacing, typography } from '@/constants/theme';
-import { useAuth } from '@/context/auth-context';
 import { ApiError, api } from '@/lib/api';
 import type { Farm, FinanceProduct } from '@/types/api';
 
 export default function FinanceApplyScreen() {
   const { productId } = useLocalSearchParams<{ productId: string }>();
-  const { activeOrganization } = useAuth();
   const [products, setProducts] = useState<FinanceProduct[]>([]);
   const [farms, setFarms] = useState<Farm[]>([]);
   const [selectedFarm, setSelectedFarm] = useState<string>('');
@@ -26,20 +24,19 @@ export default function FinanceApplyScreen() {
 
   useFocusEffect(useCallback(() => {
     void (async () => {
-      if (!activeOrganization) { setLoading(false); return; }
       try {
-        const [productData, farmData] = await Promise.all([api.financeProducts(activeOrganization.id), api.farms({ 'filter[organization_id]': activeOrganization.id, per_page: 50 })]);
+        const [productData, farmData] = await Promise.all([api.financeProducts(), api.farms({ per_page: 50 })]);
         setProducts(productData); setFarms(farmData); setSelectedFarm(farmData[0]?.id ?? '');
       } finally { setLoading(false); }
     })();
-  }, [activeOrganization]));
+  }, []));
 
   const product = products.find((item) => item.id === Number(productId));
   const submit = async () => {
-    if (!activeOrganization || !product) return;
+    if (!product) return;
     setSubmitting(true); setError('');
     try {
-      await api.createFinanceApplication(activeOrganization.id, { farm_id: selectedFarm, asset_finance_product_id: product.id, quantity: Number(quantity), requested_amount: Number(amount), purpose, consent: true });
+      await api.createFinanceApplication({ farm_id: selectedFarm, asset_finance_product_id: product.id, quantity: Number(quantity), requested_amount: Number(amount), purpose, consent: true });
       setComplete(true); await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (reason) {
       if (reason instanceof ApiError) setError(Object.values(reason.errors)[0]?.[0] ?? reason.message); else setError('The application could not be saved.');
@@ -47,7 +44,7 @@ export default function FinanceApplyScreen() {
   };
 
   if (loading) return <Screen><LoadingState /></Screen>;
-  if (complete) return <Screen><TextButton label="Close" onPress={() => router.back()} /><PageHeader eyebrow="Application recorded" title="Your organisation can track it now" description="The proposed finance partner still performs its own assessment and makes every financing decision." /><PrimaryButton label="Return to Asset access" onPress={() => router.back()} /></Screen>;
+  if (complete) return <Screen><TextButton label="Close" onPress={() => router.back()} /><PageHeader eyebrow="Application recorded" title="You can track it here" description="The proposed finance partner still performs its own assessment and makes every financing decision." /><PrimaryButton label="Return to Asset access" onPress={() => router.back()} /></Screen>;
 
   return (
     <Screen>
@@ -57,7 +54,7 @@ export default function FinanceApplyScreen() {
       <Text style={styles.label}>Farm</Text><View style={styles.options}>{farms.map((farm) => <Pressable accessibilityRole="button" accessibilityState={{ selected: selectedFarm === farm.id }} key={farm.id} onPress={() => setSelectedFarm(farm.id)} style={[styles.option, selectedFarm === farm.id && styles.optionActive]}><Text style={[styles.optionText, selectedFarm === farm.id && styles.optionTextActive]}>{farm.name}</Text></Pressable>)}</View>
       <View style={styles.row}><View style={styles.grow}><Field keyboardType="number-pad" label="Quantity" onChangeText={setQuantity} value={quantity} /></View><View style={styles.grow}><Field keyboardType="decimal-pad" label="Requested amount (NGN)" onChangeText={setAmount} placeholder="500000" value={amount} /></View></View>
       <Field label="How will this asset improve crop production?" multiline onChangeText={setPurpose} placeholder="Explain the crop, season and intended productive use…" value={purpose} />
-      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: consent }} onPress={() => setConsent(!consent)} style={styles.consent}><View style={[styles.checkbox, consent && styles.checkboxChecked]}>{consent ? <View style={styles.check} /> : null}</View><Text style={styles.consentText}>I have the farmer’s permission to share this application and farm context with the named proposed finance partner for assessment.</Text></Pressable>
+      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: consent }} onPress={() => setConsent(!consent)} style={styles.consent}><View style={[styles.checkbox, consent && styles.checkboxChecked]}>{consent ? <View style={styles.check} /> : null}</View><Text style={styles.consentText}>I agree to share my application and farm details with the named proposed finance partner for assessment.</Text></Pressable>
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
       <PrimaryButton disabled={!product || !selectedFarm || !amount || purpose.length < 20 || !consent} label="Record application" loading={submitting} onPress={submit} />
     </Screen>

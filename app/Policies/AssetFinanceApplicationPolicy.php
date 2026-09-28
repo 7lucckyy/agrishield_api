@@ -19,7 +19,11 @@ final class AssetFinanceApplicationPolicy
 
     public function view(User $user, AssetFinanceApplication $application): Response
     {
-        return $user->hasOrganizationRole(
+        if ($application->applicant_user_id === $user->getKey()) {
+            return Response::allow();
+        }
+
+        return $application->organization_id !== null && $user->hasOrganizationRole(
             $application->organization_id,
             [OrganizationRole::OrganizationAdmin, OrganizationRole::Agronomist],
         ) ? Response::allow() : Response::denyAsNotFound();
@@ -27,7 +31,7 @@ final class AssetFinanceApplicationPolicy
 
     public function update(User $user, AssetFinanceApplication $application): Response
     {
-        return $user->hasOrganizationRole($application->organization_id, OrganizationRole::OrganizationAdmin)
+        return $application->organization_id !== null && $user->hasOrganizationRole($application->organization_id, OrganizationRole::OrganizationAdmin)
             ? Response::allow()
             : Response::deny('Only an organization administrator can update a finance application.');
     }

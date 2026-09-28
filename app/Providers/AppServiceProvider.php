@@ -10,6 +10,7 @@ use App\Integrations\Contracts\VoiceTranscriptionProvider;
 use App\Integrations\Fake\FakeFarmerVoiceProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
 use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
+use App\Integrations\NAtlas\NAtlasVoiceTranscriptionProvider;
 use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
 use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
@@ -30,7 +31,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(VoiceTranscriptionProvider::class, OpenAIVoiceTranscriptionProvider::class);
+        $this->app->bind(VoiceTranscriptionProvider::class, function (Application $application): VoiceTranscriptionProvider {
+            return match ((string) config('voice-assistance.transcription_provider')) {
+                'n_atlas' => $application->make(NAtlasVoiceTranscriptionProvider::class),
+                'openai' => $application->make(OpenAIVoiceTranscriptionProvider::class),
+                default => throw new InvalidArgumentException('Unknown voice transcription provider: '.config('voice-assistance.transcription_provider')),
+            };
+        });
 
         $this->app->bind(FarmingInsightsProvider::class, function (Application $application): FarmingInsightsProvider {
             return match ((string) config('farming.provider')) {

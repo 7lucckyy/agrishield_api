@@ -17,16 +17,18 @@ final class UpdateOrganizationMemberRole
 {
     public function __construct(private RecordAuditLog $recordAuditLog) {}
 
-    public function execute(Organization $organization, User $member, OrganizationRole $role): User
+    public function execute(Organization $organization, User $member, OrganizationRole $role, ?string $clusterName = null): User
     {
         $beforeRole = null;
-        DB::transaction(function () use ($organization, $member, $role, &$beforeRole): void {
+        $beforeCluster = null;
+        DB::transaction(function () use ($organization, $member, $role, $clusterName, &$beforeRole, &$beforeCluster): void {
             $membership = OrganizationMembership::query()
                 ->where('organization_id', $organization->getKey())
                 ->where('user_id', $member->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
             $beforeRole = $membership->role->value;
+            $beforeCluster = $membership->cluster_name;
 
             if ($membership->status === OrganizationMembershipStatus::Active
                 && $membership->role === OrganizationRole::OrganizationAdmin
@@ -35,12 +37,13 @@ final class UpdateOrganizationMemberRole
             }
 
             $membership->role = $role;
+            $membership->cluster_name = $clusterName;
             $membership->save();
         });
         $this->recordAuditLog->execute('member.role_changed', $organization, [
             'member_id' => $member->getKey(),
-            'before' => ['role' => $beforeRole],
-            'after' => ['role' => $role->value],
+            'before' => ['role' => $beforeRole, 'cluster_name' => $beforeCluster],
+            'after' => ['role' => $role->value, 'cluster_name' => $clusterName],
         ]);
 
         return $organization->users()->whereKey($member->getKey())->firstOrFail();

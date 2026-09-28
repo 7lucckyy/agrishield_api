@@ -8,15 +8,15 @@ use Tests\TestCase;
 
 uses(TestCase::class);
 
-test('N-ATLaS creates farmer guidance from an OpenAI transcript', function () {
-    config()->set('voice-assistance.openai.api_key', 'openai-test-key');
+test('N-ATLaS creates farmer guidance from an N-ATLaS transcript', function () {
+    config()->set('voice-assistance.n_atlas.asr_endpoints.en', 'https://natlas.test/asr/english');
     config()->set('voice-assistance.n_atlas.chat_completions_url', 'https://natlas.test/v1/chat/completions');
     config()->set('voice-assistance.n_atlas.api_key', 'hf-test-key');
     $audioPath = tempnam(sys_get_temp_dir(), 'voice-test-');
     file_put_contents($audioPath, 'test audio');
 
     Http::fake([
-        '*/audio/transcriptions' => Http::response(['text' => 'My maize leaves are yellow.'], 200, ['x-request-id' => 'asr_123']),
+        'https://natlas.test/asr/english' => Http::response(['text' => 'My maize leaves are yellow.'], 200, ['x-request-id' => 'asr_123']),
         'https://natlas.test/*' => Http::response([
             'id' => 'natlas_123',
             'choices' => [[
@@ -45,13 +45,13 @@ test('N-ATLaS creates farmer guidance from an OpenAI transcript', function () {
 });
 
 test('N-ATLaS rejects malformed guidance instead of silently falling back', function () {
-    config()->set('voice-assistance.openai.api_key', 'openai-test-key');
+    config()->set('voice-assistance.n_atlas.asr_endpoints.en', 'https://natlas.test/asr/english');
     config()->set('voice-assistance.n_atlas.chat_completions_url', 'https://natlas.test/v1/chat/completions');
     $audioPath = tempnam(sys_get_temp_dir(), 'voice-test-');
     file_put_contents($audioPath, 'test audio');
 
     Http::fake([
-        '*/audio/transcriptions' => Http::response(['text' => 'My maize leaves are yellow.']),
+        'https://natlas.test/asr/english' => Http::response(['text' => 'My maize leaves are yellow.']),
         'https://natlas.test/*' => Http::response(['choices' => [['message' => ['content' => 'not-json']]]]),
     ]);
 
