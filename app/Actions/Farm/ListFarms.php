@@ -37,6 +37,7 @@ final class ListFarms
             ->first();
 
         $farms = $query
+            ->withCount('sections')
             ->orderBy($sort['field'], $sort['direction'])
             ->orderBy('id')
             ->paginate($perPage)

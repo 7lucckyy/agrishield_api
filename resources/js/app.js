@@ -6,8 +6,8 @@ const setMenuState = (isOpen) => {
     header?.classList.toggle('menu-open', isOpen);
     document.body.classList.toggle('menu-locked', isOpen);
     menuButton?.setAttribute('aria-expanded', String(isOpen));
-    menuButton?.setAttribute('aria-label', isOpen ? 'Close main menu' : 'Open main menu');
-    if (menuLabel) menuLabel.textContent = isOpen ? 'Close' : 'Menu';
+    menuButton?.setAttribute('aria-label', isOpen ? menuButton.dataset.closeLabel : menuButton.dataset.openLabel);
+    if (menuLabel) menuLabel.textContent = isOpen ? menuButton?.dataset.menuLabelOpen : menuButton?.dataset.menuLabelClosed;
 };
 
 menuButton?.addEventListener('click', () => {
@@ -50,35 +50,6 @@ if ('IntersectionObserver' in window && ! window.matchMedia('(prefers-reduced-mo
 }
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const motionTargets = document.querySelectorAll('[data-motion]');
-
-if (motionTargets.length) {
-    document.documentElement.classList.add('motion-ready');
-
-    const revealMotionTarget = (element) => element.classList.add('is-in-view');
-    const entranceTargets = document.querySelectorAll('[data-motion="hero-media"], [data-motion="hero-copy"]');
-
-    window.requestAnimationFrame(() => entranceTargets.forEach(revealMotionTarget));
-
-    if ('IntersectionObserver' in window && ! reducedMotion.matches) {
-        const motionObserver = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (! entry.isIntersecting) return;
-
-                revealMotionTarget(entry.target);
-                motionObserver.unobserve(entry.target);
-            });
-        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.14 });
-
-        motionTargets.forEach((element) => {
-            if (! element.matches('[data-motion="hero-media"], [data-motion="hero-copy"]')) {
-                motionObserver.observe(element);
-            }
-        });
-    } else {
-        motionTargets.forEach(revealMotionTarget);
-    }
-}
 
 const depthCards = document.querySelectorAll('[data-motion="depth-card"]');
 

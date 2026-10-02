@@ -51,6 +51,19 @@ final class FarmResource extends JsonResource
                     ? null
                     : new CropCycleResource($farm->activeCropCycle),
             ),
+            'sections_count' => $this->whenCounted('sections'),
+            'sections' => FarmSectionResource::collection($this->whenLoaded('sections')),
+            'section_summary' => $this->whenLoaded('sections', function () use ($farm): array {
+                $allocatedHectares = (float) $farm->sections->sum('area_hectares');
+
+                return [
+                    'count' => $farm->sections->count(),
+                    'allocated_hectares' => round($allocatedHectares, 4),
+                    'remaining_hectares' => $farm->area_hectares === null
+                        ? null
+                        : round(max(0, (float) $farm->area_hectares - $allocatedHectares), 4),
+                ];
+            }),
             'last_synced_at' => $farm->last_synced_at?->toISOString(),
             'created_at' => $farm->created_at?->toISOString(),
         ];

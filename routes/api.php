@@ -37,6 +37,10 @@ use App\Http\Controllers\Api\V1\Farm\ListFarmController;
 use App\Http\Controllers\Api\V1\Farm\ShowFarmController;
 use App\Http\Controllers\Api\V1\Farm\StoreFarmController;
 use App\Http\Controllers\Api\V1\Farm\UpdateFarmController;
+use App\Http\Controllers\Api\V1\FarmSection\DeleteFarmSectionController;
+use App\Http\Controllers\Api\V1\FarmSection\ListFarmSectionController;
+use App\Http\Controllers\Api\V1\FarmSection\StoreFarmSectionController;
+use App\Http\Controllers\Api\V1\FarmSection\UpdateFarmSectionController;
 use App\Http\Controllers\Api\V1\Health\ShowDetailedHealthController;
 use App\Http\Controllers\Api\V1\Health\ShowHealthController;
 use App\Http\Controllers\Api\V1\Insight\ListSatelliteObservationController;
@@ -111,6 +115,15 @@ Route::prefix('v1')->group(function (): void {
             ->middleware(['abilities:farms:write', 'throttle:sync'])->name('farms.sync.store');
         Route::get('/farms/{farm}/sync-runs', ListFarmSyncRunController::class)
             ->middleware('abilities:farms:read')->name('farms.sync-runs.index');
+
+        Route::get('/farms/{farm}/sections', ListFarmSectionController::class)
+            ->middleware('abilities:farms:read')->name('farms.sections.index');
+        Route::post('/farms/{farm}/sections', StoreFarmSectionController::class)
+            ->middleware(['abilities:farms:write', 'throttle:writes'])->name('farms.sections.store');
+        Route::patch('/farms/{farm}/sections/{farmSection}', UpdateFarmSectionController::class)
+            ->middleware(['abilities:farms:write', 'throttle:writes'])->scopeBindings()->name('farms.sections.update');
+        Route::delete('/farms/{farm}/sections/{farmSection}', DeleteFarmSectionController::class)
+            ->middleware(['abilities:farms:write', 'throttle:writes'])->scopeBindings()->name('farms.sections.destroy');
 
         Route::get('/farms/{farm}/soil-health', ShowSoilHealthController::class)
             ->middleware('abilities:farms:read')->name('farms.soil-health.show');

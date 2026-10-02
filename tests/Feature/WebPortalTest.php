@@ -13,13 +13,21 @@ use Spatie\Permission\Models\Role;
 test('the public product website explains the agrishield proposition', function () {
     $this->get(route('home'))
         ->assertSuccessful()
-        ->assertSee('From a farmer’s question to the next field action.')
-        ->assertSee('Northern Nigeria')
+        ->assertSee('See every field. Know what needs attention.')
+        ->assertSee('Agricultural intelligence for every farm')
         ->assertSee('Field Voice')
-        ->assertSee('One record.')
-        ->assertSee('Five responsible handoffs.')
-        ->assertSee('Private organisation workspaces')
-        ->assertSee('Clear answers before field work begins.')
+        ->assertSee('Farmers and field teams work from the same record.')
+        ->assertSee('Satellite crop monitoring')
+        ->assertSee('Soil health and moisture')
+        ->assertSee('Crop image diagnosis')
+        ->assertSee('Voice notes from the field')
+        ->assertSee('Access to farm loans')
+        ->assertSee('Weather risk and advisories')
+        ->assertSee('NDVI · healthy signal')
+        ->assertSee('A simpler path from “what changed?” to “what happens next?”')
+        ->assertSee('The farm plan stays visible wherever the work moves.')
+        ->assertSee('The same clear field story in English, Hausa and French.')
+        ->assertSee('Can one farm contain different crops?')
         ->assertSee('jigawa-farmer.webp')
         ->assertSee('hawul-borno-farmland.webp')
         ->assertSee('favicon.svg')
@@ -27,25 +35,47 @@ test('the public product website explains the agrishield proposition', function 
         ->assertSee('agrishield-social.png')
         ->assertSee('aria-label="Primary navigation"', escape: false)
         ->assertSee('aria-controls="primary-navigation"', escape: false)
-        ->assertSeeInOrder(['Platform', 'Field Voice', 'How it works', 'Company', 'Sign in', 'Plan a deployment'])
+        ->assertSeeInOrder(['Platform', 'How it works', 'Field Voice', 'About', 'Sign in', 'Plan a deployment'])
+        ->assertSeeInOrder(['jigawa-farmer.webp', 'Plan each part of the farm around what is planted there.', 'North farm'])
         ->assertDontSee('API readiness')
-        ->assertSee('Discuss a focused deployment');
+        ->assertSee('Discuss a deployment');
+});
+
+test('the public landing page switches and remembers supported languages', function () {
+    $this->get(route('home', ['lang' => 'ha']))
+        ->assertSuccessful()
+        ->assertSee('<html lang="ha">', escape: false)
+        ->assertSee('Ka ga kowane fili. Ka san abin da ke bukatar kulawa.')
+        ->assertSee('Gonar Arewa');
+
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('<html lang="ha">', escape: false)
+        ->assertSee('Tsara gona sashe bayan sashe.');
+
+    $this->get(route('home', ['lang' => 'fr']))
+        ->assertSuccessful()
+        ->assertSee('<html lang="fr">', escape: false)
+        ->assertSee('Voyez chaque parcelle. Sachez où agir.')
+        ->assertSee('Ferme Nord');
 });
 
 test('the landing page presents only accountable product evidence', function () {
     $this->get(route('home'))
         ->assertSuccessful()
         ->assertSeeInOrder([
-            'Register the farm',
-            'Open the crop season',
-            'Capture the question',
-            'Review the evidence',
-            'Close the loop',
+            'Map',
+            'Monitor',
+            'Review',
+            'Act',
         ])
-        ->assertSee('Illustrative workflow · not live farmer data')
-        ->assertSee('Transcription and translation can then be enabled')
+        ->assertSee('Illustrative interface · example data')
+        ->assertSee('It keeps data freshness, provider status and human review visible.')
+        ->assertSee('Does the platform invent advice when data is missing?')
         ->assertDontSee('Trusted by thousands')
-        ->assertDontSee('industry-leading accuracy');
+        ->assertDontSee('industry-leading accuracy')
+        ->assertDontSee('Yield prediction')
+        ->assertDontSee('Automated irrigation');
 });
 
 test('the public navigation identifies the current page', function () {
@@ -54,10 +84,10 @@ test('the public navigation identifies the current page', function () {
         ->assertSee('aria-current="page"', escape: false)
         ->assertSee('>Platform</a>', escape: false);
 
-    $this->get(route('partners'))
+    $this->get(route('impact'))
         ->assertSuccessful()
         ->assertSee('aria-current="page"', escape: false)
-        ->assertSee('>Company</a>', escape: false);
+        ->assertSee('>How it works</a>', escape: false);
 });
 
 test('public crawler metadata is production ready', function () {
@@ -117,12 +147,32 @@ test('the public company pages present the current agrishield offering', functio
         ->assertSee('hello@agrishield.ai');
 })->with([
     'about' => ['about', 'Crop support needs'],
-    'solutions' => ['solutions', 'One crop workflow'],
+    'solutions' => ['solutions', 'Keep every farm signal'],
     'impact' => ['impact', 'From farm record'],
-    'partners' => ['partners', 'Bring a defined'],
-    'team' => ['team', 'Built across product'],
+    'partners' => ['partners', 'Start with a field workflow'],
+    'team' => ['team', 'Agricultural, data and field expertise'],
     'contact' => ['contact', 'Bring us the crop'],
     'field voice' => ['field-voice', 'Capture the question'],
+]);
+
+test('every public company page is localized in Hausa and French', function (string $route) {
+    $this->get(route($route, ['lang' => 'ha']))
+        ->assertSuccessful()
+        ->assertSee('<html lang="ha">', escape: false)
+        ->assertDontSee('marketing.pages.');
+
+    $this->get(route($route, ['lang' => 'fr']))
+        ->assertSuccessful()
+        ->assertSee('<html lang="fr">', escape: false)
+        ->assertDontSee('marketing.pages.');
+})->with([
+    'about',
+    'solutions',
+    'impact',
+    'partners',
+    'team',
+    'contact',
+    'field-voice',
 ]);
 
 test('the product scope is crop only and keeps the startup offer focused', function () {
@@ -130,10 +180,11 @@ test('the product scope is crop only and keeps the startup offer focused', funct
         ->assertSuccessful()
         ->assertSee('The AgriShield platform')
         ->assertSee('Field Voice')
-        ->assertSee('English, Hausa, Igbo and Yoruba')
-        ->assertSee('Crop cases')
-        ->assertSee('Model confidence shown')
-        ->assertSee('Advisories')
+        ->assertSee('Satellite and NDVI')
+        ->assertSee('Soil moisture and weather')
+        ->assertSee('Image diagnosis and Field Voice')
+        ->assertSee('Farm loans and services')
+        ->assertSee('Advisories and follow-through')
         ->assertDontSee('Livestock')
         ->assertDontSee('Agricultural MEAL')
         ->assertDontSee('Market Access &amp; Trade Linkages', escape: false)
@@ -151,10 +202,17 @@ test('public platform capabilities are backed by registered routes', function (s
     'crop catalogue' => 'crops.index',
     'farms' => 'farms.index',
     'crop cycles' => 'farms.crop-cycles.index',
+    'farm sections' => 'farms.sections.index',
+    'satellite observations' => 'farms.satellite-observations.index',
+    'satellite summary' => 'farms.satellite-observations.summary',
+    'soil health' => 'farms.soil-health.show',
+    'weather' => 'farms.weather.show',
     'voice intake' => 'voice-assistance.store',
     'crop cases' => 'farms.diagnosis-requests.store',
     'advisories' => 'farms.advisories.store',
     'advisory acknowledgement' => 'farms.advisories.acknowledge',
+    'farm finance products' => 'asset-finance.products.index',
+    'farm finance applications' => 'asset-finance.applications.store',
     'organization overview' => 'organizations.overview.show',
     'integration operations' => 'integrations.index',
     'health check' => 'health.show',
@@ -164,7 +222,8 @@ test('the public website does not borrow unverified credibility', function () {
     $this->get(route('home'))
         ->assertSuccessful()
         ->assertDontSee('Illustrative service network')
-        ->assertDontSee('WEATHER &amp; SATELLITE', escape: false)
+        ->assertDontSee('95%')
+        ->assertDontSee('30% higher yields')
         ->assertDontSee('RESPONSIBLE BY DESIGN');
 
     $this->get(route('team'))
@@ -176,7 +235,7 @@ test('the public website does not borrow unverified credibility', function () {
         ->assertSuccessful()
         ->assertDontSee('FAO')
         ->assertDontSee('World Bank')
-        ->assertSee('Only confirmed relationships');
+        ->assertSee('Every deployment starts with named responsibilities');
 });
 
 test('a platform administrator signs in and reaches platform control', function () {

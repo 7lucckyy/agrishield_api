@@ -9,6 +9,7 @@ use App\Exceptions\SyncAlreadyRunningException;
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetWebsiteLocale;
 use App\Support\ApiErrorResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -32,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [AddSecurityHeaders::class]);
+        $middleware->web(append: [SetWebsiteLocale::class, AddSecurityHeaders::class]);
         $middleware->api(prepend: [AttachRequestId::class, SetLocale::class]);
         $middleware->alias([
             'abilities' => CheckAbilities::class,

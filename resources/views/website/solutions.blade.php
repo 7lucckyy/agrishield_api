@@ -1,25 +1,12 @@
 @extends('layouts.marketing')
-@section('title', 'Platform | AgriShield AI')
-@section('description', 'Explore AgriShield’s connected workspace for farms, crop seasons, farmer questions, crop cases and advisories.')
+@section('title', __('marketing.pages.solutions.meta_title'))
+@section('description', __('marketing.pages.solutions.meta_description'))
 @section('content')
-<section class="inner-hero">
-    <p class="eyebrow light"><span></span> The AgriShield platform</p>
-    <h1>One crop workflow.<br>Nothing important lost.</h1>
-    <p>Give field teams a shared place to organise farms, understand the current season and follow farmer questions through to action.</p>
-</section>
-
-<section class="platform-catalog section-pad">
-    <article><span>REGISTER</span><div><h2>Farm and organisation records</h2><p>Keep farms, boundaries, ownership and team access together in a secure workspace.</p></div><ul><li>Farm profiles</li><li>Validated boundaries</li><li>Organisation roles</li></ul></article>
-    <article><span>TRACK</span><div><h2>Crop seasons</h2><p>Record what is planted and retain the dates and context needed for ongoing support.</p></div><ul><li>Crop catalogue</li><li>Planting and harvest dates</li><li>Active season history</li></ul></article>
-    <article><span>LISTEN</span><div><h2>Field Voice</h2><p>Receive a farmer’s voice note, translate the question and return practical guidance in a supported local language.</p></div><ul><li>Browser recording</li><li>English, Hausa, Igbo and Yoruba</li><li>Private case history</li></ul></article>
-    <article><span>REVIEW</span><div><h2>Crop cases</h2><p>Screen a crop photo for possible visible conditions, then keep the finding and field context ready for expert review.</p></div><ul><li>Private image screening</li><li>Model confidence shown</li><li>Agronomist review status</li></ul></article>
-    <article><span>ACT</span><div><h2>Advisories</h2><p>Publish a practical farm-level action and retain a record of reading and acknowledgement.</p></div><ul><li>Recommended actions</li><li>Priority and timing</li><li>Acknowledgement history</li></ul></article>
-    <article><span>OPERATE</span><div><h2>Team oversight</h2><p>Give organisation and platform administrators a clear view of farms, users and operations.</p></div><ul><li>Organisation overview</li><li>Member management</li><li>Operational health</li></ul></article>
-</section>
-
-<section class="provider-note field-section">
-    <div><p class="field-kicker"><span></span> Extend when ready</p><h2>Connect specialist services without rebuilding the workflow.</h2></div>
-    <div><p>AgriShield can connect language, crop-analysis and earth-observation providers when a deployment has selected and configured them.</p><p>The core workspace remains useful on its own: farms, crop seasons, private field evidence, cases and advisories stay together.</p></div>
-</section>
-@include('website.partials.cta')
+<div class="inner-site">
+    <section class="inner-page-hero inner-page-hero-platform"><div data-motion="hero-copy"><p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.pages.solutions.eyebrow') }}</p><h1>{{ __('marketing.pages.solutions.title') }}</h1><p>{{ __('marketing.pages.solutions.intro') }}</p></div><div class="inner-hero-instrument instrument-satellite" data-motion="hero-media" aria-hidden="true"><span>SAT / FIELD 03</span><div><i></i><i></i><i></i><i></i></div><b>NDVI 0.72 · SIGNAL READY</b></div></section>
+    <section class="inner-section inner-platform-intro"><div><p class="agri-kicker"><span></span>{{ __('marketing.pages.solutions.overview_label') }}</p><h2>{{ __('marketing.pages.solutions.overview_title') }}</h2></div><p>{{ __('marketing.pages.solutions.overview_body') }}</p></section>
+    <section class="inner-feature-catalog" data-motion="stagger">@foreach(__('marketing.pages.solutions.features') as $feature)<article data-motion-item><span>{{ Str::afterLast($feature['code'], ' / ') }}</span><div><h2>{{ $feature['title'] }}</h2><p>{{ $feature['body'] }}</p></div><ul>@foreach($feature['items'] as $item)<li>{{ $item }}</li>@endforeach</ul></article>@endforeach</section>
+    <section class="inner-feature-band"><div><p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.pages.solutions.provider_label') }}</p><h2>{{ __('marketing.pages.solutions.provider_title') }}</h2></div><p>{{ __('marketing.pages.solutions.provider_body') }}</p></section>
+    @include('website.partials.cta')
+</div>
 @endsection

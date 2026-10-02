@@ -14,6 +14,7 @@
 /.zed
 /auth.json
 /node_modules
+/.tools
 # Production deploys use the compiled Vite bundle from this repository.
 /public/fonts-manifest.dev.json
 /public/hot

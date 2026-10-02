@@ -45,6 +45,9 @@ use Illuminate\Support\Str;
  * @property-read User $owner
  * @property-read Organization|null $organization
  * @property-read Collection<int, CropCycle> $cropCycles
+ * @property-read Collection<int, FarmSection> $sections
+ * @property-read Collection<int, FarmSection> $farmSections
+ * @property-read int|null $sections_count
  * @property-read CropCycle|null $activeCropCycle
  * @property-read Collection<int, FarmProviderLink> $providerLinks
  * @property-read Collection<int, SyncRun> $syncRuns
@@ -82,6 +85,18 @@ final class Farm extends Model
     public function cropCycles(): HasMany
     {
         return $this->hasMany(CropCycle::class);
+    }
+
+    /** @return HasMany<FarmSection, $this> */
+    public function sections(): HasMany
+    {
+        return $this->farmSections();
+    }
+
+    /** @return HasMany<FarmSection, $this> */
+    public function farmSections(): HasMany
+    {
+        return $this->hasMany(FarmSection::class);
     }
 
     /** @return HasOne<CropCycle, $this> */

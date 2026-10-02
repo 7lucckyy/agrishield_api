@@ -1,8 +1,10 @@
 @extends('layouts.marketing')
-@section('title', 'Product Workflow | AgriShield AI')
-@section('description', 'See how AgriShield connects farm registration, crop evidence, field review, advisories and acknowledgement in one workflow.')
+@section('title', __('marketing.pages.impact.meta_title'))
+@section('description', __('marketing.pages.impact.meta_description'))
 @section('content')
-<section class="inner-hero"><p class="eyebrow light"><span></span> Product workflow</p><h1>From farm record<br>to acknowledged action.</h1><p>The current platform keeps the essential crop-support steps together without claiming outcomes that have not been measured.</p></section>
-<section class="impact-list section-pad"><article><div class="impact-index">01</div><div><span>Establish context</span><h2>Register the crop farm and active season</h2><p>Give every question a known organisation, accountable owner, validated boundary and current crop cycle.</p><small>Farms and crop cycles</small></div><div class="impact-visual registry-visual"><i></i><i></i><i></i></div></article><article><div class="impact-index">02</div><div><span>Retain evidence</span><h2>Turn a field report into a reviewable case</h2><p>Keep voice notes, crop images and case status inside the authorised workspace.</p><small>Field Voice and crop cases</small></div><div class="impact-visual crop-health-visual"><i></i></div></article><article><div class="impact-index">03</div><div><span>Close the loop</span><h2>Publish an action and record acknowledgement</h2><p>Maintain a visible history of the advice issued and whether it was read or acknowledged.</p><small>Farm advisories</small></div><div class="impact-visual climate-visual"><i></i><i></i></div></article></section>
-@include('website.partials.cta')
+<div class="inner-site">
+    <section class="inner-page-hero inner-page-hero-text inner-page-hero-impact"><div data-motion="hero-copy"><p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.pages.impact.eyebrow') }}</p><h1>{{ __('marketing.pages.impact.title') }}</h1><p>{{ __('marketing.pages.impact.intro') }}</p></div></section>
+    <section class="inner-workflow inner-section" data-motion="stagger">@foreach(__('marketing.pages.impact.steps') as $step)<article data-motion-item><span>{{ $step['number'] }}</span><div><small>{{ $step['label'] }}</small><h2>{{ $step['title'] }}</h2><p>{{ $step['body'] }}</p><b>{{ $step['note'] }}</b></div><div class="workflow-signal" aria-hidden="true"><i></i><i></i><i></i><i></i></div></article>@endforeach</section>
+    @include('website.partials.cta')
+</div>
 @endsection

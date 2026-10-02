@@ -1,8 +1,10 @@
 @extends('layouts.marketing')
-@section('title', 'Team | AgriShield AI')
-@section('description', 'Meet the product, crop programme and field implementation disciplines behind AgriShield AI.')
+@section('title', __('marketing.pages.team.meta_title'))
+@section('description', __('marketing.pages.team.meta_description'))
 @section('content')
-<section class="inner-hero"><p class="eyebrow light"><span></span> Team</p><h1>Built across product,<br>crop and field operations.</h1><p>We do not publish placeholder biographies. Verified leadership profiles will appear here when they are ready for public release.</p></section>
-<section class="capability-team section-pad"><div><p class="eyebrow light"><span></span> Current disciplines</p><h2>The capabilities required to deliver the product.</h2></div><div><article><strong>Crop programme design</strong><p>Translates field responsibilities into a workable service path.</p></article><article><strong>Software engineering</strong><p>Owns the secure API, web workspace and operational controls.</p></article><article><strong>Field implementation</strong><p>Supports onboarding, records and responsible workflow adoption.</p></article></div></section>
-@include('website.partials.cta')
+<div class="inner-site">
+    <section class="inner-page-hero inner-page-hero-team"><div data-motion="hero-copy"><p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.pages.team.eyebrow') }}</p><h1>{{ __('marketing.pages.team.title') }}</h1><p>{{ __('marketing.pages.team.intro') }}</p></div><ul class="team-disciplines">@foreach(__('marketing.pages.team.disciplines') as $discipline)<li>{{ $discipline['title'] }}</li>@endforeach</ul></section>
+    <section class="inner-section inner-principles"><header class="inner-section-heading"><p class="agri-kicker"><span></span>{{ __('marketing.pages.team.disciplines_label') }}</p><h2>{{ __('marketing.pages.team.disciplines_title') }}</h2></header><div class="inner-card-grid" data-motion="stagger">@foreach(__('marketing.pages.team.disciplines') as $discipline)<article data-motion-item><h3>{{ $discipline['title'] }}</h3><p>{{ $discipline['body'] }}</p></article>@endforeach</div></section>
+    @include('website.partials.cta')
+</div>
 @endsection

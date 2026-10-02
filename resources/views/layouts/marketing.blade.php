@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="@yield('description', 'AgriShield connects crop farmers, field evidence and extension teams across Northern Nigeria.')">
+    <meta name="description" content="@yield('description', __('marketing.meta.description'))">
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
     <meta name="theme-color" content="#123B2A">
     <meta name="geo.region" content="NG">
@@ -15,19 +15,19 @@
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="AgriShield AI">
-    <meta property="og:locale" content="en_NG">
-    <meta property="og:title" content="@yield('title', 'AgriShield AI')">
-    <meta property="og:description" content="@yield('description', 'Crop support operations for farmers and extension teams across Northern Nigeria.')">
+    <meta property="og:locale" content="{{ app()->getLocale() === 'fr' ? 'fr_FR' : (app()->getLocale() === 'ha' ? 'ha_NG' : 'en_NG') }}">
+    <meta property="og:title" content="@yield('title', __('marketing.meta.title'))">
+    <meta property="og:description" content="@yield('description', __('marketing.meta.description'))">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:image" content="{{ asset('images/og/agrishield-social.png') }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="AgriShield AI crop support in Northern Nigeria">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('title', 'AgriShield AI')">
-    <meta name="twitter:description" content="@yield('description', 'Crop support operations for farmers and extension teams across Northern Nigeria.')">
+    <meta name="twitter:title" content="@yield('title', __('marketing.meta.title'))">
+    <meta name="twitter:description" content="@yield('description', __('marketing.meta.description'))">
     <meta name="twitter:image" content="{{ asset('images/og/agrishield-social.png') }}">
-    <title>@yield('title', 'AgriShield AI')</title>
+    <title>@yield('title', __('marketing.meta.title'))</title>
     <script type="application/ld+json">
         {
             "@@context": "https://schema.org",
@@ -46,7 +46,7 @@
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="marketing-page credible-site field-site">
+<body class="marketing-page credible-site field-site locale-{{ app()->getLocale() }}">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="field-header" data-header>
         <div class="field-header-inner">
@@ -55,39 +55,49 @@
                 <span><strong>AgriShield</strong><small>NORTHERN NIGERIA</small></span>
             </a>
             <nav class="field-nav" id="primary-navigation" aria-label="Primary navigation">
-                <span class="field-menu-eyebrow">Explore AgriShield</span>
-                <a href="{{ route('solutions') }}" @class(['active' => request()->routeIs('solutions')]) @if(request()->routeIs('solutions')) aria-current="page" @endif>Platform</a>
-                <a href="{{ route('field-voice') }}" @class(['active' => request()->routeIs('field-voice')]) @if(request()->routeIs('field-voice')) aria-current="page" @endif>Field Voice</a>
-                <a href="{{ route('impact') }}" @class(['active' => request()->routeIs('impact')]) @if(request()->routeIs('impact')) aria-current="page" @endif>How it works</a>
-                <a href="{{ route('about') }}" @class(['active' => request()->routeIs('about', 'team', 'partners')]) @if(request()->routeIs('about', 'team', 'partners')) aria-current="page" @endif>Company</a>
+                <span class="field-menu-eyebrow">{{ __('marketing.nav.explore') }}</span>
+                <a href="{{ route('solutions') }}" @class(['active' => request()->routeIs('solutions')]) @if(request()->routeIs('solutions')) aria-current="page" @endif>{{ __('marketing.nav.platform') }}</a>
+                <a href="{{ route('impact') }}" @class(['active' => request()->routeIs('impact')]) @if(request()->routeIs('impact')) aria-current="page" @endif>{{ __('marketing.nav.how') }}</a>
+                <a href="{{ route('field-voice') }}" @class(['active' => request()->routeIs('field-voice')]) @if(request()->routeIs('field-voice')) aria-current="page" @endif>{{ __('marketing.nav.field_voice') }}</a>
+                <a href="{{ route('about') }}" @class(['active' => request()->routeIs('about', 'team')]) @if(request()->routeIs('about', 'team')) aria-current="page" @endif>{{ __('marketing.nav.about') }}</a>
             </nav>
             <div class="field-header-actions">
+                <details class="language-switcher">
+                    <summary aria-label="{{ __('marketing.language.label') }}">{{ strtoupper(app()->getLocale()) }}<span aria-hidden="true">⌄</span></summary>
+                    <div>
+                        @foreach(config('app.supported_locales') as $locale)
+                            <a href="{{ request()->fullUrlWithQuery(['lang' => $locale]) }}" hreflang="{{ $locale }}" @if(app()->getLocale() === $locale) aria-current="true" @endif>
+                                <span>{{ strtoupper($locale) }}</span>{{ __('marketing.language.'.$locale) }}
+                            </a>
+                        @endforeach
+                    </div>
+                </details>
                 @auth
                     @if(auth()->user()->hasRole(\App\Enums\GlobalRole::PlatformAdmin->value))
-                        <a class="field-signin" href="{{ route('platform.dashboard') }}">Open platform</a>
+                        <a class="field-signin" href="{{ route('platform.dashboard') }}">{{ __('marketing.nav.open_platform') }}</a>
                     @elseif(auth()->user()->primaryOrganizationId())
-                        <a class="field-signin" href="{{ route('organization.dashboard', auth()->user()->primaryOrganizationId()) }}">Open workspace</a>
+                        <a class="field-signin" href="{{ route('organization.dashboard', auth()->user()->primaryOrganizationId()) }}">{{ __('marketing.nav.open_workspace') }}</a>
                     @endif
                 @else
-                    <a class="field-signin" href="{{ route('login') }}">Sign in</a>
+                    <a class="field-signin" href="{{ route('login') }}">{{ __('marketing.nav.sign_in') }}</a>
                 @endauth
-                <a class="field-button field-button-dark" href="{{ route('contact') }}">Plan a deployment</a>
+                <a class="field-button field-button-dark" href="{{ route('contact') }}">{{ __('marketing.nav.plan') }}</a>
             </div>
-            <button class="menu-button" type="button" aria-label="Open main menu" aria-controls="primary-navigation" aria-expanded="false" data-menu-button>
-                <span class="menu-button-label" data-menu-label>Menu</span>
+            <button class="menu-button" type="button" aria-label="{{ __('marketing.nav.open_menu') }}" aria-controls="primary-navigation" aria-expanded="false" data-menu-button data-open-label="{{ __('marketing.nav.open_menu') }}" data-close-label="{{ __('marketing.nav.close_menu') }}" data-menu-label-closed="{{ __('marketing.nav.menu') }}" data-menu-label-open="{{ __('marketing.nav.close') }}">
+                <span class="menu-button-label" data-menu-label>{{ __('marketing.nav.menu') }}</span>
                 <span class="menu-button-lines" aria-hidden="true"><i></i><i></i></span>
             </button>
         </div>
     </header>
     <main id="main-content">@yield('content')</main>
     <footer class="field-footer">
-        <div class="field-footer-lead"><span>AGRISHIELD / NORTHERN NIGERIA</span><h2>One record from field question to follow-through.</h2></div>
+        <div class="field-footer-lead"><span>{{ strtoupper(__('marketing.footer.eyebrow')) }}</span><h2>{{ __('marketing.footer.title') }}</h2></div>
         <div class="field-footer-grid">
-            <div><p>Secure crop records, farmer questions and accountable advisory delivery for field teams.</p><a href="mailto:hello@agrishield.ai">hello@agrishield.ai</a></div>
-            <div><strong>Product</strong><a href="{{ route('solutions') }}">Platform</a><a href="{{ route('field-voice') }}">Field Voice</a><a href="{{ route('impact') }}">How it works</a></div>
-            <div><strong>Company</strong><a href="{{ route('about') }}">About</a><a href="{{ route('partners') }}">Work with us</a><a href="{{ route('contact') }}">Contact</a></div>
+            <div><p>{{ __('marketing.footer.body') }}</p><a href="mailto:hello@agrishield.ai">hello@agrishield.ai</a></div>
+            <div><strong>{{ __('marketing.footer.product') }}</strong><a href="{{ route('solutions') }}">{{ __('marketing.nav.platform') }}</a><a href="{{ route('field-voice') }}">{{ __('marketing.nav.field_voice') }}</a><a href="{{ route('impact') }}">{{ __('marketing.nav.how') }}</a></div>
+            <div><strong>{{ __('marketing.footer.company') }}</strong><a href="{{ route('about') }}">{{ __('marketing.footer.about') }}</a><a href="{{ route('team') }}">{{ __('marketing.footer.team') }}</a><a href="{{ route('partners') }}">{{ __('marketing.footer.work') }}</a><a href="{{ route('contact') }}">{{ __('marketing.footer.contact') }}</a></div>
         </div>
-        <small>© {{ now()->year }} AgriShield AI Ltd. Crop guidance should be reviewed by qualified local professionals.</small>
+        <small>© {{ now()->year }} AgriShield AI Ltd. {{ __('marketing.footer.disclaimer') }}</small>
     </footer>
 </body>
 </html>

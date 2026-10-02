@@ -1,176 +1,209 @@
 @extends('layouts.marketing')
-@section('title', 'AgriShield AI | Crop support that reaches the field')
-@section('description', 'AgriShield connects farm records, crop seasons, farmer questions and accountable advisory delivery across Northern Nigeria.')
+@section('title', __('marketing.meta.title'))
+@section('description', __('marketing.meta.description'))
 @push('head')
     <link rel="preload" as="image" href="{{ asset('images/field/jigawa-farmer.webp') }}" type="image/webp" fetchpriority="high">
 @endpush
+
 @section('content')
 @if(session('status'))
     <div class="flash-message">{{ session('status') }}</div>
 @endif
 
-<section class="photo-hero">
-    <figure class="photo-hero-image" data-motion="hero-media">
-        <img src="{{ asset('images/field/jigawa-farmer.webp') }}" alt="A farmer examining a crop in Jigawa, northern Nigeria" width="1800" height="2047" fetchpriority="high" decoding="async" data-parallax-media>
-        <figcaption><span>Jigawa, Nigeria</span><a href="https://www.pexels.com/photo/nigerian-farmer-examining-crops-in-field-34411658/">Photo by mk_photoz / Pexels</a></figcaption>
-    </figure>
-    <div class="photo-hero-copy" data-motion="hero-copy">
-        <p class="field-kicker" data-motion-item><span></span> Crop support, connected</p>
-        <h1 data-motion-item>From a farmer’s question to the next field action.</h1>
-        <p data-motion-item>AgriShield gives crop programmes one accountable path from farm registration to farmer question, field review and practical advice—without losing context between calls, messages and spreadsheets.</p>
-        <div class="field-actions" data-motion-item>
-            <a class="field-button field-button-yellow" href="{{ route('solutions') }}">Explore the platform</a>
-            <a class="field-text-link" href="{{ route('contact') }}">Plan a deployment <span>↗</span></a>
+<div class="agri-home">
+    <section class="agri-hero">
+        <div class="agri-hero-copy" data-motion="hero-copy">
+            <p class="agri-kicker" data-motion-item><span></span>{{ __('marketing.home.eyebrow') }}</p>
+            <h1 data-motion-item>{{ __('marketing.home.headline') }}</h1>
+            <p class="agri-hero-lede" data-motion-item>{{ __('marketing.home.lede') }}</p>
+            <div class="agri-actions" data-motion-item>
+                <a class="agri-button agri-button-primary" href="{{ route('contact') }}">{{ __('marketing.home.primary_cta') }}<span aria-hidden="true">↗</span></a>
+                <a class="agri-text-link" href="{{ route('solutions') }}">{{ __('marketing.home.secondary_cta') }}<span aria-hidden="true">→</span></a>
+            </div>
         </div>
-        <dl class="photo-hero-notes" data-motion-item>
-            <div><dt>For farmers</dt><dd>A familiar way to report what they see.</dd></div>
-            <div><dt>For field teams</dt><dd>A clear record of what needs attention.</dd></div>
-            <div><dt>For organisations</dt><dd>One view of farms, cases and follow-through.</dd></div>
-        </dl>
-    </div>
-</section>
 
-<section class="field-model-band" data-motion="reveal">
-    <div class="field-model-copy">
-        <p class="field-kicker"><span></span> Field context</p>
-        <h2>See the farm without losing sight of the farmer.</h2>
-        <p>Keep the field boundary, active crop and case context together while the farmer’s evidence remains clear and unobstructed.</p>
-    </div>
-    <div class="field-model-stage">
-        <div class="field-terrain-shell" data-field-terrain aria-hidden="true">
-            <div class="field-terrain-head"><span>FIELD MODEL / JIGAWA</span><b><i></i> LIVE CONTEXT</b></div>
-            <canvas data-field-terrain-canvas></canvas>
-            <div class="field-terrain-fallback"></div>
-            <div class="field-terrain-foot"><span>12.04°N / 8.32°E</span><span>PARCEL CONTEXT</span><span>CROP / MAIZE</span></div>
+        <figure class="agri-hero-photo" data-motion="hero-media">
+            <img src="{{ asset('images/field/jigawa-farmer.webp') }}" alt="{{ __('marketing.home.hero_image_alt') }}" width="1920" height="1080" fetchpriority="high" decoding="async">
+            <figcaption>{{ __('marketing.home.hero_caption') }}</figcaption>
+        </figure>
+    </section>
+
+    <section class="agri-field-model agri-section">
+        <div class="agri-field-model-copy" data-motion="reveal">
+            <p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.home.field_plan') }}</p>
+            <h2>{{ __('marketing.home.field_model_title') }}</h2>
+            <p>{{ __('marketing.home.field_model_body') }}</p>
         </div>
-    </div>
-</section>
-
-<section class="field-promise" data-motion="reveal">
-    <p>AGRISHIELD CONNECTS</p>
-    <div><span>THE FARM</span><i>+</i><span>THE SEASON</span><i>+</i><span>THE QUESTION</span><i>+</i><span>THE RESPONSE</span></div>
-</section>
-
-<section class="product-story field-section">
-    <div class="product-story-heading" data-motion="reveal">
-        <p class="field-kicker"><span></span> One crop-support workspace</p>
-        <h2>Know the field.<br>Keep the history.<br>Follow through.</h2>
-    </div>
-    <div class="product-story-list" data-motion="stagger">
-        <article data-motion-item><span>FARMS</span><h3>Build a dependable farm register</h3><p>Keep ownership, location, boundaries and organisation access in one private record.</p></article>
-        <article data-motion-item><span>CROP SEASONS</span><h3>Track what is growing now</h3><p>Connect each farm to its crop, planting period, harvest window and current season.</p></article>
-        <article data-motion-item><span>FIELD VOICE</span><h3>Receive questions in the moment</h3><p>Record or upload a voice note, attach it to a farm and retain the case for review.</p></article>
-        <article data-motion-item><span>CASES & ADVISORIES</span><h3>Turn evidence into accountable action</h3><p>Review crop images, publish practical advice and record whether it was acknowledged.</p></article>
-    </div>
-</section>
-
-<section class="record-spine field-section">
-    <header class="record-spine-intro">
-        <div>
-            <p class="field-kicker"><span></span> Field to follow-through</p>
-            <h2>One record.<br>Five responsible handoffs.</h2>
+        <div data-motion="reveal">
+            <article class="farm-plan farm-plan-standalone" aria-label="{{ __('marketing.home.field_plan') }}">
+                <header>
+                    <div><span>{{ __('marketing.home.field_plan') }}</span><strong>{{ __('marketing.home.field_name') }}</strong></div>
+                    <small><i></i>{{ __('marketing.home.context_ready') }}</small>
+                </header>
+                <div class="farm-plan-body">
+                    <svg class="farm-plan-map" viewBox="0 0 620 320" role="img" aria-label="{{ __('marketing.home.allocated') }}">
+                        <defs><pattern id="field-grid" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M34 0H0V34" fill="none" stroke="currentColor" stroke-opacity=".1"/></pattern></defs>
+                        <rect width="620" height="320" fill="url(#field-grid)"/>
+                        <path d="M68 68 245 31l111 72-20 163-219 18-64-106Z" class="plot plot-a"/>
+                        <path d="m245 31 111 72 180-29 47 106-58 105-189-19 20-163Z" class="plot plot-b"/>
+                        <path d="m73 178 64 106 199-18 189 19 58-105-31 116-397 4Z" class="plot plot-c"/>
+                        <path d="M68 68 245 31l111 72 180-29 47 106-31 116-397 4-82-122Z" class="farm-outline"/>
+                        <circle cx="410" cy="132" r="8" class="farm-marker"/><circle cx="410" cy="132" r="17" class="farm-marker-ring"/>
+                    </svg>
+                    <div class="farm-plan-sections">
+                        @foreach(__('marketing.home.sections') as $index => $section)
+                            <div><span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span><strong>{{ $section['name'] }}</strong><small>{{ $section['crop'] }} · {{ $section['area'] }}</small></div>
+                        @endforeach
+                    </div>
+                </div>
+                <footer><span></span>{{ __('marketing.home.allocated') }}</footer>
+            </article>
         </div>
-        <p>Every farmer question stays connected to the farm, current crop season, evidence, reviewer and response. Teams can see both the next action and the history behind it.</p>
-    </header>
-    <div class="record-spine-layout">
-        <ol class="record-steps" aria-label="AgriShield crop support workflow">
-            <li><span>01</span><div><small>FIELD TEAM</small><h3>Register the farm</h3><p>Confirm ownership, organisation access and field boundary.</p></div></li>
-            <li><span>02</span><div><small>FIELD TEAM</small><h3>Open the crop season</h3><p>Record the crop and planting window that shape the case context.</p></div></li>
-            <li><span>03</span><div><small>FARMER + FIELD OFFICER</small><h3>Capture the question</h3><p>Keep the voice note or crop image with the correct farm record.</p></div></li>
-            <li><span>04</span><div><small>REVIEWER</small><h3>Review the evidence</h3><p>Assess what was reported and document the responsible next step.</p></div></li>
-            <li><span>05</span><div><small>PROGRAMME TEAM</small><h3>Close the loop</h3><p>Publish the advisory and retain its reading and acknowledgement trail.</p></div></li>
+    </section>
+
+    <section class="agri-audiences agri-section">
+        <header class="agri-section-head" data-motion="reveal">
+            <div><p class="agri-kicker"><span></span>{{ __('marketing.home.audience_eyebrow') }}</p><h2>{{ __('marketing.home.audience_title') }}</h2></div>
+            <p>{{ __('marketing.home.audience_intro') }}</p>
+        </header>
+        <div class="audience-grid" data-motion="stagger">
+            @foreach(__('marketing.home.audiences') as $index => $audience)
+                <article class="audience-card audience-card-{{ $index + 1 }}" data-motion-item>
+                    <header><small>{{ $audience['label'] }}</small></header>
+                    <div><h3>{{ $audience['title'] }}</h3><p>{{ $audience['body'] }}</p></div>
+                    <ul>@foreach($audience['items'] as $item)<li><span aria-hidden="true">✓</span>{{ $item }}</li>@endforeach</ul>
+                </article>
+            @endforeach
+        </div>
+    </section>
+
+    <section class="agri-capabilities agri-section">
+        <header class="agri-section-head" data-motion="reveal">
+            <div><p class="agri-kicker"><span></span>{{ __('marketing.home.capabilities_eyebrow') }}</p><h2>{{ __('marketing.home.capabilities_title') }}</h2></div>
+            <p>{{ __('marketing.home.capabilities_intro') }}</p>
+        </header>
+        <div class="capability-atlas" data-motion="stagger">
+            @foreach(__('marketing.home.capabilities') as $feature)
+                <article class="capability-module capability-module-{{ $feature['visual'] }}" data-motion-item>
+                    <header><span>{{ $feature['code'] }}</span><i aria-hidden="true"></i></header>
+                    <div class="capability-instrument" aria-hidden="true">
+                        @switch($feature['visual'])
+                            @case('satellite')
+                                <div class="satellite-tile"><i></i><i></i><i></i><i></i><span>NDVI</span></div>
+                                <div class="signal-trend"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                                @break
+                            @case('soil')
+                                <div class="soil-gauge"><span style="--level:31%"></span><i></i></div>
+                                <div class="soil-readings"><i>pH 6.4</i><i>N 42</i><i>K 18</i></div>
+                                @break
+                            @case('diagnosis')
+                                <div class="diagnosis-view"><span></span><i></i><b>IMG 024</b></div>
+                                <div class="diagnosis-lines"><i></i><i></i><i></i></div>
+                                @break
+                            @case('voice')
+                                <div class="field-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                                <div class="voice-route-mini"><span>HA</span><i>→</i><span>TEXT</span><i>→</i><span>ACTION</span></div>
+                                @break
+                            @case('finance')
+                                <div class="finance-sheet"><span>₦</span><i></i><i></i><i></i><b>FARM LINKED</b></div>
+                                @break
+                            @case('weather')
+                                <div class="rain-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                                <div class="weather-axis"><span>NOW</span><span>+24H</span></div>
+                                @break
+                        @endswitch
+                    </div>
+                    <div class="capability-reading"><strong>{{ $feature['value'] }}</strong><small>{{ $feature['label'] }}</small></div>
+                    <div class="capability-copy"><h3>{{ $feature['title'] }}</h3><p>{{ $feature['body'] }}</p></div>
+                </article>
+            @endforeach
+        </div>
+        <p class="capability-atlas-note">{{ __('marketing.home.capabilities_note') }}</p>
+    </section>
+
+    <section class="agri-flow agri-section">
+        <div class="agri-flow-intro" data-motion="reveal">
+            <p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.home.flow_eyebrow') }}</p>
+            <h2>{{ __('marketing.home.flow_title') }}</h2>
+            <p>{{ __('marketing.home.flow_intro') }}</p>
+        </div>
+        <ol class="agri-flow-steps" data-motion="stagger">
+            @foreach(__('marketing.home.steps') as $step)
+                <li data-motion-item><span>{{ $step['number'] }}</span><div><small>{{ $step['label'] }}</small><h3>{{ $step['title'] }}</h3><p>{{ $step['body'] }}</p></div></li>
+            @endforeach
         </ol>
-        <article class="field-record-card" aria-label="Illustrative crop support record" data-motion="depth-card">
-            <header><span>SAMPLE CASE / MAIZE</span><b>AWAITING REVIEW</b></header>
-            <div class="field-record-context">
-                <div><small>Farm</small><strong>North plot</strong></div>
-                <div><small>Season</small><strong>2026 wet season</strong></div>
-                <div><small>Owner</small><strong>Field team</strong></div>
+    </section>
+
+    <section class="agri-product agri-section">
+        <header class="agri-section-head" data-motion="reveal">
+            <div><p class="agri-kicker"><span></span>{{ __('marketing.home.product_eyebrow') }}</p><h2>{{ __('marketing.home.product_title') }}</h2></div>
+            <p>{{ __('marketing.home.product_body') }}</p>
+        </header>
+        <div class="product-window" data-motion="depth-card">
+            <header class="product-window-bar">
+                <div class="product-window-brand"><img src="{{ asset('brand/agrishield-mark.svg') }}" alt="" width="30" height="30"><span><strong>AgriShield</strong><small>{{ __('marketing.home.dashboard.title') }}</small></span></div>
+                <span>{{ __('marketing.home.dashboard.season') }}</span><i aria-hidden="true"></i>
+            </header>
+            <div class="product-window-body">
+                <aside aria-hidden="true"><i class="active"></i><i></i><i></i><i></i></aside>
+                <div class="product-window-content">
+                    <div class="product-window-title"><div><small>{{ __('marketing.home.dashboard.status') }}</small><h3>{{ __('marketing.home.dashboard.farm') }}</h3></div><span>{{ __('marketing.home.dashboard.sections') }}</span></div>
+                    <div class="product-metrics">
+                        @foreach(__('marketing.home.sections') as $section)
+                            <div><small>{{ $section['name'] }}</small><strong>{{ $section['crop'] }}</strong><span>{{ $section['area'] }}</span></div>
+                        @endforeach
+                    </div>
+                    <div class="product-workspace">
+                        <div class="product-map" aria-hidden="true">
+                            <svg viewBox="0 0 620 320"><path d="M68 68 245 31l111 72-20 163-219 18-64-106Z"/><path d="m245 31 111 72 180-29 47 106-58 105-189-19 20-163Z"/><path d="m73 178 64 106 199-18 189 19 58-105-31 116-397 4Z"/><circle cx="410" cy="132" r="9"/></svg>
+                            <span>{{ __('marketing.home.dashboard.rain') }}</span>
+                        </div>
+                        <article class="product-alert">
+                            <small>{{ __('marketing.home.dashboard.attention') }}</small><h4>{{ __('marketing.home.dashboard.alert_title') }}</h4><p>{{ __('marketing.home.dashboard.alert_body') }}</p><b>{{ __('marketing.home.dashboard.action') }} <span aria-hidden="true">→</span></b>
+                        </article>
+                    </div>
+                </div>
             </div>
-            <div class="field-record-question">
-                <small>FARMER QUESTION</small>
-                <blockquote>“The lower leaves are turning yellow. What should I check first?”</blockquote>
-                <span>Voice note retained with case</span>
-            </div>
-            <div class="field-record-history">
-                <div><i></i><p><small>RECEIVED</small><strong>Question linked to farm and active crop season</strong></p></div>
-                <div><i></i><p><small>NEXT</small><strong>Assigned reviewer checks field evidence</strong></p></div>
-                <div class="pending"><i></i><p><small>THEN</small><strong>Advisory published and acknowledgement recorded</strong></p></div>
-            </div>
-            <footer>Illustrative workflow · not live farmer data</footer>
-        </article>
-    </div>
-</section>
+            <footer>{{ __('marketing.home.dashboard.note') }}</footer>
+        </div>
+    </section>
 
-<section class="field-documentary">
-    <figure data-motion="reveal">
-        <img src="{{ asset('images/field/hawul-borno-farmland.webp') }}" alt="People tending crops across farmland in Hawul, Borno State" width="1920" height="1080" loading="lazy" decoding="async" data-parallax-media>
-        <figcaption>Farmland in Hawul, Borno State · <a href="https://commons.wikimedia.org/wiki/File:Farmland_Hawul_Borno_State_Nigeria._2019.DSC01973.jpg">Ifeatu Nnaobi / CC BY-SA 4.0</a></figcaption>
-    </figure>
-    <div data-motion="reveal">
-        <p class="field-kicker"><span></span> Designed for field operations</p>
-        <h2>Technology is useful when the person responsible knows what happens next.</h2>
-        <p>AgriShield gives crop programmes a simple operating path: register the farm, open the crop season, capture the question, review the evidence and record the response.</p>
-        <a class="field-text-link" href="{{ route('impact') }}">See how the workflow moves <span>→</span></a>
-    </div>
-</section>
+    <section class="agri-field-story">
+        <figure data-motion="reveal">
+            <img src="{{ asset('images/field/hawul-borno-farmland.webp') }}" alt="{{ __('marketing.home.field_image_alt') }}" width="1800" height="2047" loading="lazy" decoding="async">
+            <figcaption>{{ __('marketing.home.field_image_caption') }}</figcaption>
+        </figure>
+        <div class="agri-field-copy" data-motion="reveal">
+            <p class="agri-kicker"><span></span>{{ __('marketing.home.field_eyebrow') }}</p><h2>{{ __('marketing.home.field_title') }}</h2><p>{{ __('marketing.home.field_body') }}</p>
+            <dl>@foreach(__('marketing.home.field_points') as $point)<div><dt>{{ $point['title'] }}</dt><dd>{{ $point['body'] }}</dd></div>@endforeach</dl>
+        </div>
+    </section>
 
-<section class="voice-feature field-section">
-    <div>
-        <p class="field-kicker"><span></span> Field Voice</p>
-        <h2>The field report starts with the farmer’s own words.</h2>
-        <p>Field Voice securely captures a voice note and keeps it connected to the relevant farm and organisation. Transcription and translation can be enabled with a configured language provider.</p>
-        <a class="field-button field-button-dark" href="{{ route('field-voice') }}">Explore Field Voice</a>
-    </div>
-    <div class="voice-receipt" aria-label="Example Field Voice case" data-motion="depth-card">
-        <header><span>FIELD VOICE / CASE</span><b>RECEIVED</b></header>
-        <div><small>QUESTION</small><p>“The lower leaves are turning yellow. What should I check first?”</p></div>
-        <dl><div><dt>Farm</dt><dd>North plot</dd></div><div><dt>Crop</dt><dd>Maize</dd></div><div><dt>Status</dt><dd>Awaiting review</dd></div></dl>
-        <footer>Illustrative record · not live farmer data</footer>
-    </div>
-</section>
+    <section class="agri-languages agri-section">
+        <div class="agri-language-copy" data-motion="reveal">
+            <p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.home.language_eyebrow') }}</p><h2>{{ __('marketing.home.language_title') }}</h2><p>{{ __('marketing.home.language_body') }}</p>
+        </div>
+        <div class="language-cards" data-motion="stagger">
+            @foreach(__('marketing.home.language_cards') as $language)
+                <a href="{{ request()->fullUrlWithQuery(['lang' => strtolower($language['code'])]) }}" @class(['active' => app()->getLocale() === strtolower($language['code'])]) data-motion-item>
+                    <span>{{ $language['code'] }}</span><strong>{{ $language['name'] }}</strong><p>{{ $language['sample'] }}</p><i aria-hidden="true">→</i>
+                </a>
+            @endforeach
+        </div>
+    </section>
 
-<section class="deployment-standard field-section">
-    <div class="deployment-standard-heading">
-        <p class="field-kicker"><span></span> Deployment standard</p>
-        <h2>Useful in the field.<br>Accountable at programme level.</h2>
-        <p>AgriShield is designed around the operating controls a crop programme needs before automation becomes useful.</p>
-    </div>
-    <div class="deployment-standard-grid">
-        <article><span>ACCESS</span><h3>Private organisation workspaces</h3><p>Farm, audio and crop-image records remain inside authorised organisation workflows.</p></article>
-        <article><span>CONTEXT</span><h3>Every case starts with a known farm</h3><p>Questions and evidence retain the crop season and ownership context needed for review.</p></article>
-        <article><span>ACCOUNTABILITY</span><h3>Advice has a visible trail</h3><p>Published actions, reading status and acknowledgement remain part of the operating record.</p></article>
-        <article><span>LIMITS</span><h3>Automation is provider-aware</h3><p>Transcription, translation and specialist analysis are enabled only when a deployment configures them.</p></article>
-    </div>
-</section>
+    <section class="agri-faq agri-section">
+        <header><p class="agri-kicker"><span></span>{{ __('marketing.home.faq_eyebrow') }}</p><h2>{{ __('marketing.home.faq_title') }}</h2></header>
+        <div class="agri-faq-list">
+            @foreach(__('marketing.home.faqs') as $faq)
+                <details><summary>{{ $faq['question'] }}<span aria-hidden="true">+</span></summary><p>{{ $faq['answer'] }}</p></details>
+            @endforeach
+        </div>
+    </section>
 
-<section class="deployment-faq field-section">
-    <header>
-        <p class="field-kicker"><span></span> Before a deployment</p>
-        <h2>Clear answers before field work begins.</h2>
-    </header>
-    <div class="deployment-faq-list">
-        <details>
-            <summary>Who is AgriShield built for?<span aria-hidden="true">+</span></summary>
-            <p>Crop programmes, cooperatives and extension teams that need a shared record of farms, farmer questions, crop cases and follow-through.</p>
-        </details>
-        <details>
-            <summary>Does AgriShield replace the extension officer?<span aria-hidden="true">+</span></summary>
-            <p>No. The current workflow helps the responsible team retain context, review evidence and issue accountable advice. It keeps human ownership visible.</p>
-        </details>
-        <details>
-            <summary>How does Field Voice handle local languages?<span aria-hidden="true">+</span></summary>
-            <p>The platform records or uploads a farmer’s voice note first. Transcription and translation can then be enabled with a configured language provider for the deployment.</p>
-        </details>
-        <details>
-            <summary>Can an organisation begin with one crop programme?<span aria-hidden="true">+</span></summary>
-            <p>Yes. The recommended starting point is one defined crop workflow, a responsible field team and a clear support problem to evaluate.</p>
-        </details>
-    </div>
-</section>
-
-<section class="ledger-closing">
-    <div><span>FOR CROP PROGRAMMES AND EXTENSION TEAMS</span><h2>Start with one clear field workflow.</h2></div>
-    <div><p>Bring one crop programme, a defined field team and a support problem worth solving.</p><a class="field-button field-button-yellow" href="{{ route('contact') }}">Discuss a focused deployment</a></div>
-</section>
+    <section class="agri-closing">
+        <div><span>{{ strtoupper(__('marketing.home.closing_label')) }}</span><h2>{{ __('marketing.home.closing_title') }}</h2></div>
+        <div><p>{{ __('marketing.home.closing_body') }}</p><a class="agri-button agri-button-yellow" href="{{ route('contact') }}">{{ __('marketing.home.closing_cta') }}<span aria-hidden="true">↗</span></a></div>
+    </section>
+</div>
 @endsection
