@@ -72,7 +72,6 @@ return [
         'capabilities_eyebrow' => 'Field intelligence, made usable',
         'capabilities_title' => 'The signals and services behind each farm decision.',
         'capabilities_intro' => 'AgriShield brings remote sensing, farmer evidence and operational services into the same farm record. Each capability is shown with its source, status and practical next step.',
-        'capabilities_note' => 'Availability depends on the providers configured for each deployment.',
         'capabilities' => [
             ['visual' => 'satellite', 'code' => 'SAT / NDVI', 'title' => 'Satellite crop monitoring', 'body' => 'Review supported satellite observations and NDVI vegetation signals by farm, section and date.', 'value' => '0.72', 'label' => 'NDVI · healthy signal'],
             ['visual' => 'soil', 'code' => 'SOIL / MOISTURE', 'title' => 'Soil health and moisture', 'body' => 'Keep supported moisture, pH, nitrogen, phosphorus, potassium and organic-carbon readings together.', 'value' => '31%', 'label' => 'Soil moisture'],
