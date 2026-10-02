@@ -2,9 +2,9 @@
 @section('title', __('marketing.pages.partners.meta_title'))
 @section('description', __('marketing.pages.partners.meta_description'))
 @section('content')
-<div class="inner-site">
-    <section class="inner-page-hero inner-page-hero-brief inner-page-hero-partners"><div data-motion="hero-copy"><p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.pages.partners.eyebrow') }}</p><h1>{{ __('marketing.pages.partners.title') }}</h1><p>{{ __('marketing.pages.partners.intro') }}</p></div><aside class="deployment-brief"><span>{{ __('marketing.pages.partners.starting_label') }}</span><ul>@foreach(array_slice(__('marketing.pages.partners.starting_points'), 0, 3) as $point)<li>{{ $point }}</li>@endforeach</ul></aside></section>
-    <section class="inner-section inner-partner-grid"><div><p class="agri-kicker"><span></span>{{ __('marketing.pages.partners.starting_label') }}</p><h2>{{ __('marketing.pages.partners.starting_title') }}</h2><p>{{ __('marketing.pages.partners.starting_body') }}</p></div><ul>@foreach(__('marketing.pages.partners.starting_points') as $point)<li>{{ $point }}</li>@endforeach</ul></section>
-    <section class="inner-feature-band"><div><p class="agri-kicker agri-kicker-light"><span></span>{{ __('marketing.pages.partners.proof_label') }}</p><h2>{{ __('marketing.pages.partners.proof_title') }}</h2></div><p>{{ __('marketing.pages.partners.proof_body') }}</p><a class="agri-button agri-button-yellow" href="{{ route('contact') }}">{{ __('marketing.home.closing_cta') }} <span aria-hidden="true">↗</span></a></section>
+<div class="gs-inner">
+    <section class="gs-partner-hero"><div class="gs-container"><div><p class="gs-context">{{ __('marketing.pages.partners.eyebrow') }}</p><h1>{{ __('marketing.pages.partners.title') }}</h1><p>{{ __('marketing.pages.partners.intro') }}</p></div><aside><strong>{{ __('marketing.pages.partners.starting_label') }}</strong><p>{{ __('marketing.pages.partners.starting_body') }}</p></aside></div></section>
+    <section class="gs-partner-list gs-container"><header><h2>{{ __('marketing.pages.partners.starting_title') }}</h2></header><ol>@foreach(__('marketing.pages.partners.starting_points') as $point)<li><span>{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>{{ $point }}</li>@endforeach</ol></section>
+    <section class="gs-responsibility"><div class="gs-container"><h2>{{ __('marketing.pages.partners.proof_title') }}</h2><div><p>{{ __('marketing.pages.partners.proof_body') }}</p><a class="gs-button gs-button-accent" href="{{ route('contact') }}">{{ __('marketing.home.closing_cta') }} ↗</a></div></div></section>
 </div>
 @endsection

@@ -90,6 +90,26 @@ test('the public navigation identifies the current page', function () {
         ->assertSee('>How it works</a>', escape: false);
 });
 
+test('the public website uses one restrained editorial design system', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('class="marketing-page gs-site', escape: false)
+        ->assertSee('class="gs-hero gs-container"', escape: false)
+        ->assertSee('class="gs-capability-list"', escape: false)
+        ->assertSee('class="gs-product-frame"', escape: false)
+        ->assertDontSee('class="agri-kicker', escape: false)
+        ->assertDontSee('class="audience-card', escape: false)
+        ->assertDontSee('class="capability-module', escape: false);
+
+    $this->get(route('about'))->assertSuccessful()->assertSee('class="gs-about-hero gs-container"', escape: false);
+    $this->get(route('solutions'))->assertSuccessful()->assertSee('class="gs-platform-hero"', escape: false);
+    $this->get(route('impact'))->assertSuccessful()->assertSee('class="gs-text-hero"', escape: false);
+    $this->get(route('partners'))->assertSuccessful()->assertSee('class="gs-partner-hero"', escape: false);
+    $this->get(route('team'))->assertSuccessful()->assertSee('class="gs-team-hero"', escape: false);
+    $this->get(route('field-voice'))->assertSuccessful()->assertSee('class="gs-voice-hero"', escape: false);
+    $this->get(route('contact'))->assertSuccessful()->assertSee('class="gs-contact-intro gs-container"', escape: false);
+});
+
 test('public crawler metadata is production ready', function () {
     $this->get(route('robots'))
         ->assertSuccessful()

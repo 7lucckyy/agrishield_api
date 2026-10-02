@@ -46,22 +46,20 @@
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="marketing-page credible-site field-site locale-{{ app()->getLocale() }}">
+<body class="marketing-page gs-site locale-{{ app()->getLocale() }}">
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <header class="field-header" data-header>
-        <div class="field-header-inner">
-            <a class="field-brand" href="{{ route('home') }}" aria-label="AgriShield AI home">
+    <header class="gs-header" data-header>
+        <div class="gs-container gs-header-inner">
+            <a class="gs-brand" href="{{ route('home') }}" aria-label="AgriShield AI home">
                 <img src="{{ asset('brand/agrishield-mark.svg') }}" alt="" width="42" height="42">
                 <span><strong>AgriShield</strong><small>NORTHERN NIGERIA</small></span>
             </a>
-            <nav class="field-nav" id="primary-navigation" aria-label="Primary navigation">
-                <span class="field-menu-eyebrow">{{ __('marketing.nav.explore') }}</span>
+            <nav class="gs-nav" id="primary-navigation" aria-label="Primary navigation">
                 <a href="{{ route('solutions') }}" @class(['active' => request()->routeIs('solutions')]) @if(request()->routeIs('solutions')) aria-current="page" @endif>{{ __('marketing.nav.platform') }}</a>
                 <a href="{{ route('impact') }}" @class(['active' => request()->routeIs('impact')]) @if(request()->routeIs('impact')) aria-current="page" @endif>{{ __('marketing.nav.how') }}</a>
-                <a href="{{ route('field-voice') }}" @class(['active' => request()->routeIs('field-voice')]) @if(request()->routeIs('field-voice')) aria-current="page" @endif>{{ __('marketing.nav.field_voice') }}</a>
                 <a href="{{ route('about') }}" @class(['active' => request()->routeIs('about', 'team')]) @if(request()->routeIs('about', 'team')) aria-current="page" @endif>{{ __('marketing.nav.about') }}</a>
             </nav>
-            <div class="field-header-actions">
+            <div class="gs-header-actions">
                 <details class="language-switcher">
                     <summary aria-label="{{ __('marketing.language.label') }}">{{ strtoupper(app()->getLocale()) }}<span aria-hidden="true">⌄</span></summary>
                     <div>
@@ -74,14 +72,14 @@
                 </details>
                 @auth
                     @if(auth()->user()->hasRole(\App\Enums\GlobalRole::PlatformAdmin->value))
-                        <a class="field-signin" href="{{ route('platform.dashboard') }}">{{ __('marketing.nav.open_platform') }}</a>
+                        <a class="gs-signin" href="{{ route('platform.dashboard') }}">{{ __('marketing.nav.open_platform') }}</a>
                     @elseif(auth()->user()->primaryOrganizationId())
-                        <a class="field-signin" href="{{ route('organization.dashboard', auth()->user()->primaryOrganizationId()) }}">{{ __('marketing.nav.open_workspace') }}</a>
+                        <a class="gs-signin" href="{{ route('organization.dashboard', auth()->user()->primaryOrganizationId()) }}">{{ __('marketing.nav.open_workspace') }}</a>
                     @endif
                 @else
-                    <a class="field-signin" href="{{ route('login') }}">{{ __('marketing.nav.sign_in') }}</a>
+                    <a class="gs-signin" href="{{ route('login') }}">{{ __('marketing.nav.sign_in') }}</a>
                 @endauth
-                <a class="field-button field-button-dark" href="{{ route('contact') }}">{{ __('marketing.nav.plan') }}</a>
+                <a class="gs-button gs-button-primary" href="{{ route('contact') }}">{{ __('marketing.nav.plan') }}</a>
             </div>
             <button class="menu-button" type="button" aria-label="{{ __('marketing.nav.open_menu') }}" aria-controls="primary-navigation" aria-expanded="false" data-menu-button data-open-label="{{ __('marketing.nav.open_menu') }}" data-close-label="{{ __('marketing.nav.close_menu') }}" data-menu-label-closed="{{ __('marketing.nav.menu') }}" data-menu-label-open="{{ __('marketing.nav.close') }}">
                 <span class="menu-button-label" data-menu-label>{{ __('marketing.nav.menu') }}</span>
@@ -90,14 +88,16 @@
         </div>
     </header>
     <main id="main-content">@yield('content')</main>
-    <footer class="field-footer">
-        <div class="field-footer-lead"><span>{{ strtoupper(__('marketing.footer.eyebrow')) }}</span><h2>{{ __('marketing.footer.title') }}</h2></div>
-        <div class="field-footer-grid">
+    <footer class="gs-footer">
+        <div class="gs-container">
+        <div class="gs-footer-lead"><span>{{ strtoupper(__('marketing.footer.eyebrow')) }}</span><h2>{{ __('marketing.footer.title') }}</h2></div>
+        <div class="gs-footer-grid">
             <div><p>{{ __('marketing.footer.body') }}</p><a href="mailto:hello@agrishield.ai">hello@agrishield.ai</a></div>
             <div><strong>{{ __('marketing.footer.product') }}</strong><a href="{{ route('solutions') }}">{{ __('marketing.nav.platform') }}</a><a href="{{ route('field-voice') }}">{{ __('marketing.nav.field_voice') }}</a><a href="{{ route('impact') }}">{{ __('marketing.nav.how') }}</a></div>
             <div><strong>{{ __('marketing.footer.company') }}</strong><a href="{{ route('about') }}">{{ __('marketing.footer.about') }}</a><a href="{{ route('team') }}">{{ __('marketing.footer.team') }}</a><a href="{{ route('partners') }}">{{ __('marketing.footer.work') }}</a><a href="{{ route('contact') }}">{{ __('marketing.footer.contact') }}</a></div>
         </div>
         <small>© {{ now()->year }} AgriShield AI Ltd. {{ __('marketing.footer.disclaimer') }}</small>
+        </div>
     </footer>
 </body>
 </html>
