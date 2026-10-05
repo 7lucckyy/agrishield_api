@@ -152,35 +152,54 @@ class _HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                contextLabel.toUpperCase(),
+                contextLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: AgriColors.grove,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 10,
-                  letterSpacing: 1.15,
+                  color: AgriColors.muted,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 '${_greeting()}, $firstName',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              const SizedBox(height: 5),
-              const Text(
+              const SizedBox(height: 4),
+              Text(
                 'Here is what your farms need today.',
-                style: TextStyle(color: AgriColors.muted, fontSize: 15),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: AgriColors.muted),
               ),
             ],
           ),
         ),
         const SizedBox(width: 12),
-        Material(
-          color: AgriColors.forest,
-          shape: const CircleBorder(),
-          child: IconButton(
-            tooltip: 'Open profile',
-            onPressed: () => context.go('/more'),
-            icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
+        Tooltip(
+          message: 'Open profile',
+          child: Material(
+            color: AgriColors.leafSoft,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => context.go('/more'),
+              child: SizedBox.square(
+                dimension: 44,
+                child: Center(
+                  child: Text(
+                    firstName.isEmpty
+                        ? '?'
+                        : firstName.characters.first.toUpperCase(),
+                    style: const TextStyle(
+                      color: AgriColors.forest,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -312,12 +331,12 @@ class _SituationPanel extends StatelessWidget {
                               'FIELD IN FOCUS',
                               style: TextStyle(
                                 color: AgriColors.millet,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1,
-                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: .8,
+                                fontSize: 11,
                               ),
                             ),
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 6),
                             Text(
                               farm.name,
                               style: Theme.of(context).textTheme.titleLarge
@@ -328,7 +347,10 @@ class _SituationPanel extends StatelessWidget {
                                   .whereType<String>()
                                   .where((value) => value.isNotEmpty)
                                   .join(', '),
-                              style: const TextStyle(color: Color(0xFFC7D4CD)),
+                              style: const TextStyle(
+                                color: Color(0xFFC7D4CD),
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
@@ -340,11 +362,11 @@ class _SituationPanel extends StatelessWidget {
                         color: hasRain
                             ? const Color(0xFF9FD5E3)
                             : AgriColors.millet,
-                        size: 34,
+                        size: 28,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 26),
+                  const SizedBox(height: 22),
                   Row(
                     children: [
                       _Signal(
@@ -397,9 +419,9 @@ class _Signal extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Color(0xFF9FB4A9),
-              fontSize: 8,
-              fontWeight: FontWeight.w900,
-              letterSpacing: .7,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: .5,
             ),
           ),
           const SizedBox(height: 4),
@@ -410,7 +432,7 @@ class _Signal extends StatelessWidget {
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -458,7 +480,7 @@ class _AttentionItem extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 11),
+                    const SizedBox(height: 10),
                     Text(
                       advisory.title,
                       style: Theme.of(context).textTheme.titleMedium,
@@ -468,17 +490,22 @@ class _AttentionItem extends StatelessWidget {
                       advisory.summary,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AgriColors.muted),
+                      style: const TextStyle(
+                        color: AgriColors.muted,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     const Row(
                       children: [
-                        Text(
-                          'Review evidence and next step',
-                          style: TextStyle(
-                            color: AgriColors.grove,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
+                        Flexible(
+                          child: Text(
+                            'Review evidence and next step',
+                            style: TextStyle(
+                              color: AgriColors.grove,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         SizedBox(width: 4),
@@ -519,12 +546,12 @@ class _ClearAttention extends StatelessWidget {
             children: [
               Text(
                 'No active warnings',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
               SizedBox(height: 3),
               Text(
                 'There is no urgent guidance for this farm. Check field conditions before major work.',
-                style: TextStyle(color: AgriColors.muted),
+                style: TextStyle(color: AgriColors.muted, fontSize: 13),
               ),
             ],
           ),
@@ -580,16 +607,19 @@ class _OverviewValue extends StatelessWidget {
           style: const TextStyle(
             color: AgriColors.forest,
             fontSize: 20,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
+        const SizedBox(height: 2),
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: AgriColors.muted,
-            fontSize: 8,
-            fontWeight: FontWeight.w900,
-            letterSpacing: .65,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: .4,
           ),
         ),
       ],
@@ -625,7 +655,7 @@ class _WeatherStrip extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 116,
+      height: 124,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: weather.take(7).length,
@@ -638,7 +668,7 @@ class _WeatherStrip extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: index == 0 ? AgriColors.sky : AgriColors.paper,
-              borderRadius: BorderRadius.circular(AgriRadius.sm),
+              borderRadius: BorderRadius.circular(AgriRadius.md),
               border: Border.all(
                 color: index == 0 ? AgriColors.sky : AgriColors.line,
               ),
@@ -654,8 +684,8 @@ class _WeatherStrip extends StatelessWidget {
                       : DateFormat('EEE').format(date).toUpperCase(),
                   style: TextStyle(
                     color: index == 0 ? Colors.white70 : AgriColors.muted,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: .6,
                   ),
                 ),
@@ -672,8 +702,8 @@ class _WeatherStrip extends StatelessWidget {
                   day.maximum == null ? '—' : '${day.maximum!.round()}°',
                   style: TextStyle(
                     color: index == 0 ? Colors.white : AgriColors.ink,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
@@ -748,16 +778,23 @@ class _ActionButton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AgriColors.forest, size: 28),
-            const SizedBox(height: 22),
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: const BoxDecoration(
+                color: Color(0xB3FFFFFF),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AgriColors.forest, size: 20),
+            ),
+            const SizedBox(height: 18),
             Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
             ),
             const SizedBox(height: 2),
             Text(
               detail,
-              style: const TextStyle(color: AgriColors.muted, fontSize: 11),
+              style: const TextStyle(color: AgriColors.muted, fontSize: 12),
             ),
           ],
         ),
@@ -775,7 +812,7 @@ class _FinanceRow extends StatelessWidget {
     onTap: onTap,
     child: const Row(
       children: [
-        Icon(Icons.agriculture_outlined, color: AgriColors.indigo, size: 30),
+        Icon(Icons.agriculture_outlined, color: AgriColors.indigo, size: 26),
         SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -783,7 +820,7 @@ class _FinanceRow extends StatelessWidget {
             children: [
               Text(
                 'Equipment and input programmes',
-                style: TextStyle(fontWeight: FontWeight.w900),
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
               SizedBox(height: 3),
               Text(
@@ -793,7 +830,7 @@ class _FinanceRow extends StatelessWidget {
             ],
           ),
         ),
-        Icon(Icons.arrow_forward_rounded),
+        Icon(Icons.chevron_right_rounded, color: AgriColors.muted),
       ],
     ),
   );
@@ -855,7 +892,7 @@ class _AttentionLoading extends StatelessWidget {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
         SizedBox(width: 12),
-        Text('Checking current farm guidance…'),
+        Expanded(child: Text('Checking current farm guidance…')),
       ],
     ),
   );

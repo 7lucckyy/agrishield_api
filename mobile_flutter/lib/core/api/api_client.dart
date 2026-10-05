@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../models/models.dart';
+import 'api_logger.dart';
 
 class ApiException implements Exception {
   const ApiException(this.message, {this.statusCode, this.errors = const {}});
@@ -27,6 +28,9 @@ class ApiClient {
               headers: const {'Accept': 'application/json'},
             ),
           ) {
+    if (kDebugMode) {
+      _dio.interceptors.add(ApiLogInterceptor());
+    }
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {
@@ -403,13 +407,21 @@ class ApiClient {
   }
 }
 
+const defaultApiBaseUrl = 'https://agrishield.ng/api/v1';
+
+/// Resolves the API base URL, defaulting to [defaultApiBaseUrl] unless
+/// `--dart-define=API_BASE_URL=...` points the build elsewhere.
 String configuredApiBaseUrl({
   String? endpoint,
   String? environment,
   bool? release,
 }) {
   final configuredUrl =
-      endpoint ?? const String.fromEnvironment('API_BASE_URL');
+      endpoint ??
+      const String.fromEnvironment(
+        'API_BASE_URL',
+        defaultValue: defaultApiBaseUrl,
+      );
   final appEnvironment =
       environment ??
       const String.fromEnvironment('APP_ENV', defaultValue: 'development');

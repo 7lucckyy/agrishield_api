@@ -1,13 +1,14 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/agri_widgets.dart';
-
-const _northernFarmersImageUrl =
-    'https://commons.wikimedia.org/wiki/Special:FilePath/Nigerian_farmers.jpg?width=1600';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -17,9 +18,13 @@ class SplashScreen extends StatelessWidget {
     body: Stack(
       fit: StackFit.expand,
       children: [
-        _NorthernFarmersImage(
+        Image.asset(
+          'assets/images/northern-nigeria-farmers-onboarding.png',
           fit: BoxFit.cover,
-          alignment: Alignment.topCenter,
+          alignment: const Alignment(.35, -.2),
+          semanticLabel: 'Two farmers inspecting sorghum and maize at sunrise',
+          errorBuilder: (context, error, stackTrace) =>
+              const _FarmImageFallback(),
         ),
         const DecoratedBox(
           decoration: BoxDecoration(
@@ -57,9 +62,11 @@ class SplashScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 12),
-                    Text(
-                      'Opening your field workspace',
-                      style: TextStyle(color: Color(0xFFE7F0E9)),
+                    Flexible(
+                      child: Text(
+                        'Opening your field workspace',
+                        style: TextStyle(color: Color(0xFFE7F0E9)),
+                      ),
                     ),
                   ],
                 ),
@@ -72,75 +79,154 @@ class SplashScreen extends StatelessWidget {
   );
 }
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AgriColors.forest,
-    body: SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Row(
-                children: [
-                  Expanded(child: _BrandLockup(light: true)),
-                  _OnboardingStep(),
-                ],
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  final _pageController = PageController();
+  int _page = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    for (final slide in _onboardingSlides) {
+      precacheImage(AssetImage(slide.asset), context);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goToPage(int page) => _pageController.animateToPage(
+    page,
+    duration: const Duration(milliseconds: 450),
+    curve: Curves.easeOutCubic,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final slide = _onboardingSlides[_page];
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: AgriColors.forest,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              itemCount: _onboardingSlides.length,
+              onPageChanged: (page) => setState(() => _page = page),
+              itemBuilder: (context, index) => _ParallaxSlideImage(
+                controller: _pageController,
+                index: index,
+                slide: _onboardingSlides[index],
               ),
-              const SizedBox(height: 24),
-              _OnboardingPhoto(height: constraints.maxHeight > 700 ? 292 : 186),
-              const SizedBox(height: 18),
-              const _TrustLine(),
-              const SizedBox(height: 12),
-              Text(
-                'Know what your crop needs. Act with confidence.',
-                style: Theme.of(context).textTheme.displaySmall
-                    ?.copyWith(color: Colors.white, height: 1.04),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'From farm boundaries to crop checks and voice guidance, AgriShield helps you make the next field decision with confidence.',
-                style: TextStyle(
-                  color: Color(0xFFD8E6DD),
-                  fontSize: 16,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 22),
-              const _CapabilityHeading(),
-              const SizedBox(height: 10),
-              const _ValueRail(),
-              const SizedBox(height: 24),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AgriColors.millet,
-                  foregroundColor: AgriColors.ink,
-                ),
-                onPressed: () => context.go('/register'),
-                child: const Text('Create my farmer account'),
-              ),
-              const SizedBox(height: 10),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Color(0xFF759383)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AgriRadius.sm),
+            ),
+            const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x9912382C),
+                      Color(0x0012382C),
+                      Color(0x0012382C),
+                      Color(0xCC12382C),
+                      Color(0xFA0E2C22),
+                    ],
+                    stops: [0, .22, .4, .66, .9],
                   ),
                 ),
-                onPressed: () => context.go('/sign-in'),
-                child: const Text('I already have an account'),
               ),
-            ],
-          ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AgriSpacing.lg,
+                  AgriSpacing.md,
+                  AgriSpacing.lg,
+                  AgriSpacing.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    IgnorePointer(
+                      child: Row(
+                        children: [
+                          const Expanded(child: _BrandLockup(light: true)),
+                          _PageCounter(
+                            page: _page,
+                            total: _onboardingSlides.length,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    IgnorePointer(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 380),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        layoutBuilder: (current, previous) => Stack(
+                          alignment: Alignment.bottomLeft,
+                          children: [...previous, ?current],
+                        ),
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween(
+                              begin: const Offset(0, .08),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        ),
+                        child: _SlideCopy(key: ValueKey(_page), slide: slide),
+                      ),
+                    ),
+                    const SizedBox(height: AgriSpacing.lg),
+                    _PageIndicator(
+                      page: _page,
+                      total: _onboardingSlides.length,
+                      onSelected: _goToPage,
+                    ),
+                    const SizedBox(height: AgriSpacing.lg),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                        backgroundColor: AgriColors.millet,
+                        foregroundColor: AgriColors.ink,
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: () => context.go('/register'),
+                      child: const Text('Create my farmer account'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => context.go('/sign-in'),
+                      child: const Text('I already have an account'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -149,11 +235,11 @@ class SignInScreen extends ConsumerStatefulWidget {
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends ConsumerState<SignInScreen> {
+class _SignInScreenState extends ConsumerState<SignInScreen>
+    with _AuthSubmission {
   final _formKey = GlobalKey<FormState>();
   final _phone = TextEditingController(text: '+234');
   final _password = TextEditingController();
-  bool _hidden = true;
   @override
   void dispose() {
     _phone.dispose();
@@ -161,72 +247,71 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    await ref
+  @override
+  Set<String> get formFields => const {'phone', 'password'};
+
+  Future<void> _submit() => submitAuth(
+    _formKey,
+    () => ref
         .read(authControllerProvider.notifier)
-        .signIn(_phone.text, _password.text);
-    if (!mounted) return;
-    final result = ref.read(authControllerProvider);
-    if (result.hasError) showMessage(context, friendlyError(result.error));
-  }
+        .signIn(_phone.text, _password.text),
+  );
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(authControllerProvider).isLoading;
     return _AuthForm(
+      heroAsset: 'assets/images/jigawa-farmer.jpeg',
+      heroAlignment: const Alignment(.2, -.5),
+      heroTagline: 'Your fields are waiting.',
       title: 'Welcome back',
       subtitle: 'Sign in with the phone number on your farmer account.',
-      footer: TextButton(
+      footer: _AuthSwitchLink(
+        prompt: 'New to AgriShield?',
+        action: 'Create an account',
         onPressed: () => context.go('/register'),
-        child: const Text('New to AgriShield? Create an account'),
       ),
       children: [
         Form(
           key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                autofillHints: const [AutofillHints.telephoneNumber],
-                decoration: const InputDecoration(
-                  labelText: 'Phone number',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                ),
-                validator: _phoneValidator,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _password,
-                obscureText: _hidden,
-                autofillHints: const [AutofillHints.password],
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    onPressed: () => setState(() => _hidden = !_hidden),
-                    icon: Icon(
-                      _hidden
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
+          child: AutofillGroup(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _phone,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.telephoneNumber],
+                  decoration: const InputDecoration(
+                    labelText: 'Phone number',
+                    prefixIcon: Icon(Icons.phone_outlined),
                   ),
+                  validator: (value) =>
+                      serverError('phone') ?? _phoneValidator(value),
                 ),
-                validator: (value) =>
-                    (value?.length ?? 0) < 8 ? 'Enter your password' : null,
-              ),
-              const SizedBox(height: 22),
-              FilledButton(
-                onPressed: loading ? null : _submit,
-                child: loading
-                    ? const SizedBox.square(
-                        dimension: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Sign in'),
-              ),
-            ],
+                const SizedBox(height: 14),
+                _PasswordField(
+                  controller: _password,
+                  label: 'Password',
+                  autofillHints: const [AutofillHints.password],
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _submit(),
+                  validator: (value) =>
+                      serverError('password') ??
+                      ((value?.length ?? 0) < 8 ? 'Enter your password' : null),
+                ),
+                if (formError != null) ...[
+                  const SizedBox(height: AgriSpacing.md),
+                  _AuthErrorBanner(message: formError!),
+                ],
+                const SizedBox(height: AgriSpacing.lg),
+                _AuthSubmitButton(
+                  label: 'Sign in',
+                  loading: submitting,
+                  onPressed: _submit,
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -240,7 +325,8 @@ class RegisterScreen extends ConsumerStatefulWidget {
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen>
+    with _AuthSubmission {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _phone = TextEditingController(text: '+234');
@@ -257,9 +343,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    await ref.read(authControllerProvider.notifier).register({
+  @override
+  Set<String> get formFields => const {
+    'name',
+    'phone',
+    'password',
+    'password_confirmation',
+    'referral_code',
+  };
+
+  Future<void> _submit() => submitAuth(
+    _formKey,
+    () => ref.read(authControllerProvider.notifier).register({
       'name': _name.text.trim(),
       'phone': _phone.text.trim(),
       'password': _password.text,
@@ -267,91 +362,104 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       'locale': 'en',
       if (_referral.text.trim().isNotEmpty)
         'referral_code': _referral.text.trim(),
-    });
-    if (!mounted) return;
-    final result = ref.read(authControllerProvider);
-    if (result.hasError) showMessage(context, friendlyError(result.error));
-  }
+    }),
+  );
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(authControllerProvider).isLoading;
     return _AuthForm(
+      heroAsset: 'assets/images/northern-nigeria-farmers-onboarding.png',
+      heroAlignment: const Alignment(.35, -.1),
+      heroTagline: 'Practical guidance for every field.',
       title: 'Start with your own farm',
       subtitle: 'No organisation is required. A cluster code is optional if someone invited you.',
-      footer: TextButton(
+      footer: _AuthSwitchLink(
+        prompt: 'Already registered?',
+        action: 'Sign in',
         onPressed: () => context.go('/sign-in'),
-        child: const Text('Already registered? Sign in'),
       ),
       children: [
         Form(
           key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _name,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Full name',
-                  prefixIcon: Icon(Icons.person_outline),
+          child: AutofillGroup(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _name,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.name],
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator: (value) =>
+                      serverError('name') ??
+                      ((value?.trim().length ?? 0) < 2
+                          ? 'Enter your full name'
+                          : null),
                 ),
-                validator: (value) => (value?.trim().length ?? 0) < 2
-                    ? 'Enter your full name'
-                    : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Phone number',
-                  prefixIcon: Icon(Icons.phone_outlined),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _phone,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.telephoneNumber],
+                  decoration: const InputDecoration(
+                    labelText: 'Phone number',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                  validator: (value) =>
+                      serverError('phone') ?? _phoneValidator(value),
                 ),
-                validator: _phoneValidator,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _password,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Create password',
-                  prefixIcon: Icon(Icons.lock_outline),
+                const SizedBox(height: 14),
+                _PasswordField(
+                  controller: _password,
+                  label: 'Create password',
+                  helperText: 'At least 8 characters',
+                  autofillHints: const [AutofillHints.newPassword],
+                  validator: (value) =>
+                      serverError('password') ??
+                      ((value?.length ?? 0) < 8
+                          ? 'Use at least 8 characters'
+                          : null),
                 ),
-                validator: (value) => (value?.length ?? 0) < 8
-                    ? 'Use at least 8 characters'
-                    : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _confirm,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm password',
-                  prefixIcon: Icon(Icons.lock_reset_outlined),
+                const SizedBox(height: 14),
+                _PasswordField(
+                  controller: _confirm,
+                  label: 'Confirm password',
+                  prefixIcon: Icons.lock_reset_outlined,
+                  autofillHints: const [AutofillHints.newPassword],
+                  validator: (value) =>
+                      serverError('password_confirmation') ??
+                      (value != _password.text
+                          ? 'Passwords do not match'
+                          : null),
                 ),
-                validator: (value) =>
-                    value != _password.text ? 'Passwords do not match' : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _referral,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Cluster code (optional)',
-                  prefixIcon: Icon(Icons.groups_outlined),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _referral,
+                  textCapitalization: TextCapitalization.characters,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    labelText: 'Cluster code (optional)',
+                    prefixIcon: Icon(Icons.groups_outlined),
+                  ),
+                  validator: (_) => serverError('referral_code'),
                 ),
-              ),
-              const SizedBox(height: 22),
-              FilledButton(
-                onPressed: loading ? null : _submit,
-                child: loading
-                    ? const SizedBox.square(
-                        dimension: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Create account'),
-              ),
-            ],
+                if (formError != null) ...[
+                  const SizedBox(height: AgriSpacing.md),
+                  _AuthErrorBanner(message: formError!),
+                ],
+                const SizedBox(height: AgriSpacing.lg),
+                _AuthSubmitButton(
+                  label: 'Create account',
+                  loading: submitting,
+                  onPressed: _submit,
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -359,45 +467,461 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 }
 
+/// Runs a sign-in or registration request and keeps any failure on screen.
+///
+/// Server validation errors for [formFields] appear under their field; any
+/// other error is shown as [formError] above the submit button.
+mixin _AuthSubmission<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+  bool submitting = false;
+  String? formError;
+  Map<String, String> _serverErrors = const {};
+
+  Set<String> get formFields;
+
+  String? serverError(String field) => _serverErrors[field];
+
+  Future<void> submitAuth(
+    GlobalKey<FormState> formKey,
+    Future<void> Function() request,
+  ) async {
+    if (submitting) {
+      return;
+    }
+    _serverErrors = const {};
+    if (!formKey.currentState!.validate()) {
+      setState(() => formError = null);
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      formError = null;
+      submitting = true;
+    });
+    try {
+      await request();
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final fieldErrors = <String, String>{};
+      final otherErrors = <String>[];
+      for (final MapEntry(:key, value: messages) in error.errors.entries) {
+        if (messages.isEmpty) {
+          continue;
+        }
+        if (formFields.contains(key)) {
+          fieldErrors[key] = messages.first;
+        } else {
+          otherErrors.add(messages.first);
+        }
+      }
+      setState(() {
+        _serverErrors = fieldErrors;
+        formError = otherErrors.isNotEmpty
+            ? otherErrors.join('\n')
+            : fieldErrors.isNotEmpty
+            ? 'Please check the highlighted fields.'
+            : error.message;
+      });
+      formKey.currentState?.validate();
+    } catch (error) {
+      if (mounted) {
+        setState(() => formError = friendlyError(error));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => submitting = false);
+      }
+    }
+  }
+}
+
+class _AuthErrorBanner extends StatelessWidget {
+  const _AuthErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AgriColors.claySoft,
+        border: Border.all(color: const Color(0x339D4938)),
+        borderRadius: BorderRadius.circular(AgriRadius.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AgriColors.clay,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AgriColors.clay,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _AuthForm extends StatelessWidget {
   const _AuthForm({
+    required this.heroAsset,
+    required this.heroAlignment,
+    required this.heroTagline,
     required this.title,
     required this.subtitle,
     required this.children,
     required this.footer,
   });
+
+  static const _sheetRadius = 32.0;
+
+  final String heroAsset;
+  final Alignment heroAlignment;
+  final String heroTagline;
   final String title;
   final String subtitle;
   final List<Widget> children;
   final Widget footer;
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(AgriSpacing.lg),
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton(
-              onPressed: () => context.go('/welcome'),
-              icon: const Icon(Icons.arrow_back_rounded),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final heroHeight = (MediaQuery.sizeOf(context).height * .34).clamp(
+      240.0,
+      320.0,
+    );
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AgriRadius.md),
+      borderSide: BorderSide.none,
+    );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: AgriColors.paper,
+        body: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: heroHeight + _sheetRadius,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    heroAsset,
+                    fit: BoxFit.cover,
+                    alignment: heroAlignment,
+                    excludeFromSemantics: true,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const _FarmImageFallback(),
+                  ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0x9912382C),
+                          Color(0x2612382C),
+                          Color(0xD912382C),
+                        ],
+                        stops: [0, .4, 1],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            SafeArea(
+              bottom: false,
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: heroHeight - MediaQuery.paddingOf(context).top,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AgriSpacing.md,
+                            AgriSpacing.sm,
+                            AgriSpacing.lg,
+                            AgriSpacing.lg,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _GlassIconButton(
+                                icon: Icons.arrow_back_rounded,
+                                tooltip: 'Back',
+                                onPressed: () => context.go('/welcome'),
+                              ),
+                              const Spacer(),
+                              const _BrandLockup(light: true),
+                              const SizedBox(height: 12),
+                              Text(
+                                heroTagline,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: Colors.white,
+                                  height: 1.15,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight:
+                              constraints.maxHeight -
+                              heroHeight +
+                              MediaQuery.paddingOf(context).top,
+                        ),
+                        child: DecoratedBox(
+                          decoration: const BoxDecoration(
+                            color: AgriColors.paper,
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(_sheetRadius),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              AgriSpacing.lg,
+                              AgriSpacing.xl,
+                              AgriSpacing.lg,
+                              AgriSpacing.lg +
+                                  MediaQuery.paddingOf(context).bottom,
+                            ),
+                            child: Theme(
+                              data: theme.copyWith(
+                                inputDecorationTheme: theme.inputDecorationTheme
+                                    .copyWith(
+                                      fillColor: AgriColors.canvas,
+                                      prefixIconColor: AgriColors.muted,
+                                      suffixIconColor: AgriColors.muted,
+                                      border: inputBorder,
+                                      enabledBorder: inputBorder,
+                                      focusedBorder: inputBorder.copyWith(
+                                        borderSide: const BorderSide(
+                                          color: AgriColors.forest,
+                                          width: 1.6,
+                                        ),
+                                      ),
+                                      errorBorder: inputBorder.copyWith(
+                                        borderSide: const BorderSide(
+                                          color: AgriColors.clay,
+                                        ),
+                                      ),
+                                      focusedErrorBorder: inputBorder.copyWith(
+                                        borderSide: const BorderSide(
+                                          color: AgriColors.clay,
+                                          width: 1.6,
+                                        ),
+                                      ),
+                                    ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    title,
+                                    style: theme.textTheme.headlineMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    subtitle,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: AgriColors.muted,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AgriSpacing.lg),
+                                  ...children,
+                                  const SizedBox(height: AgriSpacing.md),
+                                  footer,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PasswordField extends StatefulWidget {
+  const _PasswordField({
+    required this.controller,
+    required this.label,
+    required this.validator,
+    this.prefixIcon = Icons.lock_outline,
+    this.helperText,
+    this.autofillHints,
+    this.textInputAction = TextInputAction.next,
+    this.onFieldSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final FormFieldValidator<String> validator;
+  final IconData prefixIcon;
+  final String? helperText;
+  final Iterable<String>? autofillHints;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
+
+  @override
+  State<_PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<_PasswordField> {
+  bool _obscured = true;
+
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    controller: widget.controller,
+    obscureText: _obscured,
+    enableSuggestions: false,
+    autocorrect: false,
+    autofillHints: widget.autofillHints,
+    textInputAction: widget.textInputAction,
+    onFieldSubmitted: widget.onFieldSubmitted,
+    validator: widget.validator,
+    decoration: InputDecoration(
+      labelText: widget.label,
+      helperText: widget.helperText,
+      prefixIcon: Icon(widget.prefixIcon),
+      suffixIcon: IconButton(
+        tooltip: _obscured ? 'Show password' : 'Hide password',
+        onPressed: () => setState(() => _obscured = !_obscured),
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: Icon(
+            _obscured
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            key: ValueKey(_obscured),
           ),
-          const SizedBox(height: AgriSpacing.md),
-          const _BrandMark(size: 64),
-          const SizedBox(height: AgriSpacing.lg),
-          Text(title, style: Theme.of(context).textTheme.displaySmall),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyLarge
-                ?.copyWith(color: AgriColors.muted),
+        ),
+      ),
+    ),
+  );
+}
+
+class _AuthSubmitButton extends StatelessWidget {
+  const _AuthSubmitButton({
+    required this.label,
+    required this.loading,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool loading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => FilledButton(
+    style: FilledButton.styleFrom(
+      minimumSize: const Size.fromHeight(56),
+      backgroundColor: AgriColors.forest,
+      foregroundColor: Colors.white,
+      disabledBackgroundColor: AgriColors.grove,
+      shape: const StadiumBorder(),
+    ),
+    onPressed: loading ? null : onPressed,
+    child: loading
+        ? const SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward_rounded, size: 20),
+            ],
           ),
-          const SizedBox(height: AgriSpacing.xl),
-          ...children,
-          const SizedBox(height: 12),
-          footer,
-        ],
+  );
+}
+
+class _AuthSwitchLink extends StatelessWidget {
+  const _AuthSwitchLink({
+    required this.prompt,
+    required this.action,
+    required this.onPressed,
+  });
+
+  final String prompt;
+  final String action;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    alignment: WrapAlignment.center,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      Text(prompt, style: const TextStyle(color: AgriColors.muted)),
+      TextButton(
+        style: TextButton.styleFrom(foregroundColor: AgriColors.forest),
+        onPressed: onPressed,
+        child: Text(action),
+      ),
+    ],
+  );
+}
+
+class _GlassIconButton extends StatelessWidget {
+  const _GlassIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => ClipOval(
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+      child: Material(
+        color: const Color(0x33FFFFFF),
+        shape: const CircleBorder(side: BorderSide(color: Color(0x40FFFFFF))),
+        child: IconButton(
+          tooltip: tooltip,
+          color: Colors.white,
+          onPressed: onPressed,
+          icon: Icon(icon),
+        ),
       ),
     ),
   );
@@ -429,135 +953,213 @@ class _BrandLockup extends StatelessWidget {
     children: [
       const _BrandMark(size: 48),
       const SizedBox(width: 12),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'AGRISHIELD AI',
-            style: TextStyle(
-              color: light ? Colors.white : AgriColors.ink,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.1,
+      Flexible(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'AGRISHIELD AI',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: light ? Colors.white : AgriColors.ink,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.1,
+              ),
             ),
-          ),
-          Text(
-            'Field intelligence for farmers',
-            style: TextStyle(
-              color: light ? const Color(0xFFBDD0C2) : AgriColors.muted,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+            Text(
+              'Field intelligence for farmers',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: light ? const Color(0xFFBDD0C2) : AgriColors.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ],
   );
 }
 
-class _OnboardingPhoto extends StatelessWidget {
-  const _OnboardingPhoto({required this.height});
+class _OnboardingSlide {
+  const _OnboardingSlide({
+    required this.icon,
+    required this.eyebrow,
+    required this.title,
+    required this.body,
+    required this.semanticLabel,
+    required this.asset,
+    this.alignment = Alignment.center,
+    this.lift = 0,
+    this.credit,
+  });
 
-  final double height;
+  final String asset;
+  final Alignment alignment;
+
+  /// Fraction of the screen height to raise the photo so its subject clears the copy.
+  final double lift;
+  final IconData icon;
+  final String eyebrow;
+  final String title;
+  final String body;
+  final String semanticLabel;
+  final String? credit;
+}
+
+const _onboardingSlides = [
+  _OnboardingSlide(
+    asset: 'assets/images/northern-nigeria-farmers-onboarding.png',
+    alignment: Alignment(.35, -.2),
+    icon: Icons.location_on_outlined,
+    eyebrow: 'Made for Northern Nigerian farms',
+    title: 'Know what your crop needs. Act with confidence.',
+    body: 'AgriShield helps you make the next field decision with practical, local guidance.',
+    semanticLabel: 'Two farmers inspecting sorghum and maize at sunrise',
+  ),
+  _OnboardingSlide(
+    asset: 'assets/images/jigawa-farmer.jpeg',
+    alignment: Alignment(.1, 0),
+    icon: Icons.eco_outlined,
+    eyebrow: 'Crop checks',
+    title: 'Spot crop problems before they spread.',
+    body: 'Check your plants from your phone and get clear next steps for your field.',
+    semanticLabel: 'A farmer in Jigawa checking young plants in sandy soil',
+  ),
+  _OnboardingSlide(
+    asset: 'assets/images/kano-farmer-tending-field.webp',
+    alignment: Alignment(.35, 0),
+    lift: .09,
+    icon: Icons.mic_none_rounded,
+    eyebrow: 'Farm mapping · Voice guidance',
+    title: 'Map your farm. Ask by voice.',
+    body: 'Mark your farm boundaries and ask questions out loud when typing is not convenient.',
+    semanticLabel: 'A farmer tending a green rice field in Kano State',
+    credit: 'Photo: Photobyamin · Wikimedia Commons',
+  ),
+];
+
+class _ParallaxSlideImage extends StatelessWidget {
+  const _ParallaxSlideImage({
+    required this.controller,
+    required this.index,
+    required this.slide,
+  });
+
+  final PageController controller;
+  final int index;
+  final _OnboardingSlide slide;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    image: true,
-    label: 'Nigerian farmers working in a field',
-    child: Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0x40759383)),
-        borderRadius: BorderRadius.circular(AgriRadius.lg),
+  Widget build(BuildContext context) {
+    final image = Image.asset(
+      slide.asset,
+      fit: BoxFit.cover,
+      alignment: slide.alignment,
+      semanticLabel: slide.semanticLabel,
+      errorBuilder: (context, error, stackTrace) => const _FarmImageFallback(),
+    );
+    return ClipRect(
+      child: AnimatedBuilder(
+        animation: controller,
+        child: SizedBox.expand(child: image),
+        builder: (context, child) {
+          final position =
+              controller.hasClients && controller.position.haveDimensions
+              ? controller.page! - index
+              : 0.0;
+          final size = MediaQuery.sizeOf(context);
+          return Transform.translate(
+            offset: Offset(
+              position * size.width * .1,
+              -slide.lift * size.height,
+            ),
+            child: Transform.scale(scale: 1.2, child: child),
+          );
+        },
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AgriRadius.lg - 1),
-        child: Stack(
+    );
+  }
+}
+
+class _SlideCopy extends StatelessWidget {
+  const _SlideCopy({super.key, required this.slide});
+
+  final _OnboardingSlide slide;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _GlassChip(icon: slide.icon, label: slide.eyebrow),
+      const SizedBox(height: AgriSpacing.md),
+      Text(
+        slide.title,
+        style: Theme.of(context).textTheme.displaySmall
+            ?.copyWith(color: Colors.white, height: 1.04),
+      ),
+      const SizedBox(height: 12),
+      Text(
+        slide.body,
+        style: const TextStyle(
+          color: Color(0xFFD8E6DD),
+          fontSize: 16,
+          height: 1.45,
+        ),
+      ),
+      if (slide.credit != null) ...[
+        const SizedBox(height: 10),
+        Text(
+          slide.credit!,
+          style: const TextStyle(
+            color: Color(0xB3E7F0E9),
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ],
+  );
+}
+
+class _GlassChip extends StatelessWidget {
+  const _GlassChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(999),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0x26FFFFFF),
+          border: Border.all(color: const Color(0x33FFFFFF)),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              height: height,
-              width: double.infinity,
-              child: const _NorthernFarmersImage(
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-              ),
-            ),
-            const Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x0012382C), Color(0xB812382C)],
-                    stops: [.42, 1],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xE8F4E5BA),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'FIELD NOTE  ·  01',
-                  style: TextStyle(
-                    color: AgriColors.ink,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: .8,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 12,
-              bottom: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xD912382C),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.wb_sunny_outlined,
-                      color: AgriColors.millet,
-                      size: 16,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Built for the field',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Positioned(
-              right: 12,
-              bottom: 14,
+            Icon(icon, color: AgriColors.millet, size: 16),
+            const SizedBox(width: 6),
+            Flexible(
               child: Text(
-                'Photo: Mike Blyth · CC BY 2.5',
-                style: TextStyle(
-                  color: Color(0xFFE7F0E9),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                label.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFF4E5BA),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .9,
                 ),
               ),
             ),
@@ -568,38 +1170,75 @@ class _OnboardingPhoto extends StatelessWidget {
   );
 }
 
-class _NorthernFarmersImage extends StatelessWidget {
-  const _NorthernFarmersImage({required this.fit, required this.alignment});
+class _PageCounter extends StatelessWidget {
+  const _PageCounter({required this.page, required this.total});
 
-  final BoxFit fit;
-  final Alignment alignment;
+  final int page;
+  final int total;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    image: true,
-    label: 'Nigerian farmers working in a field',
-    child: Image.network(
-      _northernFarmersImageUrl,
-      fit: fit,
-      alignment: alignment,
-      excludeFromSemantics: true,
-      loadingBuilder: (context, child, loading) {
-        if (loading == null) return child;
-        return const _FarmImageFallback(loading: true);
-      },
-      errorBuilder: (context, error, stackTrace) => const _FarmImageFallback(),
+  Widget build(BuildContext context) => Text(
+    '${(page + 1).toString().padLeft(2, '0')} / ${total.toString().padLeft(2, '0')}',
+    style: const TextStyle(
+      color: Color(0xFFF4E5BA),
+      fontSize: 12,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 1,
+      fontFeatures: [FontFeature.tabularFigures()],
     ),
   );
 }
 
-class _FarmImageFallback extends StatelessWidget {
-  const _FarmImageFallback({this.loading = false});
+class _PageIndicator extends StatelessWidget {
+  const _PageIndicator({
+    required this.page,
+    required this.total,
+    required this.onSelected,
+  });
 
-  final bool loading;
+  final int page;
+  final int total;
+  final ValueChanged<int> onSelected;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
+  Widget build(BuildContext context) => Row(
+    children: [
+      for (var index = 0; index < total; index++)
+        Semantics(
+          button: true,
+          selected: index == page,
+          label: 'Slide ${index + 1} of $total',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => onSelected(index),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                margin: const EdgeInsets.only(right: 6),
+                height: 6,
+                width: index == page ? 28 : 8,
+                decoration: BoxDecoration(
+                  color: index == page
+                      ? AgriColors.millet
+                      : const Color(0x66FFFFFF),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
+}
+
+class _FarmImageFallback extends StatelessWidget {
+  const _FarmImageFallback();
+
+  @override
+  Widget build(BuildContext context) => const DecoratedBox(
+    decoration: BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -607,11 +1246,7 @@ class _FarmImageFallback extends StatelessWidget {
       ),
     ),
     child: Center(
-      child: Icon(
-        loading ? Icons.agriculture_outlined : Icons.landscape_outlined,
-        color: Color(0xFFDEBE67),
-        size: 48,
-      ),
+      child: Icon(Icons.landscape_outlined, color: Color(0xFFDEBE67), size: 48),
     ),
   );
 }
@@ -624,135 +1259,19 @@ class _SplashTopline extends StatelessWidget {
     children: [
       Icon(Icons.radar_rounded, color: AgriColors.millet, size: 18),
       SizedBox(width: 8),
-      Text(
-        'NORTHERN NIGERIA · FIELD READY',
-        style: TextStyle(
-          color: Color(0xFFF4E5BA),
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.1,
-        ),
-      ),
-    ],
-  );
-}
-
-class _TrustLine extends StatelessWidget {
-  const _TrustLine();
-
-  @override
-  Widget build(BuildContext context) => const Row(
-    children: [
-      Icon(Icons.location_on_outlined, color: AgriColors.millet, size: 18),
-      SizedBox(width: 7),
-      Expanded(
+      Flexible(
         child: Text(
-          'Made for Northern Nigerian farms',
+          'NORTHERN NIGERIA · FIELD READY',
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: Color(0xFFF4E5BA),
-            fontWeight: FontWeight.w800,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.1,
           ),
         ),
       ),
     ],
-  );
-}
-
-class _OnboardingStep extends StatelessWidget {
-  const _OnboardingStep();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-    decoration: BoxDecoration(
-      color: const Color(0x29102019),
-      border: Border.all(color: const Color(0x33759383)),
-      borderRadius: BorderRadius.circular(AgriRadius.sm),
-    ),
-    child: const Text(
-      'START HERE',
-      style: TextStyle(
-        color: Color(0xFFF4E5BA),
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        letterSpacing: .9,
-      ),
-    ),
-  );
-}
-
-class _CapabilityHeading extends StatelessWidget {
-  const _CapabilityHeading();
-
-  @override
-  Widget build(BuildContext context) => const Row(
-    children: [
-      Text(
-        'YOUR FIELD TOOLKIT',
-        style: TextStyle(
-          color: Color(0xFFF4E5BA),
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1,
-        ),
-      ),
-      SizedBox(width: 10),
-      Expanded(child: Divider(color: Color(0x33759383))),
-    ],
-  );
-}
-
-class _ValueRail extends StatelessWidget {
-  const _ValueRail();
-
-  @override
-  Widget build(BuildContext context) => const Row(
-    children: [
-      Expanded(
-        child: _ValueItem(icon: Icons.map_outlined, label: 'Map your farm'),
-      ),
-      SizedBox(width: 8),
-      Expanded(
-        child: _ValueItem(icon: Icons.mic_none_rounded, label: 'Ask by voice'),
-      ),
-      SizedBox(width: 8),
-      Expanded(
-        child: _ValueItem(icon: Icons.eco_outlined, label: 'Check crops'),
-      ),
-    ],
-  );
-}
-
-class _ValueItem extends StatelessWidget {
-  const _ValueItem({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 82,
-    padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      color: const Color(0x29102019),
-      border: Border.all(color: const Color(0x33759383)),
-      borderRadius: BorderRadius.circular(AgriRadius.sm),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: AgriColors.millet, size: 20),
-        const Spacer(),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    ),
   );
 }
 

@@ -793,7 +793,7 @@ class _FarmHero extends StatelessWidget {
                     style: TextStyle(
                       color: AgriColors.millet,
                       fontSize: 10,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 1,
                     ),
                   ),
@@ -934,7 +934,7 @@ class _SoilMetric extends StatelessWidget {
           style: const TextStyle(
             color: AgriColors.soil,
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],

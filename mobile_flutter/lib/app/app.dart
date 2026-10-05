@@ -26,10 +26,15 @@ class AgriShieldApp extends ConsumerWidget {
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authControllerProvider);
-  return GoRouter(
+  final authState = ValueNotifier(ref.read(authControllerProvider));
+  ref.listen(authControllerProvider, (_, next) => authState.value = next);
+  ref.onDispose(authState.dispose);
+
+  final router = GoRouter(
     initialLocation: '/splash',
+    refreshListenable: authState,
     redirect: (context, state) {
+      final auth = authState.value;
       final location = state.matchedLocation;
       if (auth.isLoading) return location == '/splash' ? null : '/splash';
       final signedIn = auth.value?.isAuthenticated ?? false;
@@ -116,6 +121,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(router.dispose);
+  return router;
 });
 
 class AppShell extends ConsumerWidget {

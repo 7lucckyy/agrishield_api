@@ -64,19 +64,36 @@ ThemeData buildAgriShieldTheme() {
     scaffoldBackgroundColor: AgriColors.canvas,
     textTheme: text.copyWith(
       displaySmall: text.displaySmall?.copyWith(
+        fontSize: 32,
         fontWeight: FontWeight.w800,
-        letterSpacing: -1.1,
+        letterSpacing: -1,
       ),
       headlineMedium: text.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w800,
-        letterSpacing: -.8,
-        height: 1.08,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -.5,
+        height: 1.15,
       ),
-      titleLarge: text.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-      titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-      bodyLarge: text.bodyLarge?.copyWith(height: 1.48, fontSize: 16),
+      titleLarge: text.titleLarge?.copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -.2,
+      ),
+      titleMedium: text.titleMedium?.copyWith(
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+      ),
+      bodyLarge: text.bodyLarge?.copyWith(height: 1.45, fontSize: 15),
       bodyMedium: text.bodyMedium?.copyWith(height: 1.45, fontSize: 14),
-      labelLarge: text.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+      bodySmall: text.bodySmall?.copyWith(
+        height: 1.4,
+        fontSize: 12,
+        color: AgriColors.muted,
+      ),
+      labelLarge: text.labelLarge?.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+      ),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: AgriColors.canvas,
@@ -87,6 +104,7 @@ ThemeData buildAgriShieldTheme() {
     cardTheme: const CardThemeData(
       color: AgriColors.paper,
       elevation: 0,
+      clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         side: BorderSide(color: AgriColors.line),
@@ -116,7 +134,7 @@ ThemeData buildAgriShieldTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AgriRadius.sm),
         ),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -126,20 +144,36 @@ ThemeData buildAgriShieldTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AgriRadius.sm),
         ),
-        textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
     ),
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(minimumSize: const Size.square(48)),
     ),
-    navigationBarTheme: const NavigationBarThemeData(
-      height: 76,
+    navigationBarTheme: NavigationBarThemeData(
+      height: 68,
       backgroundColor: AgriColors.paper,
       indicatorColor: AgriColors.leafSoft,
       elevation: 0,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      labelTextStyle: WidgetStatePropertyAll(
-        TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          fontSize: 11,
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w500,
+          color: states.contains(WidgetState.selected)
+              ? AgriColors.forest
+              : AgriColors.muted,
+        ),
+      ),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 22,
+          color: states.contains(WidgetState.selected)
+              ? AgriColors.forest
+              : AgriColors.muted,
+        ),
       ),
     ),
     dividerTheme: const DividerThemeData(color: AgriColors.line, thickness: 1),

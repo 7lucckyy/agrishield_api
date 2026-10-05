@@ -227,7 +227,7 @@ class _AssistChoice extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 34,
                 color: AgriColors.line,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
