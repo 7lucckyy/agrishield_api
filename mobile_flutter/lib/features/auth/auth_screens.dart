@@ -91,9 +91,7 @@ class WelcomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              _OnboardingPhoto(
-                height: constraints.maxHeight > 700 ? 292 : 186,
-              ),
+              _OnboardingPhoto(height: constraints.maxHeight > 700 ? 292 : 186),
               const SizedBox(height: 18),
               const _TrustLine(),
               const SizedBox(height: 12),
@@ -499,7 +497,10 @@ class _OnboardingPhoto extends StatelessWidget {
               top: 12,
               left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xE8F4E5BA),
                   borderRadius: BorderRadius.circular(20),
@@ -519,7 +520,10 @@ class _OnboardingPhoto extends StatelessWidget {
               left: 12,
               bottom: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xD912382C),
                   borderRadius: BorderRadius.circular(20),
