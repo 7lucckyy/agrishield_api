@@ -13,6 +13,7 @@ use App\Exceptions\ActiveCropCycleExistsException;
 use App\Models\CropCycle;
 use App\Models\Farm;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 final class CreateCropCycle
@@ -23,11 +24,23 @@ final class CreateCropCycle
     public function execute(Farm $farm, array $data): CropCycle
     {
         $data['status'] ??= CropCycleStatus::Active->value;
+        $sectionIds = Arr::pull($data, 'farm_section_ids', []);
+        $sectionIds = is_array($sectionIds) ? $sectionIds : [];
 
         try {
-            $cropCycle = DB::transaction(
-                fn (): CropCycle => $farm->cropCycles()->create($data),
-            );
+            $cropCycle = DB::transaction(function () use ($farm, $data, $sectionIds): CropCycle {
+                $lockedFarm = Farm::query()->lockForUpdate()->findOrFail($farm->getKey());
+
+                if ($data['status'] === CropCycleStatus::Active->value
+                    && $lockedFarm->cropCycles()->where('status', CropCycleStatus::Active)->exists()) {
+                    throw new ActiveCropCycleExistsException;
+                }
+
+                $cycle = $lockedFarm->cropCycles()->create($data);
+                $cycle->sections()->sync($sectionIds);
+
+                return $cycle;
+            });
         } catch (QueryException $exception) {
             if ($exception->getCode() === '23505'
                 && str_contains($exception->getMessage(), 'uniq_active_cycle_per_farm')) {
@@ -46,6 +59,6 @@ final class CreateCropCycle
             );
         }
 
-        return $cropCycle->load(['farm:id,uuid', 'crop']);
+        return $cropCycle->load(['farm:id,uuid', 'crop', 'sections.farm:id,uuid,area_hectares', 'sections.crop']);
     }
 }

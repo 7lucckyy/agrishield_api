@@ -17,7 +17,7 @@ final class ListFarmSectionController extends Controller
         Gate::authorize('view', $farm);
 
         $sections = $farm->sections()
-            ->with(['farm:id,uuid,area_hectares', 'crop'])
+            ->with(['farm:id,uuid,area_hectares', 'crop', 'cropCycles:id'])
             ->orderBy('position')
             ->orderBy('name')
             ->get();

@@ -12,6 +12,8 @@ use App\Models\Farm;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 final class StoreDiagnosisRequestController extends Controller
 {
@@ -21,7 +23,13 @@ final class StoreDiagnosisRequestController extends Controller
         $user = $request->user();
         /** @var UploadedFile $image */
         $image = $request->file('image');
-        $diagnosis = $createDiagnosisRequest->execute($farm, $user, $image, $request->safe()->except('image'));
+        $clientRequestId = $request->header('Idempotency-Key');
+        if ($clientRequestId !== null && ! Str::isUuid($clientRequestId)) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'The Idempotency-Key header must be a valid UUID.',
+            ]);
+        }
+        $diagnosis = $createDiagnosisRequest->execute($farm, $user, $image, $request->safe()->except('image'), $clientRequestId);
         $diagnosis->load('farm:id,uuid');
 
         return (new DiagnosisRequestResource($diagnosis))->response()->setStatusCode(202);

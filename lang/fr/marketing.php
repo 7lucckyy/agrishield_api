@@ -9,13 +9,18 @@ return [
     ],
     'language' => ['label' => 'Langue', 'current' => 'Français', 'en' => 'English', 'ha' => 'Hausa', 'fr' => 'Français'],
     'nav' => [
-        'explore' => 'Découvrir AgriShield', 'home' => 'Accueil', 'platform' => 'Plateforme', 'field_voice' => 'Voix du terrain', 'how' => 'Fonctionnement', 'about' => 'À propos', 'work' => 'Collaborer', 'sign_in' => 'Connexion', 'open_platform' => 'Ouvrir la plateforme', 'open_workspace' => 'Ouvrir l’espace', 'plan' => 'Planifier un déploiement', 'menu' => 'Menu', 'close' => 'Fermer', 'open_menu' => 'Ouvrir le menu principal', 'close_menu' => 'Fermer le menu principal',
+        'explore' => 'Découvrir AgriShield', 'home' => 'Accueil', 'platform' => 'Plateforme', 'field_voice' => 'Voix du terrain', 'how' => 'Flux de travail', 'about' => 'Entreprise', 'work' => 'Déploiements', 'sign_in' => 'Connexion', 'open_platform' => 'Ouvrir la plateforme', 'open_workspace' => 'Ouvrir l’espace', 'plan' => 'Démarrer la discussion', 'menu' => 'Menu', 'close' => 'Fermer', 'open_menu' => 'Ouvrir le menu principal', 'close_menu' => 'Fermer le menu principal',
     ],
     'home' => [
         'eyebrow' => 'L’intelligence agricole pour chaque ferme',
         'headline' => 'Voyez chaque parcelle. Sachez où agir.',
         'lede' => 'AgriShield réunit limites de ferme, sections cultivées, météo, sol et observations des agriculteurs dans une vue claire—pour que chaque décision parte du contexte complet.',
         'primary_cta' => 'Planifier un déploiement', 'secondary_cta' => 'Découvrir la plateforme',
+        'hero_proof' => [
+            ['label' => 'Plateforme principale', 'value' => 'Disponible maintenant'],
+            ['label' => 'Accès terrain', 'value' => 'Mobile + web'],
+            ['label' => 'Langues', 'value' => 'Anglais · haoussa · français'],
+        ],
         'hero_image_alt' => 'Un agriculteur examine une culture à Jigawa, au Nigeria', 'hero_caption' => 'Inspection terrain · Jigawa, Nigeria',
         'field_plan' => 'Plan de ferme en direct', 'field_model_title' => 'Planifiez chaque partie de la ferme selon la culture qui y pousse.', 'field_model_body' => 'Le plan de terrain dispose désormais de son propre espace. Définissez chaque parcelle, affectez sa culture et reliez chaque signal à la section concernée.', 'field_name' => 'Ferme Nord', 'context_ready' => 'Contexte prêt',
         'sections' => [
@@ -31,7 +36,7 @@ return [
             ['label' => 'Pour les agriculteurs', 'title' => 'Planifiez la ferme section par section.', 'body' => 'Divisez la ferme en autant de sections que nécessaire, affectez une culture à chacune et reliez météo, sol et contrôles à la bonne zone.', 'items' => ['Nommer clairement chaque section', 'Affecter oignon, tomate, maïs ou une autre culture', 'Voir la surface attribuée et restante']],
             ['label' => 'Pour les équipes agricoles', 'title' => 'Voyez où le soutien est nécessaire.', 'body' => 'Examinez les observations terrain, comprenez le contexte cultural et orientez les urgences vers le bon conseiller sans reconstruire l’historique depuis des messages.', 'items' => ['File d’attention priorisée', 'Preuves reliées à la ferme', 'Révision et validation visibles']],
         ],
-        'capabilities_eyebrow' => 'L’intelligence terrain, rendue utile', 'capabilities_title' => 'Les signaux et services derrière chaque décision agricole.', 'capabilities_intro' => 'AgriShield réunit télédétection, observations des agriculteurs et services opérationnels dans le même dossier de ferme. Chaque capacité affiche sa source, son état et la prochaine action utile.', 'capabilities_note' => 'La disponibilité dépend des fournisseurs configurés pour chaque déploiement.',
+        'capabilities_eyebrow' => 'L’intelligence terrain, rendue utile', 'capabilities_title' => 'Les signaux et services derrière chaque décision agricole.', 'capabilities_intro' => 'AgriShield réunit télédétection, observations des agriculteurs et services opérationnels dans le même dossier de ferme. Chaque capacité affiche sa source, son état et la prochaine action utile.', 'capabilities_note_label' => 'Note de déploiement.', 'capabilities_note' => 'Les signaux fournis par des partenaires et les conseils automatisés ne sont actifs que lorsque le service concerné est configuré. Le dossier agricole, les preuves terrain et le flux opérationnel restent disponibles.',
         'capabilities' => [
             ['visual' => 'satellite', 'code' => 'SAT / NDVI', 'title' => 'Suivi des cultures par satellite', 'body' => 'Consultez les observations satellite prises en charge et les signaux NDVI par ferme, section et date.', 'value' => '0,72', 'label' => 'NDVI · signal sain'],
             ['visual' => 'soil', 'code' => 'SOL / HUMIDITÉ', 'title' => 'Santé et humidité du sol', 'body' => 'Réunissez les mesures prises en charge : humidité, pH, azote, phosphore, potassium et carbone organique.', 'value' => '31 %', 'label' => 'Humidité du sol'],
@@ -94,6 +99,14 @@ return [
                 ['code' => '05 / AGIR', 'title' => 'Conseils et suivi', 'body' => 'Publiez une action pratique et conservez responsable, lecture et validation.', 'items' => ['Priorité et délai', 'Responsable', 'Historique de validation']],
                 ['code' => '06 / ACCÈS', 'title' => 'Prêts agricoles et services', 'body' => 'Explorez les produits configurés et soumettez une demande liée à la ferme.', 'items' => ['Produits éligibles', 'Demande liée à la ferme', 'État de la demande']],
             ],
+            'reality_label' => 'Ce qui est disponible aujourd’hui',
+            'reality_title' => 'Un socle utile, avec des limites claires autour des services connectés.',
+            'reality_body' => 'Chaque déploiement commence par le dossier agricole et le flux opérationnel. L’intelligence spécialisée est activée uniquement lorsque sa source de données et son parcours de révision sont prêts.',
+            'reality_layers' => [
+                ['status' => 'SOCLE / DISPONIBLE', 'title' => 'Opérations agricoles', 'body' => 'Organisations, fermes, sections, cycles culturaux, preuves privées, conseils, validations et demandes de financement sont pris en charge aujourd’hui.'],
+                ['status' => 'CONFIGURATION / REQUISE', 'title' => 'Intelligence connectée', 'body' => 'Satellite, sol, météo, diagnostic image, transcription, traduction et conseils générés dépendent des fournisseurs configurés.'],
+                ['status' => 'DÉPLOIEMENT / INCLUS', 'title' => 'Mise en œuvre responsable', 'body' => 'Langue, responsabilité terrain, fraîcheur des données, révision et escalade sont définies avec chaque équipe de mise en œuvre.'],
+            ],
             'provider_label' => 'Conçu autour des fournisseurs', 'provider_title' => 'Les services spécialisés se connectent sans masquer leur source.', 'provider_body' => 'Satellite, langues, analyse des cultures, météo et finance affichent leur disponibilité. Le dossier agricole reste utile même si un service externe est indisponible.',
         ],
         'impact' => [
@@ -121,7 +134,7 @@ return [
         ],
         'contact' => [
             'meta_title' => 'Contact | AgriShield AI Ltd', 'meta_description' => 'Contactez AgriShield pour un déploiement d’intelligence agricole.', 'eyebrow' => 'Contact', 'title' => 'Présentez-nous le problème d’appui aux cultures.', 'intro' => 'Expliquez où les agriculteurs ou conseillers sont bloqués. Nous vous aiderons à définir un premier déploiement ciblé.',
-            'form_label' => 'Commencer la discussion', 'form_title' => 'Nous sommes prêts à écouter.', 'form_body' => 'Pour le cadrage, une démonstration, un partenariat ou une demande institutionnelle, contactez notre équipe.', 'email' => 'E-mail', 'region' => 'Zone prioritaire', 'region_value' => 'Nord du Nigeria', 'name' => 'Votre nom', 'name_placeholder' => 'Nom complet', 'work_email' => 'E-mail professionnel', 'organisation' => 'Organisation', 'organisation_placeholder' => 'Nom de l’organisation', 'interest' => 'Je souhaite', 'message' => 'Comment pouvons-nous aider ?', 'message_placeholder' => 'Décrivez les fermes, utilisateurs et résultats recherchés.', 'options' => ['Demander une démonstration', 'Planifier un déploiement', 'Explorer un partenariat données ou finance', 'Question générale'], 'submit' => 'Préparer l’e-mail', 'privacy' => 'Cela ouvre votre application e-mail. Aucune donnée n’est stockée sur ce site.'
+            'form_label' => 'Commencer la discussion', 'form_title' => 'Nous sommes prêts à écouter.', 'form_body' => 'Pour le cadrage, une démonstration, un partenariat ou une demande institutionnelle, contactez notre équipe.', 'email' => 'E-mail', 'region' => 'Zone prioritaire', 'region_value' => 'Nord du Nigeria', 'name' => 'Votre nom', 'name_placeholder' => 'Nom complet', 'work_email' => 'E-mail professionnel', 'organisation' => 'Organisation', 'organisation_placeholder' => 'Nom de l’organisation', 'interest' => 'Je souhaite', 'message' => 'Comment pouvons-nous aider ?', 'message_placeholder' => 'Décrivez les fermes, utilisateurs et résultats recherchés.', 'options' => ['Demander une démonstration', 'Planifier un déploiement', 'Explorer un partenariat données ou finance', 'Question générale'], 'submit' => 'Préparer l’e-mail', 'privacy' => 'Cela ouvre votre application e-mail. Aucune donnée n’est stockée sur ce site.',
         ],
         'field_voice' => [
             'meta_title' => 'Voix du terrain | AgriShield AI', 'meta_description' => 'Capturez les questions culturales par la voix avec leur contexte agricole.', 'eyebrow' => 'Voix du terrain / réception prête', 'title' => 'Capturez la question. Gardez le contexte.', 'intro' => 'Enregistrez ou importez la question d’un agriculteur, reliez-la à une ferme et conservez un historique privé.',
@@ -134,5 +147,5 @@ return [
             'panel_badge' => 'Espace organisation sécurisé', 'panel_title' => 'La réception vocale est disponible', 'panel_body' => 'Transcription, traduction et conseil généré s’activent lorsqu’un fournisseur vocal de production est configuré.', 'panel_action' => 'Ouvrir Voix du terrain', 'panel_signin' => 'Se connecter pour continuer', 'bounds_label' => 'Limites publiées', 'bounds_title' => 'Ce que fait la fonction—et ce qui dépend d’un fournisseur.', 'core_title' => 'Plateforme principale', 'core_items' => ['Réception et lecture audio privées', 'Sélection de ferme et de langue', 'Historique de l’organisation', 'Visibilité des états et échecs'], 'provider_title' => 'Fournisseur configuré', 'provider_items' => ['Transcription vocale', 'Traduction', 'Conseil cultural généré', 'Signaux d’escalade automatisés'],
         ],
     ],
-    'footer' => ['eyebrow' => 'AgriShield / Nord du Nigeria', 'title' => 'Un seul dossier, de la question terrain jusqu’au suivi.', 'body' => 'Des dossiers culturaux sécurisés, les questions des agriculteurs et des conseils traçables pour les équipes terrain.', 'product' => 'Produit', 'company' => 'Entreprise', 'about' => 'À propos', 'team' => 'Équipe', 'work' => 'Travailler avec nous', 'contact' => 'Contact', 'disclaimer' => 'Les conseils culturaux doivent être examinés par des professionnels locaux qualifiés.'],
+    'footer' => ['eyebrow' => 'AgriShield / Nord du Nigeria', 'title' => 'Un seul dossier, de la question terrain jusqu’au suivi.', 'body' => 'Des dossiers culturaux sécurisés, les questions des agriculteurs et des conseils traçables pour les équipes terrain.', 'product' => 'Produit', 'company' => 'Entreprise', 'about' => 'Entreprise', 'team' => 'Équipe', 'work' => 'Déploiements', 'contact' => 'Contact', 'disclaimer' => 'Les conseils culturaux doivent être examinés par des professionnels locaux qualifiés.'],
 ];

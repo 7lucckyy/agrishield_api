@@ -9,7 +9,6 @@ use App\Http\Resources\Api\V1\AdvisoryResource;
 use App\Models\Advisory;
 use App\Models\Farm;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;

@@ -19,7 +19,7 @@ final class ListCropCycles
         string $path,
     ): LengthAwarePaginator {
         return $farm->cropCycles()
-            ->with(['farm:id,uuid', 'crop'])
+            ->with(['farm:id,uuid', 'crop', 'sections.farm:id,uuid,area_hectares', 'sections.crop'])
             ->when($status, fn ($query, $cycleStatus) => $query->where('status', $cycleStatus))
             ->latest('planting_date')
             ->paginate($perPage)

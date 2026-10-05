@@ -83,7 +83,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/auth/password/reset', ResetPasswordController::class);
     });
 
-    Route::middleware(['auth:sanctum', 'throttle:general'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'active', 'throttle:general'])->group(function (): void {
         Route::post('/auth/logout', LogoutController::class);
         Route::post('/auth/tokens/revoke-all', RevokeAllTokensController::class);
 

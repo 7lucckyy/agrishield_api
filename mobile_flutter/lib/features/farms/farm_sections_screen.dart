@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../core/storage/farm_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/agri_widgets.dart';
 import '../../models/models.dart';
@@ -18,7 +19,7 @@ class FarmSectionsScreen extends ConsumerStatefulWidget {
 }
 
 class _FarmSectionsScreenState extends ConsumerState<FarmSectionsScreen> {
-  late Future<Farm> _future;
+  late Future<FarmDetailRepositoryResult> _future;
 
   @override
   void initState() {
@@ -27,7 +28,9 @@ class _FarmSectionsScreenState extends ConsumerState<FarmSectionsScreen> {
   }
 
   void _load() {
-    _future = ref.read(apiClientProvider).farm(widget.farmId);
+    _future = (() async => (await ref.read(
+      farmRepositoryProvider.future,
+    )).detail(widget.farmId))();
   }
 
   Future<void> _openForm([FarmSection? section]) async {
@@ -84,12 +87,15 @@ class _FarmSectionsScreenState extends ConsumerState<FarmSectionsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Farm sections')),
-    floatingActionButton: FloatingActionButton.extended(
-      onPressed: _openForm,
-      icon: const Icon(Icons.add_rounded),
-      label: const Text('Add section'),
+    floatingActionButton: FutureBuilder<FarmDetailRepositoryResult>(
+      future: _future,
+      builder: (context, snapshot) => FloatingActionButton.extended(
+        onPressed: snapshot.data?.isOffline == false ? _openForm : null,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add section'),
+      ),
     ),
-    body: FutureBuilder<Farm>(
+    body: FutureBuilder<FarmDetailRepositoryResult>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
@@ -107,10 +113,29 @@ class _FarmSectionsScreenState extends ConsumerState<FarmSectionsScreen> {
           );
         }
 
-        final farm = snapshot.data!;
+        final result = snapshot.data!;
+        final farm = result.farm;
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
           children: [
+            if (result.isOffline)
+              const Padding(
+                padding: EdgeInsets.only(bottom: AgriSpacing.md),
+                child: AgriCard(
+                  color: AgriColors.milletSoft,
+                  child: Row(
+                    children: [
+                      Icon(Icons.cloud_off_rounded, color: AgriColors.ink),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Saved sections are read-only until you reconnect.',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             _AllocationHeader(farm: farm),
             const SizedBox(height: 24),
             Row(
@@ -132,15 +157,15 @@ class _FarmSectionsScreenState extends ConsumerState<FarmSectionsScreen> {
             ),
             const SizedBox(height: 10),
             if (farm.sections.isEmpty)
-              _EmptySections(onAdd: _openForm)
+              _EmptySections(onAdd: result.isOffline ? null : _openForm)
             else
               ...farm.sections.map(
                 (section) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _SectionCard(
                     section: section,
-                    onEdit: () => _openForm(section),
-                    onDelete: () => _delete(section),
+                    onEdit: result.isOffline ? null : () => _openForm(section),
+                    onDelete: result.isOffline ? null : () => _delete(section),
                   ),
                 ),
               ),
@@ -193,8 +218,9 @@ class _AllocationHeader extends StatelessWidget {
           const SizedBox(height: 7),
           Text(
             farm.name,
-            style: Theme.of(context).textTheme.headlineMedium
-                ?.copyWith(color: Colors.white),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -271,7 +297,7 @@ class _AllocationMetric extends StatelessWidget {
 class _EmptySections extends StatelessWidget {
   const _EmptySections({required this.onAdd});
 
-  final VoidCallback onAdd;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) => AgriCard(
@@ -308,8 +334,8 @@ class _SectionCard extends StatelessWidget {
   });
 
   final FarmSection section;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) => AgriCard(
@@ -347,14 +373,16 @@ class _SectionCard extends StatelessWidget {
                 ],
               ),
             ),
-            PopupMenuButton<String>(
-              tooltip: 'Section options',
-              onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit section')),
-                PopupMenuItem(value: 'delete', child: Text('Remove section')),
-              ],
-            ),
+            if (onEdit != null && onDelete != null)
+              PopupMenuButton<String>(
+                tooltip: 'Section options',
+                onSelected: (value) =>
+                    value == 'edit' ? onEdit!() : onDelete!(),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit section')),
+                  PopupMenuItem(value: 'delete', child: Text('Remove section')),
+                ],
+              ),
           ],
         ),
         const Divider(height: 26),
@@ -520,7 +548,8 @@ class _FarmSectionFormScreenState extends ConsumerState<FarmSectionFormScreen> {
                 title: widget.sectionId == null
                     ? 'Plan a growing section'
                     : 'Update this section',
-                description: 'Give the section a clear label, choose its crop and allocate part of the farm area.',
+                description:
+                    'Give the section a clear label, choose its crop and allocate part of the farm area.',
               ),
               TextFormField(
                 controller: _name,

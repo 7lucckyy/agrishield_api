@@ -15,6 +15,7 @@ use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
 use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
 use App\Models\User;
+use App\Support\ProductionProviderGuard;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
@@ -68,8 +69,14 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(ProductionProviderGuard $providerGuard): void
     {
+        $providerGuard->ensureSafe($this->app->environment(), [
+            'farming' => config('farming.provider'),
+            'diagnosis' => config('diagnosis.provider'),
+            'voice_assistance' => config('voice-assistance.provider'),
+        ]);
+
         Gate::define('viewDetailedHealth', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
         Gate::define('manageIntegrations', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
         Gate::define('accessPlatform', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));

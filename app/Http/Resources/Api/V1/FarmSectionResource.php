@@ -27,7 +27,13 @@ final class FarmSectionResource extends JsonResource
             'id' => $section->getKey(),
             'farm_id' => $this->whenLoaded('farm', fn (): string => $section->farm->uuid),
             'name' => $section->name,
+            'status' => $section->status->value,
             'crop' => $this->whenLoaded('crop', fn (): CropResource => new CropResource($section->crop)),
+            'boundary_geojson' => $section->boundary_geojson,
+            'centroid' => [
+                'latitude' => $section->centroid_latitude === null ? null : (float) $section->centroid_latitude,
+                'longitude' => $section->centroid_longitude === null ? null : (float) $section->centroid_longitude,
+            ],
             'area' => [
                 'hectares' => (float) $section->area_hectares,
                 'acres' => (float) $section->area_acres,
@@ -36,6 +42,10 @@ final class FarmSectionResource extends JsonResource
                     : round(((float) $section->area_hectares / $farmAreaHectares) * 100, 1),
             ],
             'position' => $section->position,
+            'crop_cycle_ids' => $this->whenLoaded(
+                'cropCycles',
+                fn (): array => $section->cropCycles->modelKeys(),
+            ),
             'notes' => $section->notes,
             'created_at' => $section->created_at?->toISOString(),
             'updated_at' => $section->updated_at?->toISOString(),

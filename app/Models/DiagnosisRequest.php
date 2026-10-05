@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 /**
  * @property int $id
  * @property string $uuid
+ * @property string|null $client_request_id
  * @property int $farm_id
  * @property int|null $farm_crop_cycle_id
  * @property int $requested_by_user_id
@@ -40,7 +41,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property-read Farm $farm
  */
-#[Fillable(['uuid', 'farm_crop_cycle_id', 'image_disk', 'image_path', 'image_mime', 'image_size_bytes', 'image_checksum', 'note', 'status', 'diagnosis', 'recommendation', 'confidence', 'detected_labels', 'provider_payload', 'external_reference', 'reviewed_at', 'submitted_at', 'completed_at', 'expires_at', 'failure_reason'])]
+#[Fillable(['uuid', 'client_request_id', 'farm_crop_cycle_id', 'image_disk', 'image_path', 'image_mime', 'image_size_bytes', 'image_checksum', 'note', 'status', 'diagnosis', 'recommendation', 'confidence', 'detected_labels', 'provider_payload', 'external_reference', 'reviewed_at', 'submitted_at', 'completed_at', 'expires_at', 'failure_reason'])]
 final class DiagnosisRequest extends Model
 {
     /** @use HasFactory<DiagnosisRequestFactory> */

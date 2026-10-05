@@ -3,34 +3,93 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class SavedSession {
+  const SavedSession({
+    required this.token,
+    required this.ownerUserId,
+    required this.profile,
+  });
+
+  final String token;
+  final int ownerUserId;
+  final Map<String, dynamic> profile;
+}
+
 class LocalStore {
   LocalStore(this._preferences);
   static const _secureStorage = FlutterSecureStorage();
-  static const _tokenKey = 'agrishield.auth.token';
-  static const _farmCacheKey = 'agrishield.cache.farms';
-  static const _profileCacheKey = 'agrishield.cache.profile';
-  static const _organizationKey = 'agrishield.active_organization';
+  static const _sessionKey = 'agrishield.auth.session.v2';
   final SharedPreferences _preferences;
 
-  static Future<LocalStore> create() async =>
-      LocalStore(await SharedPreferences.getInstance());
-  Future<String?> readToken() async {
+  static Future<LocalStore> create() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove('agrishield.cache.profile');
+    await preferences.remove('agrishield.active_organization');
+    await _secureStorage.delete(key: 'agrishield.auth.token');
+    await _secureStorage.delete(key: 'agrishield.auth.profile');
+    return LocalStore(preferences);
+  }
+
+  Future<SavedSession?> readSession() async {
     try {
-      return await _secureStorage
-          .read(key: _tokenKey)
+      final value = await _secureStorage
+          .read(key: _sessionKey)
           .timeout(const Duration(seconds: 4));
+      if (value == null) return null;
+      final decoded = jsonDecode(value);
+      if (decoded is! Map) return null;
+      final token = decoded['token'];
+      final ownerUserId = decoded['owner_user_id'];
+      final profile = decoded['profile'];
+      if (token is! String ||
+          token.isEmpty ||
+          ownerUserId is! int ||
+          ownerUserId <= 0 ||
+          profile is! Map ||
+          profile['id'] != ownerUserId) {
+        return null;
+      }
+      return SavedSession(
+        token: token,
+        ownerUserId: ownerUserId,
+        profile: Map<String, dynamic>.from(profile),
+      );
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> saveToken(String token) =>
-      _secureStorage.write(key: _tokenKey, value: token);
-  Future<void> clearToken() => _secureStorage.delete(key: _tokenKey);
-  Future<void> cacheProfile(Map<String, dynamic> profile) async =>
-      _preferences.setString(_profileCacheKey, jsonEncode(profile));
-  Map<String, dynamic>? cachedProfile() {
-    final value = _preferences.getString(_profileCacheKey);
+  Future<void> saveSession(String token, Map<String, dynamic> profile) {
+    final ownerUserId = profile['id'];
+    if (token.isEmpty || ownerUserId is! int || ownerUserId <= 0) {
+      throw ArgumentError('A token and verified user ID are required.');
+    }
+    return _secureStorage.write(
+      key: _sessionKey,
+      value: jsonEncode({
+        'token': token,
+        'owner_user_id': ownerUserId,
+        'profile': profile,
+      }),
+    );
+  }
+
+  Future<void> clearSession() => _secureStorage.delete(key: _sessionKey);
+
+  int? activeOrganizationId(int ownerUserId) =>
+      _preferences.getInt('agrishield.organization.$ownerUserId');
+  Future<void> saveActiveOrganizationId(int ownerUserId, int id) =>
+      _preferences.setInt('agrishield.organization.$ownerUserId', id);
+  Future<void> saveDraft(
+    int ownerUserId,
+    String key,
+    Map<String, dynamic> value,
+  ) => _secureStorage.write(
+    key: 'draft.$ownerUserId.$key',
+    value: jsonEncode(value),
+  );
+  Future<Map<String, dynamic>?> readDraft(int ownerUserId, String key) async {
+    final value = await _secureStorage.read(key: 'draft.$ownerUserId.$key');
     if (value == null) return null;
     try {
       return Map<String, dynamic>.from(jsonDecode(value) as Map);
@@ -39,35 +98,6 @@ class LocalStore {
     }
   }
 
-  int? activeOrganizationId() => _preferences.getInt(_organizationKey);
-  Future<void> saveActiveOrganizationId(int id) =>
-      _preferences.setInt(_organizationKey, id);
-  Future<void> cacheFarms(List<Map<String, dynamic>> farms) async =>
-      _preferences.setString(_farmCacheKey, jsonEncode(farms));
-  List<Map<String, dynamic>> cachedFarms() {
-    final value = _preferences.getString(_farmCacheKey);
-    if (value == null) return [];
-    try {
-      return (jsonDecode(value) as List)
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> saveDraft(String key, Map<String, dynamic> value) =>
-      _preferences.setString('draft.$key', jsonEncode(value));
-  Map<String, dynamic>? readDraft(String key) {
-    final value = _preferences.getString('draft.$key');
-    if (value == null) return null;
-    try {
-      return Map<String, dynamic>.from(jsonDecode(value) as Map);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> clearDraft(String key) => _preferences.remove('draft.$key');
+  Future<void> clearDraft(int ownerUserId, String key) =>
+      _secureStorage.delete(key: 'draft.$ownerUserId.$key');
 }

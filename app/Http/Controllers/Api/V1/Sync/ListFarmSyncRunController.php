@@ -7,8 +7,8 @@ namespace App\Http\Controllers\Api\V1\Sync;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\SyncRunResource;
 use App\Models\Farm;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 final class ListFarmSyncRunController extends Controller

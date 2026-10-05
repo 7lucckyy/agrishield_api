@@ -308,11 +308,13 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
     setState(() => _busy = true);
     try {
       final result = await ref
-          .read(apiClientProvider)
-          .submitDiagnosis(
-            farmId: widget.farmId,
-            imagePath: _image!.path,
-            note: _note.text.trim().isEmpty ? null : _note.text.trim(),
+          .read(offlineSubmissionRepositoryProvider.future)
+          .then(
+            (repository) => repository.submitDiagnosis(
+              farmId: widget.farmId,
+              imagePath: _image!.path,
+              note: _note.text.trim().isEmpty ? null : _note.text.trim(),
+            ),
           );
       ref.invalidate(diagnosisHistoryProvider(widget.farmId));
       if (mounted) setState(() => _result = result);
@@ -497,12 +499,14 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
     setState(() => _busy = true);
     try {
       final result = await ref
-          .read(apiClientProvider)
-          .submitVoice(
-            path: _path!,
-            sourceLanguage: _source,
-            responseLanguage: _response,
-            farmId: widget.farmId,
+          .read(offlineSubmissionRepositoryProvider.future)
+          .then(
+            (repository) => repository.submitVoice(
+              audioPath: _path!,
+              sourceLanguage: _source,
+              responseLanguage: _response,
+              farmId: widget.farmId,
+            ),
           );
       ref.invalidate(voiceHistoryProvider);
       if (mounted) setState(() => _result = result);

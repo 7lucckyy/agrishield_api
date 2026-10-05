@@ -123,6 +123,7 @@ class AppShell extends ConsumerWidget {
   final StatefulNavigationShell shell;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(outboxSyncProvider);
     final connectivity = ref.watch(connectivityProvider).value;
     final offline =
         connectivity?.every((result) => result == ConnectivityResult.none) ??

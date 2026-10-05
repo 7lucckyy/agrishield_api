@@ -13,12 +13,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Imagick;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Throwable;
 
 final class CreateDiagnosisRequest
 {
     /** @param array{farm_crop_cycle_id?: int|null, note?: string|null} $data */
-    public function execute(Farm $farm, User $user, UploadedFile $upload, array $data): DiagnosisRequest
+    public function execute(Farm $farm, User $user, UploadedFile $upload, array $data, ?string $clientRequestId = null): DiagnosisRequest
     {
         $original = file_get_contents($upload->getRealPath());
         if ($original === false) {
@@ -26,20 +27,47 @@ final class CreateDiagnosisRequest
         }
 
         $checksum = hash('sha256', $original);
-        $existing = DiagnosisRequest::query()->whereBelongsTo($farm)->where('image_checksum', $checksum)->first();
-        if ($existing !== null) {
-            return $existing;
-        }
-
-        [$contents, $extension, $mime] = $this->sanitise($original, (string) $upload->getMimeType());
-        $path = 'diagnosis/'.$farm->uuid.'/'.Str::ulid().'.'.$extension;
-        Storage::disk('private')->put($path, $contents, ['visibility' => 'private']);
-
+        $path = null;
         try {
-            $diagnosis = DB::transaction(function () use ($farm, $user, $data, $mime, $checksum, $path, $contents): DiagnosisRequest {
+            /** @var array{DiagnosisRequest, bool} $result */
+            $result = DB::transaction(function () use ($farm, $user, $data, $upload, $original, $checksum, $clientRequestId, &$path): array {
+                User::query()->whereKey($user->getKey())->lockForUpdate()->firstOrFail();
+
+                if ($clientRequestId !== null) {
+                    $existing = DiagnosisRequest::query()
+                        ->whereBelongsTo($user, 'requestedBy')
+                        ->where('client_request_id', $clientRequestId)
+                        ->first();
+                    if ($existing !== null) {
+                        if ($existing->farm_id !== $farm->getKey() || $existing->image_checksum !== $checksum
+                            || $existing->farm_crop_cycle_id !== ($data['farm_crop_cycle_id'] ?? null)
+                            || $existing->note !== ($data['note'] ?? null)) {
+                            throw new ConflictHttpException('The Idempotency-Key belongs to a different diagnosis request.');
+                        }
+
+                        return [$existing, false];
+                    }
+                } else {
+                    $existing = DiagnosisRequest::query()
+                        ->whereBelongsTo($farm)
+                        ->whereBelongsTo($user, 'requestedBy')
+                        ->where('image_checksum', $checksum)
+                        ->first();
+                    if ($existing !== null) {
+                        return [$existing, false];
+                    }
+                }
+
+                [$contents, $extension, $mime] = $this->sanitise($original, (string) $upload->getMimeType());
+                $path = 'diagnosis/'.$farm->uuid.'/'.Str::ulid().'.'.$extension;
+                if (! Storage::disk('private')->put($path, $contents, ['visibility' => 'private'])) {
+                    throw new \RuntimeException('The uploaded image could not be stored.');
+                }
+
                 $diagnosis = new DiagnosisRequest;
                 $diagnosis->fill([
                     'uuid' => (string) Str::uuid(),
+                    'client_request_id' => $clientRequestId,
                     'farm_crop_cycle_id' => $data['farm_crop_cycle_id'] ?? null,
                     'image_disk' => 'private',
                     'image_path' => $path,
@@ -52,15 +80,20 @@ final class CreateDiagnosisRequest
                 $diagnosis->requestedBy()->associate($user);
                 $diagnosis->save();
 
-                return $diagnosis;
+                return [$diagnosis, true];
             });
         } catch (Throwable $exception) {
-            Storage::disk('private')->delete($path);
+            if ($path !== null) {
+                Storage::disk('private')->delete($path);
+            }
 
             throw $exception;
         }
 
-        SubmitDiagnosisToProvider::dispatch($diagnosis->getKey())->afterCommit();
+        [$diagnosis, $created] = $result;
+        if ($created) {
+            SubmitDiagnosisToProvider::dispatch($diagnosis->getKey())->afterCommit();
+        }
 
         return $diagnosis;
     }

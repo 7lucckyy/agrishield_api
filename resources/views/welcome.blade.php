@@ -20,6 +20,11 @@
                 <a class="gs-button gs-button-primary" href="{{ route('contact') }}">{{ __('marketing.home.primary_cta') }} <span aria-hidden="true">↗</span></a>
                 <a class="gs-link" href="{{ route('solutions') }}">{{ __('marketing.home.secondary_cta') }} <span aria-hidden="true">→</span></a>
             </div>
+            <dl class="gs-hero-proof" data-motion-item>
+                @foreach(__('marketing.home.hero_proof') as $proof)
+                    <div><dt>{{ $proof['label'] }}</dt><dd>{{ $proof['value'] }}</dd></div>
+                @endforeach
+            </dl>
         </div>
         <figure class="gs-hero-image" data-motion="hero-media">
             <img src="{{ asset('images/field/jigawa-farmer.webp') }}" alt="{{ __('marketing.home.hero_image_alt') }}" width="1920" height="1080" fetchpriority="high" decoding="async">
@@ -74,13 +79,13 @@
                     <article><span>{{ $feature['code'] }}</span><div><h3>{{ $feature['title'] }}</h3><p>{{ $feature['body'] }}</p></div><p class="gs-reading"><strong>{{ $feature['value'] }}</strong><small>{{ $feature['label'] }}</small></p></article>
                 @endforeach
             </div>
-            <p class="gs-note">{{ __('marketing.home.capabilities_note') }}</p>
+            <p class="gs-note"><strong>{{ __('marketing.home.capabilities_note_label') }}</strong> {{ __('marketing.home.capabilities_note') }}</p>
         </div>
     </section>
 
-    <section class="gs-workflow">
+    <section class="gs-workflow" id="workflow" aria-labelledby="workflow-title">
         <div class="gs-container gs-workflow-grid">
-            <div><p class="gs-context">{{ __('marketing.home.flow_eyebrow') }}</p><h2>{{ __('marketing.home.flow_title') }}</h2><p>{{ __('marketing.home.flow_intro') }}</p></div>
+            <div><p class="gs-context">{{ __('marketing.home.flow_eyebrow') }}</p><h2 id="workflow-title">{{ __('marketing.home.flow_title') }}</h2><p>{{ __('marketing.home.flow_intro') }}</p></div>
             <ol>@foreach(__('marketing.home.steps') as $step)<li><span>{{ $step['number'] }}</span><div><small>{{ $step['label'] }}</small><h3>{{ $step['title'] }}</h3><p>{{ $step['body'] }}</p></div></li>@endforeach</ol>
         </div>
     </section>
@@ -91,7 +96,7 @@
             <header><div><img src="{{ asset('brand/agrishield-mark.svg') }}" alt="" width="28" height="28"><strong>{{ __('marketing.home.dashboard.farm') }}</strong></div><span>{{ __('marketing.home.dashboard.season') }}</span></header>
             <div class="gs-product-body">
                 <div class="gs-product-map"><svg viewBox="0 0 620 320" aria-hidden="true"><path d="M68 68 245 31l111 72-20 163-219 18-64-106Z"/><path d="m245 31 111 72 180-29 47 106-58 105-189-19 20-163Z"/><path d="m73 178 64 106 199-18 189 19 58-105-31 116-397 4Z"/><circle cx="410" cy="132" r="9"/></svg><span>{{ __('marketing.home.dashboard.rain') }}</span></div>
-                <div class="gs-product-summary"><small>{{ __('marketing.home.dashboard.attention') }}</small><h3>{{ __('marketing.home.dashboard.alert_title') }}</h3><p>{{ __('marketing.home.dashboard.alert_body') }}</p><a href="{{ route('impact') }}">{{ __('marketing.home.dashboard.action') }} →</a></div>
+                <div class="gs-product-summary"><small>{{ __('marketing.home.dashboard.attention') }}</small><h3>{{ __('marketing.home.dashboard.alert_title') }}</h3><p>{{ __('marketing.home.dashboard.alert_body') }}</p><a href="#workflow">{{ __('marketing.home.dashboard.action') }} →</a></div>
             </div>
             <footer>{{ __('marketing.home.dashboard.note') }}</footer>
         </div>

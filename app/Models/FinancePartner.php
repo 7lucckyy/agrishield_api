@@ -11,6 +11,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property string $name
+ * @property string $legal_name
+ * @property string $slug
+ * @property FinancePartnerType $type
+ * @property string $financing_model
+ * @property string|null $website
+ * @property string|null $contact_email
+ * @property bool $is_active
+ * @property array<string, mixed>|null $metadata
+ */
 #[Fillable(['uuid', 'name', 'legal_name', 'slug', 'type', 'financing_model', 'website', 'contact_email', 'is_active', 'metadata'])]
 final class FinancePartner extends Model
 {

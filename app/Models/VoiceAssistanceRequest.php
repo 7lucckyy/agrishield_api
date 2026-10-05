@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 /**
  * @property int $id
  * @property string $uuid
+ * @property string|null $client_request_id
  * @property int $user_id
  * @property int|null $organization_id
  * @property int|null $farm_id
@@ -37,7 +38,7 @@ use Illuminate\Support\Str;
  * @property-read Farm|null $farm
  * @property-read Organization|null $organization
  */
-#[Fillable(['uuid', 'source_language', 'response_language', 'audio_disk', 'audio_path', 'audio_mime', 'audio_size_bytes', 'audio_checksum', 'status', 'transcript', 'translated_transcript', 'guidance', 'safety_note', 'provider', 'provider_reference', 'failure_reason', 'completed_at'])]
+#[Fillable(['uuid', 'client_request_id', 'source_language', 'response_language', 'audio_disk', 'audio_path', 'audio_mime', 'audio_size_bytes', 'audio_checksum', 'status', 'transcript', 'translated_transcript', 'guidance', 'safety_note', 'provider', 'provider_reference', 'failure_reason', 'completed_at'])]
 final class VoiceAssistanceRequest extends Model
 {
     /** @use HasFactory<VoiceAssistanceRequestFactory> */

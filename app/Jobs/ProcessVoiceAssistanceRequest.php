@@ -10,6 +10,7 @@ use App\Models\VoiceAssistanceRequest;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Throwable;
 
 final class ProcessVoiceAssistanceRequest implements ShouldQueue
@@ -41,13 +42,60 @@ final class ProcessVoiceAssistanceRequest implements ShouldQueue
         $farmContext = $request->farm === null
             ? null
             : collect([$request->farm->name, $request->farm->locality, $request->farm->state])->filter()->join(', ');
-        $result = $provider->assist(
-            Storage::disk($request->audio_disk)->path($request->audio_path),
-            $request->audio_mime,
-            $request->source_language,
-            $request->response_language,
-            $farmContext,
-        );
+        $source = Storage::disk($request->audio_disk)->readStream($request->audio_path);
+        if (! is_resource($source)) {
+            throw new RuntimeException('The stored voice note could not be opened.');
+        }
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'agrishield-voice-');
+        if ($temporaryPath === false) {
+            fclose($source);
+            throw new RuntimeException('A temporary voice file could not be created.');
+        }
+
+        $extension = match ($request->audio_mime) {
+            'audio/mpeg' => 'mp3',
+            'audio/mp4', 'audio/x-m4a' => 'm4a',
+            'audio/wav', 'audio/x-wav' => 'wav',
+            'audio/ogg' => 'ogg',
+            'audio/webm', 'video/webm' => 'webm',
+            default => 'bin',
+        };
+        $audioPath = $temporaryPath.'.'.$extension;
+
+        try {
+            if (! rename($temporaryPath, $audioPath)) {
+                throw new RuntimeException('A temporary voice file could not be prepared.');
+            }
+
+            $destination = fopen($audioPath, 'wb');
+            if (! is_resource($destination)) {
+                throw new RuntimeException('A temporary voice file could not be opened.');
+            }
+            try {
+                if (stream_copy_to_stream($source, $destination) === false) {
+                    throw new RuntimeException('The stored voice note could not be copied.');
+                }
+            } finally {
+                fclose($destination);
+            }
+
+            $result = $provider->assist(
+                $audioPath,
+                $request->audio_mime,
+                $request->source_language,
+                $request->response_language,
+                $farmContext,
+            );
+        } finally {
+            fclose($source);
+            if (is_file($audioPath)) {
+                unlink($audioPath);
+            }
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
 
         $request->update([
             'status' => VoiceAssistanceStatus::Completed,

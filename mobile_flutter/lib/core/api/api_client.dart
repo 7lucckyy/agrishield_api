@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../models/models.dart';
@@ -20,10 +21,7 @@ class ApiClient {
           dio ??
           Dio(
             BaseOptions(
-              baseUrl: const String.fromEnvironment(
-                'API_BASE_URL',
-                defaultValue: 'https://agrishield.ng/api/v1',
-              ),
+              baseUrl: configuredApiBaseUrl(),
               connectTimeout: const Duration(seconds: 20),
               receiveTimeout: const Duration(seconds: 30),
               headers: const {'Accept': 'application/json'},
@@ -63,7 +61,14 @@ class ApiClient {
   }
 
   final Dio _dio;
-  void setToken(String? token) {
+  int? _authenticatedUserId;
+
+  int? get authenticatedUserId => _authenticatedUserId;
+
+  void suspendOfflineSync() => _authenticatedUserId = null;
+
+  void setToken(String? token, {int? ownerUserId}) {
+    _authenticatedUserId = token == null ? null : ownerUserId;
     if (token == null) {
       _dio.options.headers.remove('Authorization');
     } else {
@@ -259,6 +264,7 @@ class ApiClient {
     required String farmId,
     required String imagePath,
     String? note,
+    String? idempotencyKey,
   }) async {
     try {
       final file = File(imagePath);
@@ -273,7 +279,11 @@ class ApiClient {
         (await _dio.post(
               '/farms/$farmId/diagnosis-requests',
               data: form,
-              options: Options(headers: {'Idempotency-Key': const Uuid().v4()}),
+              options: Options(
+                headers: {
+                  'Idempotency-Key': idempotencyKey ?? const Uuid().v4(),
+                },
+              ),
             )).data['data']
             as Map,
       );
@@ -301,6 +311,7 @@ class ApiClient {
     required String sourceLanguage,
     required String responseLanguage,
     String? farmId,
+    String? idempotencyKey,
   }) async {
     try {
       final file = File(path);
@@ -314,7 +325,16 @@ class ApiClient {
         ),
       });
       return Map<String, dynamic>.from(
-        (await _dio.post('/voice-assistance', data: form)).data['data'] as Map,
+        (await _dio.post(
+              '/voice-assistance',
+              data: form,
+              options: Options(
+                headers: {
+                  'Idempotency-Key': idempotencyKey ?? const Uuid().v4(),
+                },
+              ),
+            )).data['data']
+            as Map,
       );
     } catch (error) {
       _throw(error);
@@ -381,4 +401,36 @@ class ApiClient {
       return false;
     }
   }
+}
+
+String configuredApiBaseUrl({
+  String? endpoint,
+  String? environment,
+  bool? release,
+}) {
+  final configuredUrl =
+      endpoint ?? const String.fromEnvironment('API_BASE_URL');
+  final appEnvironment =
+      environment ??
+      const String.fromEnvironment('APP_ENV', defaultValue: 'development');
+  final isRelease = release ?? kReleaseMode;
+  final url = configuredUrl.isEmpty && !isRelease
+      ? 'http://localhost:8000/api/v1'
+      : configuredUrl;
+  final parsed = Uri.tryParse(url);
+
+  if (isRelease && !{'staging', 'production'}.contains(appEnvironment)) {
+    throw StateError(
+      'Release builds require APP_ENV=staging or APP_ENV=production.',
+    );
+  }
+  if (url.isEmpty ||
+      parsed == null ||
+      !parsed.hasAuthority ||
+      (isRelease && parsed.scheme != 'https') ||
+      (!isRelease && !{'http', 'https'}.contains(parsed.scheme))) {
+    throw StateError('Set a valid API_BASE_URL for this build environment.');
+  }
+
+  return url;
 }

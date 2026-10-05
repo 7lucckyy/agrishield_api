@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Insight;
 
-use App\Http\Controllers\Controller;
 use App\Enums\MetricType;
+use App\Http\Controllers\Controller;
 use App\Models\Farm;
 use App\Models\SatelliteObservation;
 use App\Services\Insights\FreshnessCalculator;

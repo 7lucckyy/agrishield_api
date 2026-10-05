@@ -17,6 +17,11 @@ final class ShowCropCycleController extends Controller
         Gate::authorize('view', $farm);
         Gate::authorize('view', $cropCycle);
 
-        return new CropCycleResource($cropCycle->load(['farm:id,uuid', 'crop']));
+        return new CropCycleResource($cropCycle->load([
+            'farm:id,uuid',
+            'crop',
+            'sections.farm:id,uuid,area_hectares',
+            'sections.crop',
+        ]));
     }
 }

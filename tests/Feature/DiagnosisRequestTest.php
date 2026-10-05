@@ -15,6 +15,8 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function (): void {
     Storage::fake('private');
@@ -56,6 +58,45 @@ test('unsafe polyglot images and undersized images are rejected', function () {
         ->assertUnprocessable()->assertJsonValidationErrors('image');
     $this->post("/api/v1/farms/{$farm->uuid}/diagnosis-requests", ['image' => UploadedFile::fake()->image('tiny.jpg', 100, 100)], ['Accept' => 'application/json'])
         ->assertUnprocessable()->assertJsonValidationErrors('image');
+});
+
+test('diagnosis retries use one request and reject a reused key with different content', function () {
+    $owner = User::factory()->create();
+    $farm = Farm::factory()->for($owner, 'owner')->registered()->create();
+    $image = UploadedFile::fake()->image('leaf.jpg', 300, 300);
+    $key = (string) Str::uuid();
+    $url = "/api/v1/farms/{$farm->uuid}/diagnosis-requests";
+    $headers = ['Accept' => 'application/json', 'Idempotency-Key' => $key];
+
+    $first = $this->actingAs($owner)->post($url, ['image' => $image, 'note' => 'First observation'], $headers)->assertAccepted();
+    $this->post($url, ['image' => $image, 'note' => 'First observation'], $headers)
+        ->assertAccepted()
+        ->assertJsonPath('data.id', $first->json('data.id'));
+
+    expect(DiagnosisRequest::query()->count())->toBe(1);
+    Queue::assertPushed(SubmitDiagnosisToProvider::class, 1);
+
+    $this->post($url, ['image' => $image, 'note' => 'Different observation'], $headers)->assertConflict();
+    $this->post($url, ['image' => $image], ['Accept' => 'application/json', 'Idempotency-Key' => 'invalid'])
+        ->assertUnprocessable()->assertInvalid('idempotency_key');
+});
+
+test('the same farm image submitted by two authorized users creates private requests', function () {
+    $organization = Organization::factory()->create();
+    $firstUser = User::factory()->create();
+    $secondUser = User::factory()->create();
+    attachOrganizationRole($firstUser, $organization, OrganizationRole::Agronomist);
+    attachOrganizationRole($secondUser, $organization, OrganizationRole::Agronomist);
+    $farm = Farm::factory()->for($organization)->for($firstUser, 'owner')->create();
+    $image = UploadedFile::fake()->image('same-leaf.jpg', 300, 300);
+    $url = "/api/v1/farms/{$farm->uuid}/diagnosis-requests";
+
+    $this->actingAs($firstUser)->post($url, ['image' => $image], ['Accept' => 'application/json'])->assertAccepted();
+    Sanctum::actingAs($secondUser, ['*']);
+    $this->post($url, ['image' => $image], ['Accept' => 'application/json'])->assertAccepted();
+
+    expect(DiagnosisRequest::query()->count())->toBe(2)
+        ->and(DiagnosisRequest::query()->pluck('requested_by_user_id')->all())->toContain($firstUser->getKey(), $secondUser->getKey());
 });
 
 test('diagnosis requests become expired after the provider SLA', function () {

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\CropCycle;
 
 use App\Enums\CropCycleStatus;
+use App\Enums\IrrigationContext;
 use App\Models\CropCycle;
+use App\Models\FarmSection;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -33,6 +36,18 @@ final class UpdateCropCycleRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'farm_section_ids' => ['sometimes', 'array', 'max:100'],
+            'farm_section_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists(FarmSection::class, 'id')->where(
+                    'farm_id',
+                    $this->route('cropCycle')?->farm_id,
+                ),
+            ],
+            'variety' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'growth_stage' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'irrigation_context' => ['sometimes', 'nullable', Rule::enum(IrrigationContext::class)],
             'planting_date' => ['sometimes', 'date', 'after_or_equal:'.now()->subYears(2)->toDateString(), 'before_or_equal:'.now()->addYear()->toDateString()],
             'expected_harvest_date' => ['sometimes', 'nullable', 'date'],
             'actual_harvest_date' => ['sometimes', 'nullable', 'date'],
@@ -53,6 +68,21 @@ final class UpdateCropCycleRequest extends FormRequest
             $cycle = $this->route('cropCycle');
             if (! $cycle instanceof CropCycle) {
                 return;
+            }
+
+            if (! $validator->errors()->hasAny(['farm_section_ids', 'farm_section_ids.*'])
+                && $this->exists('farm_section_ids')) {
+                $sectionIds = $this->input('farm_section_ids', []);
+                if (is_array($sectionIds)
+                    && FarmSection::query()
+                        ->whereKey($sectionIds)
+                        ->where('crop_id', '!=', $cycle->crop_id)
+                        ->exists()) {
+                    $validator->errors()->add(
+                        'farm_section_ids',
+                        'Every selected field must currently be assigned to the crop used by this season.',
+                    );
+                }
             }
 
             $plantingDate = $this->filled('planting_date')
@@ -82,5 +112,20 @@ final class UpdateCropCycleRequest extends FormRequest
                 );
             }
         }];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $values = [];
+
+        foreach (['variety', 'growth_stage', 'notes'] as $field) {
+            if ($this->has($field)) {
+                $values[$field] = $this->filled($field)
+                    ? Str::squish((string) $this->input($field))
+                    : null;
+            }
+        }
+
+        $this->merge($values);
     }
 }

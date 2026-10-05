@@ -19,6 +19,8 @@ return [
 
     'default' => env('DB_CONNECTION', 'sqlite'),
 
+    'postgis_required' => (bool) env('REQUIRE_POSTGIS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections

@@ -8,12 +8,46 @@ use App\Enums\AssetFinanceStatus;
 use App\Enums\RepaymentStatus;
 use Database\Factories\AssetFinanceApplicationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int|null $organization_id
+ * @property int $farm_id
+ * @property int|null $farm_crop_cycle_id
+ * @property int $applicant_user_id
+ * @property int $asset_finance_product_id
+ * @property AssetFinanceStatus $status
+ * @property int $quantity
+ * @property string $requested_amount
+ * @property string $purpose
+ * @property string $consent_channel
+ * @property string $consent_version
+ * @property Carbon $consented_at
+ * @property string|null $partner_reference
+ * @property string|null $decision_note
+ * @property Carbon $submitted_at
+ * @property Carbon|null $reviewed_at
+ * @property Carbon|null $approved_at
+ * @property Carbon|null $delivery_verified_at
+ * @property int|null $delivery_verified_by_user_id
+ * @property RepaymentStatus $repayment_status
+ * @property string|null $outstanding_amount
+ * @property Carbon|null $next_payment_due_at
+ * @property Carbon|null $last_partner_sync_at
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property-read Farm $farm
+ * @property-read AssetFinanceProduct $product
+ * @property-read Collection<int, AssetFinanceEvent> $events
+ */
 #[Fillable(['uuid', 'farm_crop_cycle_id', 'asset_finance_product_id', 'status', 'quantity', 'requested_amount', 'purpose', 'consent_channel', 'consent_version', 'consented_at', 'partner_reference', 'decision_note', 'submitted_at', 'reviewed_at', 'approved_at', 'delivery_verified_at', 'delivery_verified_by_user_id', 'repayment_status', 'outstanding_amount', 'next_payment_due_at', 'last_partner_sync_at', 'metadata'])]
 final class AssetFinanceApplication extends Model
 {

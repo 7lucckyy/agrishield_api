@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Enums\CropCycleStatus;
+use App\Enums\IrrigationContext;
 use App\Models\Crop;
 use App\Models\CropCycle;
 use App\Models\Farm;
+use App\Models\FarmSection;
 use App\Models\User;
 
 test('a farm owner attaches an active crop with valid dates', function () {
@@ -130,4 +132,55 @@ test('crop cycle history is listed newest first and filterable', function () {
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $active->getKey());
+});
+
+test('one crop season can span multiple matching farm sections', function () {
+    $owner = User::factory()->create();
+    $farm = Farm::factory()->for($owner, 'owner')->create();
+    $crop = Crop::factory()->create(['active' => true, 'name' => 'Maize']);
+    $sections = FarmSection::factory()->count(2)->for($farm)->for($crop)->create();
+
+    $response = $this->actingAs($owner)->postJson("/api/v1/farms/{$farm->uuid}/crop-cycles", [
+        'crop_id' => $crop->getKey(),
+        'farm_section_ids' => $sections->modelKeys(),
+        'variety' => ' SAMMAZ 52 ',
+        'growth_stage' => ' Vegetative ',
+        'irrigation_context' => IrrigationContext::RainFed->value,
+        'planting_date' => now()->subMonth()->toDateString(),
+        'season' => '2026-wet',
+    ])->assertCreated()
+        ->assertJsonCount(2, 'data.fields')
+        ->assertJsonPath('data.variety', 'SAMMAZ 52')
+        ->assertJsonPath('data.growth_stage', 'Vegetative')
+        ->assertJsonPath('data.irrigation_context', 'rain_fed');
+
+    $cycle = CropCycle::query()->sole();
+    expect($cycle->sections()->pluck('farm_sections.id')->all())
+        ->toEqualCanonicalizing($sections->modelKeys());
+});
+
+test('a crop season cannot attach fields from another farm or a different crop', function () {
+    $owner = User::factory()->create();
+    $farm = Farm::factory()->for($owner, 'owner')->create();
+    $otherFarm = Farm::factory()->for($owner, 'owner')->create();
+    $maize = Crop::factory()->create(['active' => true]);
+    $rice = Crop::factory()->create(['active' => true]);
+    $riceSection = FarmSection::factory()->for($farm)->for($rice)->create();
+    $otherFarmSection = FarmSection::factory()->for($otherFarm)->for($maize)->create();
+
+    $this->actingAs($owner)->postJson("/api/v1/farms/{$farm->uuid}/crop-cycles", [
+        'crop_id' => $maize->getKey(),
+        'farm_section_ids' => [$riceSection->getKey(), $otherFarmSection->getKey()],
+        'planting_date' => now()->toDateString(),
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('farm_section_ids.1');
+
+    $this->actingAs($owner)->postJson("/api/v1/farms/{$farm->uuid}/crop-cycles", [
+        'crop_id' => $maize->getKey(),
+        'farm_section_ids' => [$riceSection->getKey()],
+        'planting_date' => now()->toDateString(),
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('farm_section_ids');
+
+    expect(CropCycle::query()->count())->toBe(0);
 });

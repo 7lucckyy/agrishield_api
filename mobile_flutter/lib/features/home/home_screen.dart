@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/storage/offline_database.dart';
 import '../../core/widgets/agri_widgets.dart';
 import '../../models/models.dart';
 
@@ -24,6 +25,7 @@ class HomeScreen extends ConsumerWidget {
               auth?.activeOrganization?.name ??
               DateFormat('EEEE, d MMMM').format(DateTime.now()),
         ),
+        const _OutboxStatusCard(),
         farms.when(
           loading: () => const _HomeLoading(),
           error: (error, _) => ErrorPanel(
@@ -35,6 +37,101 @@ class HomeScreen extends ConsumerWidget {
               : _IntelligenceBrief(farms: items),
         ),
       ],
+    );
+  }
+}
+
+class _OutboxStatusCard extends ConsumerWidget {
+  const _OutboxStatusCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(outboxStatusProvider);
+    return status.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, _) => AgriCard(
+        child: Text(
+          'Saved requests could not be checked: ${friendlyError(error)}',
+        ),
+      ),
+      data: (operations) {
+        if (operations.isEmpty) return const SizedBox.shrink();
+        final unresolved = operations
+            .where((operation) => operation.status != SyncState.synced)
+            .toList();
+        if (unresolved.isEmpty) return const SizedBox.shrink();
+        final conflicts = unresolved
+            .where((operation) => operation.status == SyncState.conflict)
+            .length;
+        final failed = unresolved
+            .where((operation) => operation.status == SyncState.failed)
+            .toList();
+        final retryable = unresolved.any(
+          (operation) => operation.status != SyncState.conflict,
+        );
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AgriSpacing.md),
+          child: AgriCard(
+            color: conflicts > 0 ? AgriColors.claySoft : AgriColors.milletSoft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Saved on this device',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${unresolved.length} request${unresolved.length == 1 ? '' : 's'} waiting or needing attention',
+                ),
+                const SizedBox(height: 8),
+                for (final operation in unresolved.take(3))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Text(
+                      '${operation.entityType} · ${operation.status.name.toUpperCase()}${operation.error == null ? '' : ' · ${operation.error}'}',
+                    ),
+                  ),
+                if (conflicts > 0) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    'A conflict will not retry automatically. Review the saved request before submitting it again.',
+                  ),
+                ],
+                if (retryable) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final ownerUserId = ref
+                          .read(authControllerProvider)
+                          .value
+                          ?.user
+                          ?.id;
+                      if (ownerUserId == null) return;
+                      final database = await ref.read(
+                        offlineDatabaseProvider.future,
+                      );
+                      if (!context.mounted) return;
+                      for (final operation in failed) {
+                        await database
+                            .forUser(ownerUserId)
+                            .retry(operation.localId);
+                      }
+                      if (!context.mounted) return;
+                      ref.invalidate(outboxSyncProvider);
+                      ref.invalidate(outboxStatusProvider);
+                    },
+                    icon: const Icon(Icons.sync_rounded),
+                    label: Text(
+                      failed.isEmpty ? 'Check sync' : 'Retry failed uploads',
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -105,6 +202,26 @@ class _IntelligenceBrief extends ConsumerWidget {
         api.advisories(focusFarm.id),
       ]),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ErrorPanel(
+                message:
+                    'Current weather and farm guidance are unavailable. '
+                    'AgriShield cannot confirm that this farm is clear.',
+                retry: () => ref.invalidate(farmsProvider),
+              ),
+              const SectionHeading('Farm overview'),
+              _FarmOverview(farms: farms),
+              const SectionHeading('Field actions'),
+              _FieldActions(farm: focusFarm),
+              const SectionHeading('Access for productivity'),
+              _FinanceRow(onTap: () => context.push('/finance')),
+            ],
+          );
+        }
+
         final weather = snapshot.hasData
             ? snapshot.data![0] as List<WeatherDay>
             : <WeatherDay>[];

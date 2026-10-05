@@ -19,7 +19,7 @@ final class StoreFarmSectionController extends Controller
     public function __invoke(StoreFarmSectionRequest $request, Farm $farm): JsonResponse
     {
         $response = (new FarmSectionResource(
-            $this->createFarmSection->execute($farm, $request->validated()),
+            $this->createFarmSection->execute($farm, $request->validated(), $request->processedGeometry()),
         ))->additional(['meta' => ['message' => 'Farm section created.']])->response();
         $response->setStatusCode(Response::HTTP_CREATED);
 

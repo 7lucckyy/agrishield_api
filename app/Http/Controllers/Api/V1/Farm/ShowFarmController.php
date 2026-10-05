@@ -24,6 +24,7 @@ final class ShowFarmController extends Controller
             'sections' => fn (HasMany $sections): HasMany => $sections->orderBy('position')->orderBy('name'),
             'sections.farm:id,uuid,area_hectares',
             'sections.crop',
+            'sections.cropCycles:id',
         ]));
     }
 }

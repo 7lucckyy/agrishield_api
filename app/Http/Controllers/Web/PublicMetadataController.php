@@ -33,8 +33,6 @@ class PublicMetadataController extends Controller
             'routes' => [
                 ['name' => 'home', 'changeFrequency' => 'weekly', 'priority' => '1.0'],
                 ['name' => 'solutions', 'changeFrequency' => 'monthly', 'priority' => '0.9'],
-                ['name' => 'field-voice', 'changeFrequency' => 'monthly', 'priority' => '0.9'],
-                ['name' => 'impact', 'changeFrequency' => 'monthly', 'priority' => '0.8'],
                 ['name' => 'about', 'changeFrequency' => 'monthly', 'priority' => '0.7'],
                 ['name' => 'partners', 'changeFrequency' => 'monthly', 'priority' => '0.6'],
                 ['name' => 'contact', 'changeFrequency' => 'yearly', 'priority' => '0.6'],

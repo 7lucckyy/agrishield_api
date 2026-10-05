@@ -18,7 +18,12 @@ final class UpdateFarmSectionController extends Controller
     public function __invoke(UpdateFarmSectionRequest $request, Farm $farm, FarmSection $farmSection): FarmSectionResource
     {
         return new FarmSectionResource(
-            $this->updateFarmSection->execute($farm, $farmSection, $request->validated()),
+            $this->updateFarmSection->execute(
+                $farm,
+                $farmSection,
+                $request->validated(),
+                $request->processedGeometry(),
+            ),
         );
     }
 }

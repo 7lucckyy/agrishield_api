@@ -56,8 +56,8 @@
             </a>
             <nav class="gs-nav" id="primary-navigation" aria-label="Primary navigation">
                 <a href="{{ route('solutions') }}" @class(['active' => request()->routeIs('solutions')]) @if(request()->routeIs('solutions')) aria-current="page" @endif>{{ __('marketing.nav.platform') }}</a>
-                <a href="{{ route('impact') }}" @class(['active' => request()->routeIs('impact')]) @if(request()->routeIs('impact')) aria-current="page" @endif>{{ __('marketing.nav.how') }}</a>
-                <a href="{{ route('about') }}" @class(['active' => request()->routeIs('about', 'team')]) @if(request()->routeIs('about', 'team')) aria-current="page" @endif>{{ __('marketing.nav.about') }}</a>
+                <a href="{{ route('partners') }}" @class(['active' => request()->routeIs('partners')]) @if(request()->routeIs('partners')) aria-current="page" @endif>{{ __('marketing.nav.work') }}</a>
+                <a href="{{ route('about') }}" @class(['active' => request()->routeIs('about')]) @if(request()->routeIs('about')) aria-current="page" @endif>{{ __('marketing.nav.about') }}</a>
             </nav>
             <div class="gs-header-actions">
                 <details class="language-switcher">
@@ -93,8 +93,8 @@
         <div class="gs-footer-lead"><span>{{ strtoupper(__('marketing.footer.eyebrow')) }}</span><h2>{{ __('marketing.footer.title') }}</h2></div>
         <div class="gs-footer-grid">
             <div><p>{{ __('marketing.footer.body') }}</p><a href="mailto:hello@agrishield.ai">hello@agrishield.ai</a></div>
-            <div><strong>{{ __('marketing.footer.product') }}</strong><a href="{{ route('solutions') }}">{{ __('marketing.nav.platform') }}</a><a href="{{ route('field-voice') }}">{{ __('marketing.nav.field_voice') }}</a><a href="{{ route('impact') }}">{{ __('marketing.nav.how') }}</a></div>
-            <div><strong>{{ __('marketing.footer.company') }}</strong><a href="{{ route('about') }}">{{ __('marketing.footer.about') }}</a><a href="{{ route('team') }}">{{ __('marketing.footer.team') }}</a><a href="{{ route('partners') }}">{{ __('marketing.footer.work') }}</a><a href="{{ route('contact') }}">{{ __('marketing.footer.contact') }}</a></div>
+            <div><strong>{{ __('marketing.footer.product') }}</strong><a href="{{ route('solutions') }}">{{ __('marketing.nav.platform') }}</a><a href="{{ route('home') }}#workflow">{{ __('marketing.nav.how') }}</a></div>
+            <div><strong>{{ __('marketing.footer.company') }}</strong><a href="{{ route('about') }}">{{ __('marketing.footer.about') }}</a><a href="{{ route('partners') }}">{{ __('marketing.footer.work') }}</a><a href="{{ route('contact') }}">{{ __('marketing.footer.contact') }}</a></div>
         </div>
         <small>© {{ now()->year }} AgriShield AI Ltd. {{ __('marketing.footer.disclaimer') }}</small>
         </div>

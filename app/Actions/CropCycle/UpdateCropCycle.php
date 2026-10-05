@@ -17,6 +17,9 @@ final class UpdateCropCycle
     /** @param array<string, mixed> $data */
     public function execute(CropCycle $cropCycle, array $data): CropCycle
     {
+        $shouldSyncSections = array_key_exists('farm_section_ids', $data);
+        $sectionIds = Arr::pull($data, 'farm_section_ids', []);
+        $sectionIds = is_array($sectionIds) ? $sectionIds : [];
         $requestedStatus = Arr::get($data, 'status');
         $nextStatus = is_string($requestedStatus) ? CropCycleStatus::from($requestedStatus) : null;
 
@@ -32,8 +35,24 @@ final class UpdateCropCycle
         }
 
         try {
-            DB::transaction(function () use ($cropCycle, $data): void {
+            DB::transaction(function () use ($cropCycle, $data, $sectionIds, $shouldSyncSections, $nextStatus): void {
+                $lockedCycle = CropCycle::query()->lockForUpdate()->findOrFail($cropCycle->getKey());
+                $effectiveStatus = $nextStatus ?? $lockedCycle->status;
+
+                if ($effectiveStatus === CropCycleStatus::Active
+                    && CropCycle::query()
+                        ->where('farm_id', $lockedCycle->farm_id)
+                        ->where('status', CropCycleStatus::Active)
+                        ->whereKeyNot($lockedCycle->getKey())
+                        ->exists()) {
+                    throw new ActiveCropCycleExistsException;
+                }
+
                 $cropCycle->update($data);
+
+                if ($shouldSyncSections) {
+                    $cropCycle->sections()->sync($sectionIds);
+                }
             });
         } catch (QueryException $exception) {
             if ($exception->getCode() === '23505'
@@ -44,6 +63,11 @@ final class UpdateCropCycle
             throw $exception;
         }
 
-        return $cropCycle->refresh()->load(['farm:id,uuid', 'crop']);
+        return $cropCycle->refresh()->load([
+            'farm:id,uuid',
+            'crop',
+            'sections.farm:id,uuid,area_hectares',
+            'sections.crop',
+        ]);
     }
 }

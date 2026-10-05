@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,8 @@ import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/agri_widgets.dart';
 import '../../models/models.dart';
+import '../map/map_screen.dart';
+import 'farm_boundary.dart';
 
 class FarmsScreen extends ConsumerWidget {
   const FarmsScreen({super.key});
@@ -150,18 +153,23 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
   final _name = TextEditingController();
   final _locality = TextEditingController();
   final _state = TextEditingController();
-  Position? _position;
-  double _hectares = 1;
+  StreamSubscription<Position>? _walkSubscription;
+  final List<BoundaryPoint> _perimeter = [];
+  double? _lastAccuracy;
+  bool _walking = false;
+  bool _paused = false;
+  bool _finished = false;
   bool _busy = false;
   @override
   void dispose() {
+    _walkSubscription?.cancel();
     _name.dispose();
     _locality.dispose();
     _state.dispose();
     super.dispose();
   }
 
-  Future<void> _locate() async {
+  Future<void> _startWalk() async {
     final enabled = await Geolocator.isLocationServiceEnabled();
     if (!enabled && mounted) {
       showMessage(context, 'Turn on Location Services, then try again.');
@@ -181,30 +189,83 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
       }
       return;
     }
-    setState(() => _busy = true);
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 20),
-        ),
-      );
-      if (mounted) setState(() => _position = position);
-    } catch (_) {
-      if (mounted) {
-        showMessage(
-          context,
-          'GPS is weak here. Move into an open area and try again.',
+    await _walkSubscription?.cancel();
+    setState(() {
+      _perimeter.clear();
+      _lastAccuracy = null;
+      _walking = true;
+      _paused = false;
+      _finished = false;
+    });
+    _walkSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 5,
+          ),
+        ).listen(
+          _recordPosition,
+          onError: (Object error) {
+            if (!mounted) return;
+            setState(() => _walking = false);
+            showMessage(
+              context,
+              'GPS tracking stopped. Check location access and try again.',
+            );
+          },
         );
-      }
+  }
+
+  void _recordPosition(Position position) {
+    if (!mounted || !_walking || _paused) return;
+    setState(() => _lastAccuracy = position.accuracy);
+    if (position.accuracy > 30) return;
+    if (_perimeter.isNotEmpty &&
+        Geolocator.distanceBetween(
+              _perimeter.last.latitude,
+              _perimeter.last.longitude,
+              position.latitude,
+              position.longitude,
+            ) <
+            4) {
+      return;
     }
-    if (mounted) setState(() => _busy = false);
+    setState(
+      () =>
+          _perimeter.add(BoundaryPoint(position.latitude, position.longitude)),
+    );
+  }
+
+  Future<void> _finishWalk() async {
+    final boundary = FarmBoundary(_perimeter);
+    if (boundary.hasSelfIntersection) {
+      showMessage(
+        context,
+        'The GPS trail crosses itself. Walk the perimeter again.',
+      );
+      return;
+    }
+    if (!boundary.isValid) {
+      showMessage(
+        context,
+        'Walk at least three distinct corners before finishing.',
+      );
+      return;
+    }
+    await _walkSubscription?.cancel();
+    _walkSubscription = null;
+    if (mounted) {
+      setState(() {
+        _walking = false;
+        _finished = true;
+      });
+    }
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate() || _position == null) {
-      if (_position == null) {
-        showMessage(context, 'Capture the farm location before continuing.');
+    if (!_formKey.currentState!.validate() || !_finished) {
+      if (!_finished) {
+        showMessage(context, 'Finish a GPS perimeter walk before registering.');
       }
       return;
     }
@@ -215,11 +276,7 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
         'locality': _locality.text.trim(),
         'state': _state.text.trim(),
         'country': 'NG',
-        'boundary_geojson': _squareBoundary(
-          _position!.latitude,
-          _position!.longitude,
-          _hectares,
-        ),
+        'boundary_geojson': FarmBoundary(_perimeter).toGeoJson(),
       });
       ref.invalidate(farmsProvider);
       if (mounted) {
@@ -239,7 +296,7 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
       const PageHeading(
         eyebrow: 'Step 1 of 1',
         title: 'Where is your field?',
-        description: 'Stand at the field. We use your GPS point and estimated size to create a simple boundary.',
+        description: 'Walk the farm perimeter with GPS on. Only positions with accuracy within 30 m are recorded.',
       ),
       Form(
         key: _formKey,
@@ -278,47 +335,76 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
           ],
         ),
       ),
-      const SectionHeading('Farm size'),
-      SegmentedButton<double>(
-        segments: const [
-          ButtonSegment(value: 1, label: Text('1 ha')),
-          ButtonSegment(value: 3, label: Text('3 ha')),
-          ButtonSegment(value: 5, label: Text('5 ha')),
-        ],
-        selected: {_hectares},
-        onSelectionChanged: (value) => setState(() => _hectares = value.first),
-      ),
-      const SectionHeading('GPS position'),
+      const SectionHeading('Walk the boundary'),
       AgriCard(
-        color: _position == null ? AgriColors.indigoSoft : AgriColors.leafSoft,
-        child: Row(
+        color: _finished ? AgriColors.leafSoft : AgriColors.indigoSoft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              _position == null
-                  ? Icons.my_location_rounded
-                  : Icons.check_circle_rounded,
-              color: AgriColors.forest,
-              size: 34,
+            Text(
+              _finished
+                  ? 'Boundary ready to confirm'
+                  : _walking
+                  ? (_paused ? 'Walk paused' : 'Recording perimeter')
+                  : 'No boundary recorded',
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _position == null
-                    ? 'No position captured yet'
-                    : '${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}\nAccuracy ±${_position!.accuracy.toStringAsFixed(0)} m',
-                style: const TextStyle(fontWeight: FontWeight.w700),
+            const SizedBox(height: 8),
+            Text(
+              '${_perimeter.length} points · ${FarmBoundary(_perimeter).hectares.toStringAsFixed(2)} estimated ha',
+            ),
+            if (_lastAccuracy != null)
+              Text(
+                'Latest GPS accuracy ±${_lastAccuracy!.toStringAsFixed(0)} m${_lastAccuracy! > 30 ? ' — too weak; point skipped' : ''}',
+                style: TextStyle(
+                  color: _lastAccuracy! > 30
+                      ? AgriColors.clay
+                      : AgriColors.grove,
+                ),
               ),
-            ),
-            TextButton(
-              onPressed: _busy ? null : _locate,
-              child: Text(_position == null ? 'Capture' : 'Retake'),
+            if (_perimeter.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _BoundaryPreview(points: _perimeter),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (!_walking)
+                  OutlinedButton(
+                    onPressed: _busy ? null : _startWalk,
+                    child: Text(_finished ? 'Start again' : 'Start walk'),
+                  ),
+                if (_walking)
+                  OutlinedButton(
+                    onPressed: () {
+                      setState(() => _paused = !_paused);
+                      if (_paused) {
+                        _walkSubscription?.pause();
+                      } else {
+                        _walkSubscription?.resume();
+                      }
+                    },
+                    child: Text(_paused ? 'Resume' : 'Pause'),
+                  ),
+                if (_walking)
+                  FilledButton(
+                    onPressed: _finishWalk,
+                    child: const Text('Finish walk'),
+                  ),
+              ],
             ),
           ],
         ),
       ),
+      const SizedBox(height: 8),
+      const Text(
+        'GPS area is an estimate, not a land survey. Check the outline before saving.',
+      ),
       const SizedBox(height: AgriSpacing.lg),
       FilledButton(
-        onPressed: _busy ? null : _save,
+        onPressed: _busy || !_finished ? null : _save,
         child: _busy
             ? const CircularProgressIndicator()
             : const Text('Register farm'),
@@ -341,6 +427,11 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
       List<WeatherDay> weather,
       List<Advisory> advisories,
       Json soil,
+      bool savedFarm,
+      DateTime farmUpdatedAt,
+      bool weatherUnavailable,
+      bool advisoriesUnavailable,
+      bool soilUnavailable,
     })
   >
   _future;
@@ -352,12 +443,44 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
 
   void _load() {
     final api = ref.read(apiClientProvider);
-    _future = (() async => (
-      farm: await api.farm(widget.farmId),
-      weather: await api.weather(widget.farmId),
-      advisories: await api.advisories(widget.farmId),
-      soil: await api.soil(widget.farmId),
-    ))();
+    _future = (() async {
+      final repository = await ref.read(farmRepositoryProvider.future);
+      final farmResult = await repository.detail(widget.farmId);
+      var weather = <WeatherDay>[];
+      var advisories = <Advisory>[];
+      var soil = <String, dynamic>{};
+      var weatherUnavailable = false;
+      var advisoriesUnavailable = false;
+      var soilUnavailable = false;
+
+      try {
+        weather = await api.weather(widget.farmId);
+      } catch (_) {
+        weatherUnavailable = true;
+      }
+      try {
+        advisories = await api.advisories(widget.farmId);
+      } catch (_) {
+        advisoriesUnavailable = true;
+      }
+      try {
+        soil = await api.soil(widget.farmId);
+      } catch (_) {
+        soilUnavailable = true;
+      }
+
+      return (
+        farm: farmResult.farm,
+        weather: weather,
+        advisories: advisories,
+        soil: soil,
+        savedFarm: farmResult.isOffline,
+        farmUpdatedAt: farmResult.updatedAt,
+        weatherUnavailable: weatherUnavailable,
+        advisoriesUnavailable: advisoriesUnavailable,
+        soilUnavailable: soilUnavailable,
+      );
+    })();
   }
 
   Future<void> _sync() async {
@@ -420,13 +543,50 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
       List<WeatherDay> weather,
       List<Advisory> advisories,
       Json soil,
+      bool savedFarm,
+      DateTime farmUpdatedAt,
+      bool weatherUnavailable,
+      bool advisoriesUnavailable,
+      bool soilUnavailable,
     })
     data,
   ) {
     final today = data.weather.firstOrNull;
     return [
       _FarmHero(farm: data.farm),
+      if (data.farm.boundaryGeoJson != null)
+        Padding(
+          padding: const EdgeInsets.only(top: AgriSpacing.md),
+          child: FarmOutlineMap(
+            farms: [data.farm],
+            sections: data.farm.sections,
+          ),
+        ),
+      if (data.savedFarm)
+        Padding(
+          padding: const EdgeInsets.only(top: AgriSpacing.md),
+          child: AgriCard(
+            color: AgriColors.milletSoft,
+            child: Row(
+              children: [
+                const Icon(Icons.cloud_off_rounded, color: AgriColors.ink),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Saved farm details from ${data.farmUpdatedAt.toLocal()}. Reconnect to refresh.',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       const SectionHeading('Today at this farm'),
+      if (data.weatherUnavailable)
+        const AgriCard(
+          child: Text(
+            'Weather is unavailable. Do not use older conditions for a field decision.',
+          ),
+        ),
       Row(
         children: [
           Expanded(
@@ -492,7 +652,13 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
         ],
       ),
       const SectionHeading('Risk and guidance'),
-      if (data.advisories.isEmpty)
+      if (data.advisoriesUnavailable)
+        const AgriCard(
+          child: Text(
+            'Guidance is unavailable. Reconnect to check for new advisories.',
+          ),
+        )
+      else if (data.advisories.isEmpty)
         const AgriCard(
           child: Text(
             'No urgent guidance. New crop and weather advice will appear after a farm sync.',
@@ -528,7 +694,14 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
               ),
             ),
       const SectionHeading('Soil intelligence'),
-      _SoilSnapshot(data: data.soil),
+      if (data.soilUnavailable)
+        const AgriCard(
+          child: Text(
+            'Soil information is unavailable. Reconnect to check for observations.',
+          ),
+        )
+      else
+        _SoilSnapshot(data: data.soil),
     ];
   }
 }
@@ -792,20 +965,75 @@ class _Metric extends StatelessWidget {
   );
 }
 
-Json _squareBoundary(double latitude, double longitude, double hectares) {
-  final halfSideMetres = math.sqrt(hectares * 10000) / 2;
-  final latitudeDelta = halfSideMetres / 111320;
-  final longitudeDelta =
-      halfSideMetres / (111320 * math.cos(latitude * math.pi / 180));
-  final coordinates = [
-    [longitude - longitudeDelta, latitude - latitudeDelta],
-    [longitude + longitudeDelta, latitude - latitudeDelta],
-    [longitude + longitudeDelta, latitude + latitudeDelta],
-    [longitude - longitudeDelta, latitude + latitudeDelta],
-    [longitude - longitudeDelta, latitude - latitudeDelta],
-  ];
-  return {
-    'type': 'Polygon',
-    'coordinates': [coordinates],
-  };
+class _BoundaryPreview extends StatelessWidget {
+  const _BoundaryPreview({required this.points});
+
+  final List<BoundaryPoint> points;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 180,
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: AgriColors.canvas,
+      borderRadius: BorderRadius.circular(AgriRadius.sm),
+    ),
+    child: CustomPaint(painter: _BoundaryPainter(points)),
+  );
+}
+
+class _BoundaryPainter extends CustomPainter {
+  const _BoundaryPainter(this.points);
+
+  final List<BoundaryPoint> points;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.isEmpty) return;
+    final origin = points.first;
+    final longitudeScale = math.cos(origin.latitude * math.pi / 180);
+    final east = points
+        .map((point) => (point.longitude - origin.longitude) * longitudeScale)
+        .toList();
+    final north = points
+        .map((point) => point.latitude - origin.latitude)
+        .toList();
+    final minEast = east.reduce(math.min);
+    final maxEast = east.reduce(math.max);
+    final minNorth = north.reduce(math.min);
+    final maxNorth = north.reduce(math.max);
+    final span = math.max(
+      math.max(maxEast - minEast, maxNorth - minNorth),
+      0.00001,
+    );
+    final scale = math.min(size.width - 32, size.height - 32) / span;
+    final offsets = List.generate(
+      points.length,
+      (index) => Offset(
+        (east[index] - minEast) * scale + 16,
+        size.height - ((north[index] - minNorth) * scale + 16),
+      ),
+    );
+    final path = Path()..moveTo(offsets.first.dx, offsets.first.dy);
+    for (final point in offsets.skip(1)) {
+      path.lineTo(point.dx, point.dy);
+    }
+    if (offsets.length >= 3) path.close();
+    if (offsets.length >= 3) {
+      canvas.drawPath(path, Paint()..color = AgriColors.leafSoft);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AgriColors.forest
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
+    for (final point in offsets) {
+      canvas.drawCircle(point, 4, Paint()..color = AgriColors.forest);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BoundaryPainter oldDelegate) => true;
 }

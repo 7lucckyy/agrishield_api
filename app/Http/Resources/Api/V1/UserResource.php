@@ -41,7 +41,8 @@ class UserResource extends JsonResource
                     'cluster_name' => $organization->membership->cluster_name,
                     'status' => $organization->membership->status->value,
                 ])
-                ->values()),
+                ->values()
+                ->all()),
             'created_at' => $user->created_at,
         ];
     }

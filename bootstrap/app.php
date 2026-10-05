@@ -8,6 +8,7 @@ use App\Exceptions\LastOrganizationAdminRequiredException;
 use App\Exceptions\SyncAlreadyRunningException;
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\AttachRequestId;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetWebsiteLocale;
 use App\Support\ApiErrorResponse;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
+            'active' => EnsureUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

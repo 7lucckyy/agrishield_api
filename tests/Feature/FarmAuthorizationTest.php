@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\OrganizationRole;
 use App\Enums\OrganizationMembershipStatus;
+use App\Enums\OrganizationRole;
 use App\Models\Farm;
 use App\Models\Organization;
 use App\Models\User;

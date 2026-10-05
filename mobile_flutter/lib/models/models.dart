@@ -90,6 +90,11 @@ class CropCycle {
   final String status;
   final String? cropName;
   final String? plantingDate;
+  Json toJson() => {
+    'status': status,
+    'crop': cropName == null ? null : {'name': cropName},
+    'planting_date': plantingDate,
+  };
 }
 
 class Crop {
@@ -106,6 +111,7 @@ class Crop {
   final String name;
   final String? code;
   final String? category;
+  Json toJson() => {'id': id, 'name': name, 'code': code, 'category': category};
 }
 
 class FarmSection {
@@ -118,6 +124,7 @@ class FarmSection {
     this.farmPercentage,
     this.position,
     this.notes,
+    this.boundaryGeoJson,
   });
 
   factory FarmSection.fromJson(Json json) {
@@ -132,6 +139,9 @@ class FarmSection {
       farmPercentage: (area['farm_percentage'] as num?)?.toDouble(),
       position: (json['position'] as num?)?.toInt(),
       notes: json['notes']?.toString(),
+      boundaryGeoJson: json['boundary_geojson'] is Json
+          ? json['boundary_geojson'] as Json
+          : null,
     );
   }
 
@@ -143,6 +153,20 @@ class FarmSection {
   final double? farmPercentage;
   final int? position;
   final String? notes;
+  final Json? boundaryGeoJson;
+  Json toJson() => {
+    'id': id,
+    'name': name,
+    'crop': crop.toJson(),
+    'area': {
+      'hectares': hectares,
+      'acres': acres,
+      'farm_percentage': farmPercentage,
+    },
+    'position': position,
+    'notes': notes,
+    'boundary_geojson': boundaryGeoJson,
+  };
 }
 
 class FarmSectionSummary {
@@ -161,6 +185,11 @@ class FarmSectionSummary {
   final int count;
   final double allocatedHectares;
   final double? remainingHectares;
+  Json toJson() => {
+    'count': count,
+    'allocated_hectares': allocatedHectares,
+    'remaining_hectares': remainingHectares,
+  };
 }
 
 class Farm {
@@ -173,6 +202,7 @@ class Farm {
     this.hectares,
     this.latitude,
     this.longitude,
+    this.boundaryGeoJson,
     this.activeCropCycle,
     this.sections = const [],
     this.sectionSummary,
@@ -188,6 +218,9 @@ class Farm {
     hectares: ((json['area'] as Json?)?['hectares'] as num?)?.toDouble(),
     latitude: ((json['centroid'] as Json?)?['latitude'] as num?)?.toDouble(),
     longitude: ((json['centroid'] as Json?)?['longitude'] as num?)?.toDouble(),
+    boundaryGeoJson: json['boundary_geojson'] is Json
+        ? json['boundary_geojson'] as Json
+        : null,
     activeCropCycle: json['active_crop_cycle'] is Json
         ? CropCycle.fromJson(json['active_crop_cycle'] as Json)
         : null,
@@ -209,6 +242,7 @@ class Farm {
   final double? hectares;
   final double? latitude;
   final double? longitude;
+  final Json? boundaryGeoJson;
   final CropCycle? activeCropCycle;
   final List<FarmSection> sections;
   final FarmSectionSummary? sectionSummary;
@@ -222,6 +256,11 @@ class Farm {
     'state': state,
     'area': {'hectares': hectares},
     'centroid': {'latitude': latitude, 'longitude': longitude},
+    'boundary_geojson': boundaryGeoJson,
+    'active_crop_cycle': activeCropCycle?.toJson(),
+    'sections': sections.map((section) => section.toJson()).toList(),
+    'section_summary': sectionSummary?.toJson(),
+    'sections_count': sectionsCount,
     'last_synced_at': lastSyncedAt,
   };
 }

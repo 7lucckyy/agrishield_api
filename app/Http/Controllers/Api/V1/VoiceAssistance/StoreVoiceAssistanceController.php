@@ -12,6 +12,8 @@ use App\Models\Farm;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 final class StoreVoiceAssistanceController extends Controller
 {
@@ -22,7 +24,20 @@ final class StoreVoiceAssistanceController extends Controller
         /** @var UploadedFile $audio */
         $audio = $request->file('audio');
         $farm = $request->filled('farm_id') ? Farm::query()->where('uuid', $request->string('farm_id')->toString())->firstOrFail() : null;
-        $voiceRequest = $create->execute($user, $audio, $request->string('source_language')->toString(), $request->string('response_language')->toString(), $farm);
+        $clientRequestId = $request->header('Idempotency-Key');
+        if ($clientRequestId !== null && ! Str::isUuid($clientRequestId)) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'The Idempotency-Key header must be a valid UUID.',
+            ]);
+        }
+        $voiceRequest = $create->execute(
+            $user,
+            $audio,
+            $request->string('source_language')->toString(),
+            $request->string('response_language')->toString(),
+            $farm,
+            clientRequestId: $clientRequestId,
+        );
 
         return (new VoiceAssistanceResource($voiceRequest))->response()->setStatusCode(201);
     }

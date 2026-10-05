@@ -15,7 +15,6 @@ test('the public product website explains the agrishield proposition', function 
         ->assertSuccessful()
         ->assertSee('See every field. Know what needs attention.')
         ->assertSee('Agricultural intelligence for every farm')
-        ->assertSee('Field Voice')
         ->assertSee('Farmers and field teams work from the same record.')
         ->assertSee('Satellite crop monitoring')
         ->assertSee('Soil health and moisture')
@@ -35,7 +34,7 @@ test('the public product website explains the agrishield proposition', function 
         ->assertSee('agrishield-social.png')
         ->assertSee('aria-label="Primary navigation"', escape: false)
         ->assertSee('aria-controls="primary-navigation"', escape: false)
-        ->assertSeeInOrder(['Platform', 'How it works', 'Field Voice', 'About', 'Sign in', 'Plan a deployment'])
+        ->assertSeeInOrder(['Platform', 'Deployments', 'Company', 'Sign in', 'Start a conversation'])
         ->assertSeeInOrder(['jigawa-farmer.webp', 'Plan each part of the farm around what is planted there.', 'North farm'])
         ->assertDontSee('API readiness')
         ->assertSee('Discuss a deployment');
@@ -64,12 +63,15 @@ test('the landing page presents only accountable product evidence', function () 
     $this->get(route('home'))
         ->assertSuccessful()
         ->assertSeeInOrder([
-            'Map',
-            'Monitor',
-            'Review',
-            'Act',
-        ])
+            '<small>Map</small>',
+            '<small>Monitor</small>',
+            '<small>Review</small>',
+            '<small>Act</small>',
+        ], escape: false)
         ->assertSee('Illustrative interface · example data')
+        ->assertSee('Core platform')
+        ->assertSee('Available now')
+        ->assertSee('Deployment note.')
         ->assertSee('It keeps data freshness, provider status and human review visible.')
         ->assertSee('Does the platform invent advice when data is missing?')
         ->assertDontSee('Trusted by thousands')
@@ -84,10 +86,10 @@ test('the public navigation identifies the current page', function () {
         ->assertSee('aria-current="page"', escape: false)
         ->assertSee('>Platform</a>', escape: false);
 
-    $this->get(route('impact'))
+    $this->get(route('partners'))
         ->assertSuccessful()
         ->assertSee('aria-current="page"', escape: false)
-        ->assertSee('>How it works</a>', escape: false);
+        ->assertSee('>Deployments</a>', escape: false);
 });
 
 test('the public website uses one restrained editorial design system', function () {
@@ -101,13 +103,30 @@ test('the public website uses one restrained editorial design system', function 
         ->assertDontSee('class="audience-card', escape: false)
         ->assertDontSee('class="capability-module', escape: false);
 
-    $this->get(route('about'))->assertSuccessful()->assertSee('class="gs-about-hero gs-container"', escape: false);
+    $this->get(route('about'))
+        ->assertSuccessful()
+        ->assertSee('class="gs-about-hero gs-container"', escape: false)
+        ->assertSee('kano-farmer-tending-field.webp')
+        ->assertSee('id="about-principles"', escape: false)
+        ->assertDontSee('Always remember that you are absolutely unique');
     $this->get(route('solutions'))->assertSuccessful()->assertSee('class="gs-platform-hero"', escape: false);
-    $this->get(route('impact'))->assertSuccessful()->assertSee('class="gs-text-hero"', escape: false);
     $this->get(route('partners'))->assertSuccessful()->assertSee('class="gs-partner-hero"', escape: false);
-    $this->get(route('team'))->assertSuccessful()->assertSee('class="gs-team-hero"', escape: false);
-    $this->get(route('field-voice'))->assertSuccessful()->assertSee('class="gs-voice-hero"', escape: false);
     $this->get(route('contact'))->assertSuccessful()->assertSee('class="gs-contact-intro gs-container"', escape: false);
+});
+
+test('the public website keeps workflow and field voice inside the core journey', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('id="workflow"', escape: false)
+        ->assertSee('href="#workflow"', escape: false);
+
+    expect(Route::has('impact'))->toBeFalse()
+        ->and(Route::has('team'))->toBeFalse()
+        ->and(Route::has('field-voice'))->toBeFalse();
+
+    $this->get('/impact')->assertNotFound();
+    $this->get('/team')->assertNotFound();
+    $this->get('/field-voice')->assertNotFound();
 });
 
 test('public crawler metadata is production ready', function () {
@@ -123,7 +142,9 @@ test('public crawler metadata is production ready', function () {
         ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
         ->assertSee(route('home'))
         ->assertSee(route('solutions'))
-        ->assertSee(route('field-voice'))
+        ->assertDontSee('/field-voice')
+        ->assertDontSee('/impact')
+        ->assertDontSee('/team')
         ->assertDontSee(route('login'))
         ->assertDontSee('/platform');
 
@@ -158,6 +179,40 @@ test('production brand assets are present', function (string $asset) {
     'large web app icon' => 'icons/icon-512.png',
     'social preview' => 'images/og/agrishield-social.png',
     'web manifest' => 'site.webmanifest',
+    'Kano field work' => 'images/field/commons/kano-farmer-tending-field.webp',
+    'Kano rice harvest' => 'images/field/commons/kano-rice-harvest.webp',
+    'Kano wheat harvest' => 'images/field/commons/kano-wheat-harvest.webp',
+    'Kano hand irrigation' => 'images/field/commons/kano-hand-irrigation.webp',
+    'Bauchi solar rice farm' => 'images/field/commons/bauchi-solar-rice.webp',
+    'Bauchi irrigation workers' => 'images/field/commons/bauchi-watering-workers.webp',
+]);
+
+test('public pages use attributed Northern Nigerian field photography', function (string $route, string $asset, string $credit) {
+    $this->get(route($route))
+        ->assertSuccessful()
+        ->assertSee($asset)
+        ->assertSee($credit)
+        ->assertSee('CC BY-SA 4.0')
+        ->assertSee('Wikimedia Commons', escape: false);
+})->with([
+    'platform' => ['solutions', 'kano-farmer-tending-field.webp', 'Photobyamin'],
+    'partners' => ['partners', 'bauchi-solar-rice.webp', 'SMMIMAGES'],
+    'contact' => ['contact', 'bauchi-watering-workers.webp', 'SMMIMAGES'],
+]);
+
+test('public field photography meets the high-resolution presentation standard', function (string $asset) {
+    $dimensions = getimagesize(public_path("images/field/commons/{$asset}"));
+
+    expect($dimensions)->not->toBeFalse()
+        ->and($dimensions[0])->toBeGreaterThanOrEqual(1900)
+        ->and($dimensions[1])->toBeGreaterThanOrEqual(1200);
+})->with([
+    'Kano field work' => 'kano-farmer-tending-field.webp',
+    'Kano rice harvest' => 'kano-rice-harvest.webp',
+    'Kano wheat harvest' => 'kano-wheat-harvest.webp',
+    'Kano hand irrigation' => 'kano-hand-irrigation.webp',
+    'Bauchi solar rice farm' => 'bauchi-solar-rice.webp',
+    'Bauchi irrigation workers' => 'bauchi-watering-workers.webp',
 ]);
 
 test('the public company pages present the current agrishield offering', function (string $route, string $content) {
@@ -168,11 +223,8 @@ test('the public company pages present the current agrishield offering', functio
 })->with([
     'about' => ['about', 'Crop support needs'],
     'solutions' => ['solutions', 'Keep every farm signal'],
-    'impact' => ['impact', 'From farm record'],
     'partners' => ['partners', 'Start with a field workflow'],
-    'team' => ['team', 'Agricultural, data and field expertise'],
     'contact' => ['contact', 'Bring us the crop'],
-    'field voice' => ['field-voice', 'Capture the question'],
 ]);
 
 test('every public company page is localized in Hausa and French', function (string $route) {
@@ -188,11 +240,8 @@ test('every public company page is localized in Hausa and French', function (str
 })->with([
     'about',
     'solutions',
-    'impact',
     'partners',
-    'team',
     'contact',
-    'field-voice',
 ]);
 
 test('the product scope is crop only and keeps the startup offer focused', function () {
@@ -205,15 +254,15 @@ test('the product scope is crop only and keeps the startup offer focused', funct
         ->assertSee('Image diagnosis and Field Voice')
         ->assertSee('Farm loans and services')
         ->assertSee('Advisories and follow-through')
+        ->assertSee('What is available today')
+        ->assertSee('CORE / AVAILABLE')
+        ->assertSee('CONFIGURATION / REQUIRED')
+        ->assertSee('DELIVERY / INCLUDED')
         ->assertDontSee('Livestock')
         ->assertDontSee('Agricultural MEAL')
         ->assertDontSee('Market Access &amp; Trade Linkages', escape: false)
         ->assertDontSee('Mechanisation &amp; Equipment Access', escape: false);
 
-    $this->get(route('impact'))
-        ->assertSuccessful()
-        ->assertSee('Retain evidence')
-        ->assertDontSee('Livestock intelligence');
 });
 
 test('public platform capabilities are backed by registered routes', function (string $routeName) {
@@ -245,11 +294,6 @@ test('the public website does not borrow unverified credibility', function () {
         ->assertDontSee('95%')
         ->assertDontSee('30% higher yields')
         ->assertDontSee('RESPONSIBLE BY DESIGN');
-
-    $this->get(route('team'))
-        ->assertSuccessful()
-        ->assertDontSee('Dr. Amina Bello')
-        ->assertDontSee('Engr. Musa Ibrahim');
 
     $this->get(route('partners'))
         ->assertSuccessful()

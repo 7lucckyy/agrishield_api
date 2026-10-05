@@ -15,7 +15,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgis/postgis:16-3.4-alpine
         env:
           POSTGRES_DB: agrishield_testing
           POSTGRES_USER: agrishield
@@ -35,6 +35,7 @@ jobs:
       DB_TEST_DATABASE: agrishield_testing
       DB_TEST_USERNAME: agrishield
       DB_TEST_PASSWORD: agrishield
+      REQUIRE_POSTGIS: 'true'
 
     steps:
       - name: Check out source
@@ -44,7 +45,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: mbstring, pdo_pgsql
+          extensions: mbstring, pdo_pgsql, gd, imagick
           coverage: none
           tools: composer:v2
 
@@ -65,3 +66,46 @@ jobs:
 
       - name: Audit dependencies
         run: composer audit
+
+  clients:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.3'
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        working-directory: mobile_flutter
+        run: flutter pub get
+
+      - name: Analyze Flutter
+        working-directory: mobile_flutter
+        run: flutter analyze
+
+      - name: Test Flutter
+        working-directory: mobile_flutter
+        run: flutter test
+
+      - name: Compile Android application
+        working-directory: mobile_flutter
+        run: flutter build apk --debug

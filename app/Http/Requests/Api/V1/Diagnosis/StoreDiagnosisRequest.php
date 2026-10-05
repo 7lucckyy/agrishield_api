@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\Diagnosis;
 
 use App\Models\Farm;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
