@@ -7,6 +7,9 @@ use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
 use App\Models\Farm;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
+
+uses(TestCase::class);
 
 beforeEach(function (): void {
     config()->set('farming.providers.openweather', [
