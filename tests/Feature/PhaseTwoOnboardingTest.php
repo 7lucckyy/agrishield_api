@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\OrganizationRole;
 use App\Models\Crop;
-use App\Models\Organization;
 use App\Models\User;
 
-test('phase two onboarding works from referral registration through farm crop attachment', function () {
-    $organization = Organization::factory()->create(['referral_code' => 'ONBOARD26']);
+test('phase two onboarding works from registration through farm crop attachment', function () {
     $crop = Crop::factory()->create(['active' => true, 'code' => 'MAIZE']);
 
     $this->postJson('/api/v1/auth/register', [
@@ -16,21 +13,17 @@ test('phase two onboarding works from referral registration through farm crop at
         'phone' => '+2348012345678',
         'password' => 'correct-horse-battery-staple',
         'password_confirmation' => 'correct-horse-battery-staple',
-        'referral_code' => 'ONBOARD26',
-    ])->assertCreated()
-        ->assertJsonPath('data.organizations.0.role', OrganizationRole::Farmer->value);
+    ])->assertCreated();
 
     $farmer = User::query()->sole();
     $farmResponse = $this->actingAs($farmer)->postJson('/api/v1/farms', [
         'name' => 'North Plot',
-        'organization_id' => $organization->getKey(),
         'boundary_geojson' => validFarmBoundary(),
         'area_hectares' => 999999,
         'locality' => 'Dawakin Kudu',
         'state' => 'Kano',
         'country' => 'NG',
-    ])->assertCreated()
-        ->assertJsonPath('data.organization.id', $organization->getKey());
+    ])->assertCreated();
 
     $farmId = $farmResponse->json('data.id');
 

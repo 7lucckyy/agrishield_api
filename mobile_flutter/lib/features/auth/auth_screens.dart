@@ -246,14 +246,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phone = TextEditingController(text: '+234');
   final _password = TextEditingController();
   final _confirm = TextEditingController();
-  final _referral = TextEditingController();
   @override
   void dispose() {
     _name.dispose();
     _phone.dispose();
     _password.dispose();
     _confirm.dispose();
-    _referral.dispose();
     super.dispose();
   }
 
@@ -265,8 +263,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       'password': _password.text,
       'password_confirmation': _confirm.text,
       'locale': 'en',
-      if (_referral.text.trim().isNotEmpty)
-        'referral_code': _referral.text.trim(),
     });
     if (!mounted) return;
     final result = ref.read(authControllerProvider);
@@ -278,7 +274,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final loading = ref.watch(authControllerProvider).isLoading;
     return _AuthForm(
       title: 'Start with your own farm',
-      subtitle: 'No organisation is required. A cluster code is optional if someone invited you.',
+      subtitle: 'Create an account to start managing your own farm.',
       footer: TextButton(
         onPressed: () => context.go('/sign-in'),
         child: const Text('Already registered? Sign in'),
@@ -331,15 +327,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 validator: (value) =>
                     value != _password.text ? 'Passwords do not match' : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _referral,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Cluster code (optional)',
-                  prefixIcon: Icon(Icons.groups_outlined),
-                ),
               ),
               const SizedBox(height: 22),
               FilledButton(

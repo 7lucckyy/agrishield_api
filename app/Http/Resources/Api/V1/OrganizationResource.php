@@ -30,8 +30,6 @@ final class OrganizationResource extends JsonResource
             'contact_email' => $organization->contact_email,
             'contact_phone' => $organization->contact_phone,
             'country' => $organization->country,
-            'referral_code' => $this->when($request->user()?->can('viewReferralCode', $organization) === true, $organization->referral_code),
-            'referral_code_expires_at' => $this->when($request->user()?->can('viewReferralCode', $organization) === true, $organization->referral_code_expires_at?->toISOString()),
             'created_at' => $organization->created_at?->toISOString(),
         ];
     }

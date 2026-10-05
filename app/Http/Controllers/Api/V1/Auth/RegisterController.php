@@ -15,15 +15,9 @@ class RegisterController extends Controller
 
     public function __invoke(RegisterRequest $request): JsonResponse
     {
-        $authentication = $this->registerUser->execute(
-            $request->validated(),
-            $request->ip(),
-            $request->userAgent(),
-        );
+        $authentication = $this->registerUser->execute($request->validated());
 
-        $response = (new AuthenticationResource($authentication))
-            ->additional(['meta' => ['referral_applied' => $request->filled('referral_code')]])
-            ->response();
+        $response = (new AuthenticationResource($authentication))->response();
         $response->setStatusCode(Response::HTTP_CREATED);
 
         return $response;

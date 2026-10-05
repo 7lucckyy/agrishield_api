@@ -57,7 +57,6 @@ use App\Http\Controllers\Api\V1\Organization\ListOrganizationController;
 use App\Http\Controllers\Api\V1\Organization\ListOrganizationFarmController;
 use App\Http\Controllers\Api\V1\Organization\ListOrganizationMemberController;
 use App\Http\Controllers\Api\V1\Organization\RemoveOrganizationMemberController;
-use App\Http\Controllers\Api\V1\Organization\RotateReferralCodeController;
 use App\Http\Controllers\Api\V1\Organization\ShowOrganizationController;
 use App\Http\Controllers\Api\V1\Organization\ShowOrganizationOverviewController;
 use App\Http\Controllers\Api\V1\Organization\StoreOrganizationController;
@@ -184,8 +183,6 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/organizations', StoreOrganizationController::class)->middleware('throttle:writes')->name('organizations.store');
         Route::get('/organizations/{organization}', ShowOrganizationController::class)->name('organizations.show');
         Route::patch('/organizations/{organization}', UpdateOrganizationController::class)->middleware('throttle:writes')->name('organizations.update');
-        Route::post('/organizations/{organization}/referral-code/rotate', RotateReferralCodeController::class)
-            ->middleware('throttle:writes')->name('organizations.referral.rotate');
         Route::get('/organizations/{organization}/members', ListOrganizationMemberController::class)
             ->name('organizations.members.index');
         Route::patch('/organizations/{organization}/members/{user}', UpdateOrganizationMemberController::class)
