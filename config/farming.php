@@ -4,6 +4,13 @@ return [
     'provider' => env('FARMING_PROVIDER', 'fake'),
 
     'providers' => [
+        'openweather' => [
+            'base_url' => env('OPENWEATHER_BASE_URL', 'https://api.openweathermap.org/data/2.5'),
+            'api_key' => env('OPENWEATHER_API_KEY'),
+            'connect_timeout' => (int) env('OPENWEATHER_CONNECT_TIMEOUT', 5),
+            'read_timeout' => (int) env('OPENWEATHER_READ_TIMEOUT', 15),
+            'cache_seconds' => (int) env('OPENWEATHER_CACHE_SECONDS', 900),
+        ],
         'satyukt' => [
             'base_url' => env('SATYUKT_BASE_URL'),
             'credentials_ref' => 'SATYUKT_API_KEY',

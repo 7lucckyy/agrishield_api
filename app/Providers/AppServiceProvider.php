@@ -11,6 +11,7 @@ use App\Integrations\Fake\FakeFarmerVoiceProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
 use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
 use App\Integrations\NAtlas\NAtlasVoiceTranscriptionProvider;
+use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
 use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
 use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FarmingInsightsProvider::class, function (Application $application): FarmingInsightsProvider {
             if ($application->isProduction()) {
                 return match ((string) config('farming.provider')) {
+                    'openweather' => $application->make(OpenWeatherInsightsProvider::class),
                     'satyukt' => $application->make(SatyuktInsightsProvider::class),
                     default => throw new InvalidArgumentException('Unknown production farming provider: '.config('farming.provider')),
                 };
@@ -49,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
 
             return match ((string) config('farming.provider')) {
                 'fake' => $application->make(FakeInsightsProvider::class),
+                'openweather' => $application->make(OpenWeatherInsightsProvider::class),
                 'satyukt' => $application->make(SatyuktInsightsProvider::class),
                 default => throw new InvalidArgumentException('Unknown farming provider: '.config('farming.provider')),
             };
