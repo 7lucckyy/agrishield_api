@@ -9,7 +9,6 @@ use App\DTOs\Provider\DiagnosisSubmission;
 use App\Enums\DiagnosisResultStatus;
 use App\Exceptions\Provider\ProviderContractViolation;
 use App\Integrations\Contracts\CropDiagnosisProvider;
-use App\Integrations\NAtlas\NAtlasCropAssessmentExplainer;
 use App\Integrations\Support\ProviderExceptionMapper;
 use App\Models\DiagnosisRequest;
 use Carbon\CarbonImmutable;
@@ -22,7 +21,6 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
 {
     public function __construct(
         private Factory $http,
-        private NAtlasCropAssessmentExplainer $explainer,
         private ProviderExceptionMapper $exceptionMapper,
     ) {}
 
@@ -73,23 +71,14 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
             if ($uncertainty === '') {
                 throw new ProviderContractViolation('Gemini returned no uncertainty statement.', 'provider_contract_violation', $reference);
             }
-            $explanation = $this->explainer->explain(
-                crop: $crop,
-                possibleCondition: $isCrop && $condition !== '' ? $condition : 'This image does not clearly show a crop symptom.',
-                visualSigns: $signs,
-                recommendation: trim((string) ($data['recommendation'] ?? '')),
-                uncertainty: $uncertainty,
-                responseLanguage: (string) data_get(config('voice-assistance.response_languages'), $request->requestedBy->locale, 'English'),
-            );
-
             return new DiagnosisResult(
                 DiagnosisResultStatus::Completed,
-                $explanation->diagnosis,
-                trim($explanation->recommendation.' Possible visual assessment for demonstration purposes. Please consult an extension worker before treatment.'),
+                $isCrop && $condition !== '' ? 'Possible diagnosis: '.$condition : 'The image does not clearly show a crop symptom.',
+                trim('Visible signs: '.implode('; ', $signs).'. '.(string) ($data['recommendation'] ?? '').' '.$uncertainty.' Possible visual assessment for demonstration purposes. Please consult an extension worker before treatment.'),
                 null,
                 null,
                 CarbonImmutable::now(),
-                providerRequestId: collect([$reference, $explanation->providerRequestId])->filter()->implode('|') ?: null,
+                providerRequestId: $reference,
             );
         } catch (Throwable $exception) {
             throw $this->exceptionMapper->fromThrowable($exception);
