@@ -13,6 +13,7 @@ use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
 use App\Integrations\NAtlas\NAtlasVoiceTranscriptionProvider;
 use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
 use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
+use App\Integrations\Gemini\GeminiCropDiagnosisProvider;
 use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
 use App\Models\User;
@@ -60,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CropDiagnosisProvider::class, function (Application $application): CropDiagnosisProvider {
             if ($application->isProduction()) {
                 return match ((string) config('diagnosis.provider')) {
+                    'gemini' => $application->make(GeminiCropDiagnosisProvider::class),
                     'openai' => $application->make(OpenAICropDiagnosisProvider::class),
                     'satyukt' => $application->make(SatyuktInsightsProvider::class),
                     default => throw new InvalidArgumentException('Unknown production diagnosis provider: '.config('diagnosis.provider')),
@@ -68,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
 
             return match ((string) config('diagnosis.provider')) {
                 'fake' => $application->make(FakeInsightsProvider::class),
+                'gemini' => $application->make(GeminiCropDiagnosisProvider::class),
                 'openai' => $application->make(OpenAICropDiagnosisProvider::class),
                 'satyukt' => $application->make(SatyuktInsightsProvider::class),
                 default => throw new InvalidArgumentException('Unknown crop diagnosis provider: '.config('diagnosis.provider')),
