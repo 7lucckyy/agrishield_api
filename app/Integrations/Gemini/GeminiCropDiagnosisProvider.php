@@ -9,6 +9,7 @@ use App\DTOs\Provider\DiagnosisSubmission;
 use App\Enums\DiagnosisResultStatus;
 use App\Exceptions\Provider\ProviderContractViolation;
 use App\Integrations\Contracts\CropDiagnosisProvider;
+use App\Integrations\NAtlas\NAtlasCropAssessmentExplainer;
 use App\Integrations\Support\ProviderExceptionMapper;
 use App\Models\DiagnosisRequest;
 use Carbon\CarbonImmutable;
@@ -19,7 +20,11 @@ use Throwable;
 
 final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvider
 {
-    public function __construct(private Factory $http, private ProviderExceptionMapper $exceptionMapper) {}
+    public function __construct(
+        private Factory $http,
+        private NAtlasCropAssessmentExplainer $explainer,
+        private ProviderExceptionMapper $exceptionMapper,
+    ) {}
 
     public function name(): string { return 'gemini'; }
 
@@ -41,13 +46,14 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
 
         try {
             $image = Storage::disk($request->image_disk)->get($request->image_path);
-            $response = $this->http->acceptJson()->asJson()
+            $request->loadMissing(['farm.activeCropCycle.crop:id,name', 'cropCycle.crop:id,name', 'requestedBy:id,locale']);
+            $response = $this->http->withHeaders(['x-goog-api-key' => $apiKey])->acceptJson()->asJson()
                 ->connectTimeout((int) config('diagnosis.gemini.connect_timeout'))
                 ->timeout((int) config('diagnosis.gemini.read_timeout'))
-                ->post(rtrim((string) config('diagnosis.gemini.base_url'), '/').'/models/'.config('diagnosis.gemini.model').':generateContent?key='.urlencode($apiKey), [
-                    'systemInstruction' => ['parts' => [['text' => 'You provide cautious crop-photo decision support. Never call a disease confirmed, never prescribe pesticides, and return JSON only.']]],
+                ->post(rtrim((string) config('diagnosis.gemini.base_url'), '/').'/models/'.config('diagnosis.gemini.model').':generateContent', [
+                    'systemInstruction' => ['parts' => [['text' => 'You provide cautious crop-photo decision support. Describe only visible evidence and possible causes. Never call a disease confirmed, never provide a confidence percentage, never prescribe pesticides or dosage, and return JSON only.']]],
                     'contents' => [['parts' => [
-                        ['text' => 'Assess visible crop symptoms. Return {"is_crop_image":boolean,"crop":string,"possible_condition":string,"confidence":number,"visual_signs":[string],"recommendation":string,"needs_expert_review":boolean,"safety_note":string}. Use low confidence when uncertain.'],
+                        ['text' => $this->assessmentPrompt($request)],
                         ['inlineData' => ['mimeType' => $request->image_mime, 'data' => base64_encode($image)]],
                     ]]],
                     'generationConfig' => ['responseMimeType' => 'application/json'],
@@ -57,23 +63,52 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
             $text = $response->json('candidates.0.content.parts.0.text');
             $data = is_string($text) ? json_decode($text, true, flags: JSON_THROW_ON_ERROR) : null;
             if (! is_array($data)) { throw new ProviderContractViolation('Gemini returned no structured crop result.', 'provider_contract_violation', $reference); }
-            $confidence = max(0.0, min(1.0, (float) ($data['confidence'] ?? 0)));
             $crop = trim((string) ($data['crop'] ?? ''));
             $condition = trim((string) ($data['possible_condition'] ?? ''));
             $isCrop = (bool) ($data['is_crop_image'] ?? false);
-            $signs = collect($data['visual_signs'] ?? [])->filter('is_string')->map(fn (string $value): string => trim($value))->filter()->values()->all();
+            $visualSigns = $data['visual_signs'] ?? [];
+            $signs = is_array($visualSigns) ? array_values(array_filter($visualSigns, 'is_string')) : [];
+            $signs = array_values(array_filter(array_map('trim', $signs), fn (string $sign): bool => $sign !== ''));
+            $uncertainty = trim((string) ($data['uncertainty'] ?? ''));
+            if ($uncertainty === '') {
+                throw new ProviderContractViolation('Gemini returned no uncertainty statement.', 'provider_contract_violation', $reference);
+            }
+            $explanation = $this->explainer->explain(
+                crop: $crop,
+                possibleCondition: $isCrop && $condition !== '' ? $condition : 'This image does not clearly show a crop symptom.',
+                visualSigns: $signs,
+                recommendation: trim((string) ($data['recommendation'] ?? '')),
+                uncertainty: $uncertainty,
+                responseLanguage: (string) data_get(config('voice-assistance.response_languages'), $request->requestedBy->locale, 'English'),
+            );
 
             return new DiagnosisResult(
                 DiagnosisResultStatus::Completed,
-                $isCrop ? ($condition !== '' ? $condition : 'Unable to confidently identify a condition.') : 'The image does not clearly show a crop symptom.',
-                trim('Possible visual signs: '.implode('; ', $signs).'. '.(string) ($data['recommendation'] ?? '').' '.(string) ($data['safety_note'] ?? 'AI-assisted result; consult an extension worker if symptoms are severe or unclear.')),
-                $confidence,
-                array_values(array_filter([['label' => Str::lower($crop), 'confidence' => $confidence], ['label' => Str::lower($condition), 'confidence' => $confidence]], fn (array $label): bool => $label['label'] !== '')),
+                $explanation->diagnosis,
+                trim($explanation->recommendation.' Possible visual assessment for demonstration purposes. Please consult an extension worker before treatment.'),
+                null,
+                null,
                 CarbonImmutable::now(),
-                $reference,
+                providerRequestId: collect([$reference, $explanation->providerRequestId])->filter()->implode('|') ?: null,
             );
         } catch (Throwable $exception) {
             throw $this->exceptionMapper->fromThrowable($exception);
         }
+    }
+
+    private function assessmentPrompt(DiagnosisRequest $request): string
+    {
+        $cropCycle = $request->cropCycle;
+        $crop = $cropCycle?->crop->name ?? $request->farm->activeCropCycle?->crop->name ?? 'Not recorded';
+        $location = collect([$request->farm->locality, $request->farm->state, $request->farm->country])->filter()->join(', ');
+
+        return implode("\n", [
+            'Assess visible crop symptoms only; this is a demonstration, not a confirmed diagnosis.',
+            'Recorded crop: '.$crop,
+            'Farm location: '.($location !== '' ? $location : 'Not recorded'),
+            'Farmer note: '.($request->note ?: 'None'),
+            'Return JSON with exactly these keys: is_crop_image (boolean), crop (string), possible_condition (string), visual_signs (array of strings), recommendation (string), uncertainty (string).',
+            'Use cautious wording, state what cannot be determined from this image, and give only low-risk inspection steps.',
+        ]);
     }
 }
