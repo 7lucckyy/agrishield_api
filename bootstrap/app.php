@@ -55,14 +55,10 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             $errors = $exception->errors();
-            $errorCode = array_key_exists('referral_code', $errors)
-                ? 'referral_code_invalid'
-                : 'validation_failed';
-
             return ApiErrorResponse::make(
                 $request,
                 'Validation failed.',
-                $errorCode,
+                'validation_failed',
                 Response::HTTP_UNPROCESSABLE_ENTITY,
                 $errors,
             );

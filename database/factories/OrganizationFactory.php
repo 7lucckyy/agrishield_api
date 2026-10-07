@@ -24,7 +24,6 @@ class OrganizationFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name).'-'.Str::lower(Str::random(6)),
-            'referral_code' => Str::upper(Str::random(10)),
             'status' => OrganizationStatus::Active,
             'country' => 'NG',
         ];

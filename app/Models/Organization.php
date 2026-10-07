@@ -21,15 +21,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $contact_email
  * @property string|null $contact_phone
  * @property string|null $country
- * @property string|null $referral_code
- * @property Carbon|null $referral_code_expires_at
  * @property Carbon|null $created_at
  * @property-read OrganizationMembership $membership
  * @property-read Collection<int, User> $users
  * @property-read Collection<int, Farm> $farms
  * @property-read Collection<int, VoiceAssistanceRequest> $voiceAssistanceRequests
  */
-#[Fillable(['name', 'slug', 'referral_code', 'referral_code_expires_at', 'status', 'contact_email', 'contact_phone', 'country', 'metadata'])]
+#[Fillable(['name', 'slug', 'status', 'contact_email', 'contact_phone', 'country', 'metadata'])]
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
@@ -48,12 +46,6 @@ class Organization extends Model
             ->as('membership')
             ->withPivot(['role', 'cluster_name', 'status', 'joined_at'])
             ->withTimestamps();
-    }
-
-    /** @return HasMany<ReferralRedemption, $this> */
-    public function referralRedemptions(): HasMany
-    {
-        return $this->hasMany(ReferralRedemption::class);
     }
 
     /** @return HasMany<Farm, $this> */
@@ -78,7 +70,6 @@ class Organization extends Model
     protected function casts(): array
     {
         return [
-            'referral_code_expires_at' => 'datetime',
             'status' => OrganizationStatus::class,
             'metadata' => 'array',
         ];

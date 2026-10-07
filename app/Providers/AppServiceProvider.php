@@ -11,11 +11,12 @@ use App\Integrations\Fake\FakeFarmerVoiceProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
 use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
 use App\Integrations\NAtlas\NAtlasVoiceTranscriptionProvider;
+use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
 use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
+use App\Integrations\Gemini\GeminiCropDiagnosisProvider;
 use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
 use App\Models\User;
-use App\Support\ProductionProviderGuard;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
@@ -41,16 +42,35 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(FarmingInsightsProvider::class, function (Application $application): FarmingInsightsProvider {
+            if ($application->isProduction()) {
+                return match ((string) config('farming.provider')) {
+                    'openweather' => $application->make(OpenWeatherInsightsProvider::class),
+                    'satyukt' => $application->make(SatyuktInsightsProvider::class),
+                    default => throw new InvalidArgumentException('Unknown production farming provider: '.config('farming.provider')),
+                };
+            }
+
             return match ((string) config('farming.provider')) {
                 'fake' => $application->make(FakeInsightsProvider::class),
+                'openweather' => $application->make(OpenWeatherInsightsProvider::class),
                 'satyukt' => $application->make(SatyuktInsightsProvider::class),
                 default => throw new InvalidArgumentException('Unknown farming provider: '.config('farming.provider')),
             };
         });
 
         $this->app->bind(CropDiagnosisProvider::class, function (Application $application): CropDiagnosisProvider {
+            if ($application->isProduction()) {
+                return match ((string) config('diagnosis.provider')) {
+                    'gemini' => $application->make(GeminiCropDiagnosisProvider::class),
+                    'openai' => $application->make(OpenAICropDiagnosisProvider::class),
+                    'satyukt' => $application->make(SatyuktInsightsProvider::class),
+                    default => throw new InvalidArgumentException('Unknown production diagnosis provider: '.config('diagnosis.provider')),
+                };
+            }
+
             return match ((string) config('diagnosis.provider')) {
                 'fake' => $application->make(FakeInsightsProvider::class),
+                'gemini' => $application->make(GeminiCropDiagnosisProvider::class),
                 'openai' => $application->make(OpenAICropDiagnosisProvider::class),
                 'satyukt' => $application->make(SatyuktInsightsProvider::class),
                 default => throw new InvalidArgumentException('Unknown crop diagnosis provider: '.config('diagnosis.provider')),
@@ -58,6 +78,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(FarmerVoiceProvider::class, function (Application $application): FarmerVoiceProvider {
+            if ($application->isProduction()) {
+                return match ((string) config('voice-assistance.provider')) {
+                    'n_atlas' => $application->make(NAtlasFarmerVoiceProvider::class),
+                    default => throw new InvalidArgumentException('Unknown production voice assistance provider: '.config('voice-assistance.provider')),
+                };
+            }
+
             return match ((string) config('voice-assistance.provider')) {
                 'fake' => $application->make(FakeFarmerVoiceProvider::class),
                 'n_atlas' => $application->make(NAtlasFarmerVoiceProvider::class),
@@ -69,14 +96,8 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(ProductionProviderGuard $providerGuard): void
+    public function boot(): void
     {
-        $providerGuard->ensureSafe($this->app->environment(), [
-            'farming' => config('farming.provider'),
-            'diagnosis' => config('diagnosis.provider'),
-            'voice_assistance' => config('voice-assistance.provider'),
-        ]);
-
         Gate::define('viewDetailedHealth', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
         Gate::define('manageIntegrations', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
         Gate::define('accessPlatform', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));

@@ -85,16 +85,12 @@ test('platform administrators manage organizations and integrations without expo
         ->and(AuditLog::query()->count())->toBe(2);
 });
 
-test('organization administrators update their organization and rotate referral codes', function () {
-    $organization = Organization::factory()->create(['referral_code' => 'OLDREFERRAL']);
+test('organization administrators update their organization', function () {
+    $organization = Organization::factory()->create();
     $administrator = User::factory()->create();
     attachOrganizationRole($administrator, $organization, OrganizationRole::OrganizationAdmin);
 
     $this->actingAs($administrator);
     $this->patchJson("/api/v1/organizations/{$organization->getKey()}", ['name' => 'Updated Growers'])
         ->assertSuccessful()->assertJsonPath('data.name', 'Updated Growers');
-    $this->postJson("/api/v1/organizations/{$organization->getKey()}/referral-code/rotate")
-        ->assertSuccessful();
-
-    expect($organization->refresh()->referral_code)->not->toBe('OLDREFERRAL');
 });

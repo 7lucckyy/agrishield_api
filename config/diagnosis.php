@@ -10,4 +10,11 @@ return [
         'connect_timeout' => (int) env('OPENAI_CONNECT_TIMEOUT', 10),
         'read_timeout' => (int) env('OPENAI_READ_TIMEOUT', 60),
     ],
+    'gemini' => [
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', env('GEMINI_VISION_MODEL', 'gemini-3.8-flash')),
+        'connect_timeout' => (int) env('GEMINI_CONNECT_TIMEOUT', 10),
+        'read_timeout' => (int) env('GEMINI_READ_TIMEOUT', 45),
+    ],
 ];

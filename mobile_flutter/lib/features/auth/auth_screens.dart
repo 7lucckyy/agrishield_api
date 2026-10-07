@@ -332,14 +332,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   final _phone = TextEditingController(text: '+234');
   final _password = TextEditingController();
   final _confirm = TextEditingController();
-  final _referral = TextEditingController();
   @override
   void dispose() {
     _name.dispose();
     _phone.dispose();
     _password.dispose();
     _confirm.dispose();
-    _referral.dispose();
     super.dispose();
   }
 

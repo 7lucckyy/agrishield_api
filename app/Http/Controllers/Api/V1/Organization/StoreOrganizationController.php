@@ -18,8 +18,6 @@ final class StoreOrganizationController extends Controller
     {
         $data = $request->validated();
         $data['slug'] ??= Str::slug($data['name']).'-'.Str::lower(Str::random(6));
-        $data['referral_code'] = Str::upper(Str::random(12));
-        $data['referral_code_expires_at'] = now()->addYear();
         $organization = Organization::query()->create($data);
         $recordAuditLog->execute('organization.created', $organization, ['after' => $organization->only(['name', 'slug', 'status'])]);
 

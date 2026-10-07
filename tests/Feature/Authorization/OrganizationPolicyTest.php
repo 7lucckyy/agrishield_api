@@ -96,7 +96,6 @@ test('inactive organizations are read only and suspended organizations block mem
 
     expect($admin->can('view', $inactiveOrganization))->toBeTrue()
         ->and($admin->cannot('update', $inactiveOrganization))->toBeTrue()
-        ->and($admin->cannot('rotateReferralCode', $inactiveOrganization))->toBeTrue()
         ->and($admin->cannot('view', $suspendedOrganization))->toBeTrue();
 });
 

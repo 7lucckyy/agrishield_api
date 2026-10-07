@@ -58,12 +58,6 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    /** @return HasMany<ReferralRedemption, $this> */
-    public function referralRedemptions(): HasMany
-    {
-        return $this->hasMany(ReferralRedemption::class);
-    }
-
     /** @return HasMany<Farm, $this> */
     public function farms(): HasMany
     {

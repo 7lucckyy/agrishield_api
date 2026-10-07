@@ -50,21 +50,6 @@ final class OrganizationPolicy
         return false;
     }
 
-    public function rotateReferralCode(User $user, Organization $organization): Response
-    {
-        return $this->authorizeMember(
-            $user,
-            $organization,
-            [OrganizationRole::OrganizationAdmin],
-            requiresActiveOrganization: true,
-        );
-    }
-
-    public function viewReferralCode(User $user, Organization $organization): Response
-    {
-        return $this->authorizeMember($user, $organization, [OrganizationRole::OrganizationAdmin]);
-    }
-
     public function viewMembers(User $user, Organization $organization): Response
     {
         return $this->authorizeMember($user, $organization, [OrganizationRole::OrganizationAdmin]);
