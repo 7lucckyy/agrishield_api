@@ -5,27 +5,36 @@ import 'package:flutter/foundation.dart';
 
 /// Prints each API request, response and error to the debug console.
 ///
-/// Bearer tokens and password fields are redacted so logs can be shared safely.
+/// Password fields are always redacted. Bearer tokens are redacted too unless
+/// [showTokens] is set, which the app only does in debug builds.
 /// Validation messages under `errors` are kept, since they never echo values.
 class ApiLogInterceptor extends Interceptor {
   ApiLogInterceptor({
     void Function(String message)? logPrint,
     this.maxBodyLength = 2000,
+    this.showTokens = false,
   }) : _logPrint = logPrint ?? debugPrint;
 
   static const _startedAtKey = 'api_log_started_at';
   static const _redacted = '***';
-  static const _sensitiveKeys = {
+  static const _passwordKeys = {
     'password',
     'password_confirmation',
     'current_password',
-    'token',
-    'access_token',
-    'refresh_token',
   };
+  static const _tokenKeys = {'token', 'access_token', 'refresh_token'};
 
   final void Function(String message) _logPrint;
   final int maxBodyLength;
+
+  /// Logs bearer tokens in full, e.g. to copy them into an API client.
+  final bool showTokens;
+
+  bool _isSensitive(String key) {
+    final normalized = key.toLowerCase();
+    return _passwordKeys.contains(normalized) ||
+        (!showTokens && _tokenKeys.contains(normalized));
+  }
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -82,7 +91,7 @@ class ApiLogInterceptor extends Interceptor {
 
   Map<String, dynamic> _redactHeaders(Map<String, dynamic> headers) => {
     for (final entry in headers.entries)
-      entry.key: entry.key.toLowerCase() == 'authorization'
+      entry.key: !showTokens && entry.key.toLowerCase() == 'authorization'
           ? 'Bearer $_redacted'
           : entry.value,
   };
@@ -113,8 +122,7 @@ class ApiLogInterceptor extends Interceptor {
     if (value is Map) {
       return {
         for (final entry in value.entries)
-          entry.key.toString():
-              _sensitiveKeys.contains(entry.key.toString().toLowerCase())
+          entry.key.toString(): _isSensitive(entry.key.toString())
               ? _redacted
               : entry.key == 'errors'
               ? entry.value

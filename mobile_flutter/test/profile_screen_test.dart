@@ -76,6 +76,7 @@ void main() {
   testWidgets('sign out asks for confirmation first', (tester) async {
     final controller = await _pumpProfile(tester);
 
+    await tester.scrollUntilVisible(find.text('Sign out'), 300);
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
     expect(find.text('Sign out of AgriShield?'), findsOneWidget);

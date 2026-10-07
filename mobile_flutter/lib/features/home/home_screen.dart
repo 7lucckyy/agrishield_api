@@ -236,6 +236,8 @@ class _IntelligenceBrief extends ConsumerWidget {
               const SectionHeading('Field actions'),
               _FieldActions(farm: focusFarm),
               const SectionHeading('Access for productivity'),
+              _LoansRow(onTap: () => context.push('/loans')),
+              const SizedBox(height: 10),
               _FinanceRow(onTap: () => context.push('/finance')),
             ],
           );
@@ -289,6 +291,8 @@ class _IntelligenceBrief extends ConsumerWidget {
             const SectionHeading('Field actions'),
             _FieldActions(farm: focusFarm),
             const SectionHeading('Access for productivity'),
+            _LoansRow(onTap: () => context.push('/loans')),
+            const SizedBox(height: 10),
             _FinanceRow(onTap: () => context.push('/finance')),
           ],
         );
@@ -796,6 +800,51 @@ class _ActionButton extends StatelessWidget {
               detail,
               style: const TextStyle(color: AgriColors.muted, fontSize: 12),
             ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _LoansRow extends StatelessWidget {
+  const _LoansRow({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: AgriColors.milletSoft,
+    borderRadius: BorderRadius.circular(AgriRadius.md),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AgriRadius.md),
+      child: const Padding(
+        padding: EdgeInsets.all(AgriSpacing.md),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: AgriColors.millet,
+              child: Icon(Icons.payments_outlined, color: AgriColors.ink),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Farm loans',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Tools, tractors, seeds and inputs. Repay after harvest.',
+                    style: TextStyle(color: AgriColors.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: AgriColors.muted),
           ],
         ),
       ),

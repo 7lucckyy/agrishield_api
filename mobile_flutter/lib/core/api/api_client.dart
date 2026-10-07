@@ -29,7 +29,7 @@ class ApiClient {
             ),
           ) {
     if (kDebugMode) {
-      _dio.interceptors.add(ApiLogInterceptor());
+      _dio.interceptors.add(ApiLogInterceptor(showTokens: true));
     }
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -77,6 +77,9 @@ class ApiClient {
       _dio.options.headers.remove('Authorization');
     } else {
       _dio.options.headers['Authorization'] = 'Bearer $token';
+      if (kDebugMode) {
+        debugPrint('🔑 API token: $token');
+      }
     }
   }
 
@@ -409,39 +412,31 @@ class ApiClient {
 
 const defaultApiBaseUrl = 'https://agrishield.ng/api/v1';
 
-/// Resolves the API base URL, defaulting to [defaultApiBaseUrl] unless
-/// `--dart-define=API_BASE_URL=...` points the build elsewhere.
-String configuredApiBaseUrl({
-  String? endpoint,
-  String? environment,
-  bool? release,
-}) {
+/// Resolves the API base URL: [defaultApiBaseUrl] unless
+/// `--dart-define=API_BASE_URL=...` overrides it.
+///
+/// Release builds only accept HTTPS so traffic can never go out unencrypted.
+String configuredApiBaseUrl({String? endpoint, bool? release}) {
   final configuredUrl =
-      endpoint ??
-      const String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: defaultApiBaseUrl,
-      );
-  final appEnvironment =
-      environment ??
-      const String.fromEnvironment('APP_ENV', defaultValue: 'development');
-  final isRelease = release ?? kReleaseMode;
-  final url = configuredUrl.isEmpty && !isRelease
-      ? 'http://localhost:8000/api/v1'
-      : configuredUrl;
+      (endpoint ??
+              const String.fromEnvironment(
+                'API_BASE_URL',
+                defaultValue: defaultApiBaseUrl,
+              ))
+          .trim();
+  final url = configuredUrl.isEmpty ? defaultApiBaseUrl : configuredUrl;
   final parsed = Uri.tryParse(url);
+  final isRelease = release ?? kReleaseMode;
+  final allowedSchemes = isRelease ? {'https'} : {'http', 'https'};
 
-  if (isRelease && !{'staging', 'production'}.contains(appEnvironment)) {
-    throw StateError(
-      'Release builds require APP_ENV=staging or APP_ENV=production.',
-    );
-  }
-  if (url.isEmpty ||
-      parsed == null ||
+  if (parsed == null ||
       !parsed.hasAuthority ||
-      (isRelease && parsed.scheme != 'https') ||
-      (!isRelease && !{'http', 'https'}.contains(parsed.scheme))) {
-    throw StateError('Set a valid API_BASE_URL for this build environment.');
+      !allowedSchemes.contains(parsed.scheme)) {
+    throw StateError(
+      isRelease
+          ? 'API_BASE_URL must be a valid https URL in release builds.'
+          : 'API_BASE_URL must be a valid http or https URL.',
+    );
   }
 
   return url;

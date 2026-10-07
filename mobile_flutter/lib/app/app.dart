@@ -10,6 +10,7 @@ import '../features/farms/farm_screens.dart';
 import '../features/farms/farm_sections_screen.dart';
 import '../features/finance/finance_screens.dart';
 import '../features/home/home_screen.dart';
+import '../features/loans/loan_screens.dart';
 import '../features/map/map_screen.dart';
 import '../features/more/more_screen.dart';
 import 'providers.dart';
@@ -113,6 +114,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             VoiceScreen(farmId: state.uri.queryParameters['farmId']),
       ),
       GoRoute(path: '/finance', builder: (_, _) => const FinanceScreen()),
+      GoRoute(path: '/loans', builder: (_, _) => const LoansScreen()),
+      GoRoute(
+        path: '/loans/request/:category',
+        builder: (_, state) => LoanRequestScreen(
+          category: LoanCategory.values.byName(
+            state.pathParameters['category']!,
+          ),
+        ),
+      ),
       GoRoute(
         path: '/finance/apply/:id',
         builder: (_, state) => FinanceApplyScreen(

@@ -74,6 +74,13 @@ class MoreScreen extends ConsumerWidget {
               onTap: () => context.go('/farms'),
             ),
             _SettingsTile(
+              icon: Icons.payments_outlined,
+              tint: AgriColors.millet,
+              title: 'Farm loans',
+              subtitle: 'Tools, tractors, seeds and inputs',
+              onTap: () => context.push('/loans'),
+            ),
+            _SettingsTile(
               icon: Icons.agriculture_outlined,
               tint: AgriColors.indigo,
               title: 'Asset access',
