@@ -48,6 +48,8 @@ dependencies:
   intl: ^0.20.3
   sqflite: ^2.4.4
   path: ^1.9.1
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +77,8 @@ flutter:
   assets:
     - assets/images/agrishield-icon.png
     - assets/images/northern-nigeria-farmers-onboarding.png
+    - assets/images/jigawa-farmer.jpeg
+    - assets/images/kano-farmer-tending-field.webp
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -58,7 +58,79 @@ void main() {
     );
     expect(find.text('Create my farmer account'), findsOneWidget);
     expect(find.text('I already have an account'), findsOneWidget);
-    expect(find.text('Photo: Mike Blyth · CC BY 2.5'), findsOneWidget);
+    expect(find.text('01 / 03'), findsOneWidget);
+
+    await tester.drag(find.byType(PageView), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Spot crop problems before they spread.'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Slide 3 of 3'));
+    await tester.pumpAndSettle();
+    expect(find.text('Map your farm. Ask by voice.'), findsOneWidget);
+    expect(find.text('Photo: Photobyamin · Wikimedia Commons'), findsOneWidget);
+    expect(find.text('Create my farmer account'), findsOneWidget);
+  });
+
+  testWidgets('sign in password can be revealed and hidden again', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: buildAgriShieldTheme(),
+          home: const SignInScreen(),
+        ),
+      ),
+    );
+
+    EditableText passwordField() => tester.widget<EditableText>(
+      find.descendant(
+        of: find.widgetWithText(TextFormField, 'Password'),
+        matching: find.byType(EditableText),
+      ),
+    );
+
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(passwordField().obscureText, isTrue);
+
+    await tester.tap(find.byTooltip('Show password'));
+    await tester.pump();
+    expect(passwordField().obscureText, isFalse);
+
+    await tester.tap(find.byTooltip('Hide password'));
+    await tester.pump();
+    expect(passwordField().obscureText, isTrue);
+  });
+
+  testWidgets('register password fields each have their own reveal toggle', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: buildAgriShieldTheme(),
+          home: const RegisterScreen(),
+        ),
+      ),
+    );
+
+    bool isObscured(String label) => tester
+        .widget<EditableText>(
+          find.descendant(
+            of: find.widgetWithText(TextFormField, label),
+            matching: find.byType(EditableText),
+          ),
+        )
+        .obscureText;
+
+    expect(find.byTooltip('Show password'), findsNWidgets(2));
+
+    await tester.ensureVisible(find.byTooltip('Show password').last);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byTooltip('Show password').last);
+    await tester.pump();
+    expect(isObscured('Create password'), isTrue);
+    expect(isObscured('Confirm password'), isFalse);
   });
 
   testWidgets('critical status includes a visible severity label and icon', (

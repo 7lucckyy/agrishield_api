@@ -28,9 +28,9 @@ class _FarmSectionsScreenState extends ConsumerState<FarmSectionsScreen> {
   }
 
   void _load() {
-    _future = (() async => (await ref.read(
-      farmRepositoryProvider.future,
-    )).detail(widget.farmId))();
+    _future = (() async =>
+        (await ref.read(farmRepositoryProvider.future))
+            .detail(widget.farmId))();
   }
 
   Future<void> _openForm([FarmSection? section]) async {
@@ -211,16 +211,15 @@ class _AllocationHeader extends StatelessWidget {
             style: TextStyle(
               color: AgriColors.millet,
               fontSize: 10,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
               letterSpacing: 1.1,
             ),
           ),
           const SizedBox(height: 7),
           Text(
             farm.name,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(color: Colors.white),
+            style: Theme.of(context).textTheme.headlineMedium
+                ?.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -276,8 +275,8 @@ class _AllocationMetric extends StatelessWidget {
         label.toUpperCase(),
         style: const TextStyle(
           color: Color(0xFF9EB6AA),
-          fontSize: 9,
-          fontWeight: FontWeight.w900,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
           letterSpacing: .9,
         ),
       ),
@@ -287,7 +286,7 @@ class _AllocationMetric extends StatelessWidget {
         style: const TextStyle(
           color: Colors.white,
           fontSize: 18,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w700,
         ),
       ),
     ],
@@ -391,7 +390,7 @@ class _SectionCard extends StatelessWidget {
             Expanded(
               child: Text(
                 '${section.hectares.toStringAsFixed(2)} hectares',
-                style: const TextStyle(fontWeight: FontWeight.w900),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
             if (section.farmPercentage != null)
@@ -548,8 +547,7 @@ class _FarmSectionFormScreenState extends ConsumerState<FarmSectionFormScreen> {
                 title: widget.sectionId == null
                     ? 'Plan a growing section'
                     : 'Update this section',
-                description:
-                    'Give the section a clear label, choose its crop and allocate part of the farm area.',
+                description: 'Give the section a clear label, choose its crop and allocate part of the farm area.',
               ),
               TextFormField(
                 controller: _name,

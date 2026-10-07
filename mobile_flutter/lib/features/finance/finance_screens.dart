@@ -195,7 +195,7 @@ class _ProductCard extends StatelessWidget {
               const Text(
                 'AVAILABLE RANGE',
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 10,
                   color: AgriColors.muted,
                   fontWeight: FontWeight.w800,
                   letterSpacing: .8,

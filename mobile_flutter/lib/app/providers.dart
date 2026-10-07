@@ -140,38 +140,33 @@ class AuthController extends AsyncNotifier<AuthState> {
     }
   }
 
+  /// Signs in and updates the session only on success.
+  ///
+  /// Failures are rethrown to the caller instead of being stored as auth
+  /// state, so the router keeps the user on the form to see the error.
   Future<void> signIn(String phone, String password) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await _signOutInProgress;
-      final session = await _api.login(phone, password);
-      _api.setToken(session.token, ownerUserId: session.user.id);
-      final store = await ref.read(localStoreProvider.future);
-      await store.saveSession(session.token, session.user.toJson());
-      return AuthState(
-        user: session.user,
-        organizations: session.organizations,
-        activeOrganization: session.organizations.firstOrNull,
-        isRestoring: false,
-      );
-    });
+    await _signOutInProgress;
+    await _startSession(await _api.login(phone, password));
   }
 
+  /// Registers a farmer account; failures are rethrown like [signIn].
   Future<void> register(Json payload) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await _signOutInProgress;
-      final session = await _api.register(payload);
-      _api.setToken(session.token, ownerUserId: session.user.id);
-      final store = await ref.read(localStoreProvider.future);
-      await store.saveSession(session.token, session.user.toJson());
-      return AuthState(
+    await _signOutInProgress;
+    await _startSession(await _api.register(payload));
+  }
+
+  Future<void> _startSession(AuthSession session) async {
+    _api.setToken(session.token, ownerUserId: session.user.id);
+    final store = await ref.read(localStoreProvider.future);
+    await store.saveSession(session.token, session.user.toJson());
+    state = AsyncData(
+      AuthState(
         user: session.user,
         organizations: session.organizations,
         activeOrganization: session.organizations.firstOrNull,
         isRestoring: false,
-      );
-    });
+      ),
+    );
   }
 
   Future<void> signOut() async {

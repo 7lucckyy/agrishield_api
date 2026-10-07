@@ -10,6 +10,7 @@ import '../features/farms/farm_screens.dart';
 import '../features/farms/farm_sections_screen.dart';
 import '../features/finance/finance_screens.dart';
 import '../features/home/home_screen.dart';
+import '../features/loans/loan_screens.dart';
 import '../features/map/map_screen.dart';
 import '../features/more/more_screen.dart';
 import 'providers.dart';
@@ -26,10 +27,15 @@ class AgriShieldApp extends ConsumerWidget {
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authControllerProvider);
-  return GoRouter(
+  final authState = ValueNotifier(ref.read(authControllerProvider));
+  ref.listen(authControllerProvider, (_, next) => authState.value = next);
+  ref.onDispose(authState.dispose);
+
+  final router = GoRouter(
     initialLocation: '/splash',
+    refreshListenable: authState,
     redirect: (context, state) {
+      final auth = authState.value;
       final location = state.matchedLocation;
       if (auth.isLoading) return location == '/splash' ? null : '/splash';
       final signedIn = auth.value?.isAuthenticated ?? false;
@@ -108,6 +114,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             VoiceScreen(farmId: state.uri.queryParameters['farmId']),
       ),
       GoRoute(path: '/finance', builder: (_, _) => const FinanceScreen()),
+      GoRoute(path: '/loans', builder: (_, _) => const LoansScreen()),
+      GoRoute(
+        path: '/loans/request/:category',
+        builder: (_, state) => LoanRequestScreen(
+          category: LoanCategory.values.byName(
+            state.pathParameters['category']!,
+          ),
+        ),
+      ),
       GoRoute(
         path: '/finance/apply/:id',
         builder: (_, state) => FinanceApplyScreen(
@@ -116,6 +131,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(router.dispose);
+  return router;
 });
 
 class AppShell extends ConsumerWidget {

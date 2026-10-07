@@ -12,6 +12,8 @@ import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/agri_widgets.dart';
 import '../../models/models.dart';
+import 'ai_response.dart';
+import 'dummy_ai.dart';
 
 final voiceHistoryProvider = FutureProvider.autoDispose<List<VoiceRequest>>(
   (ref) => ref.read(apiClientProvider).voiceRequests(),
@@ -227,7 +229,7 @@ class _AssistChoice extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 34,
                 color: AgriColors.line,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -272,9 +274,14 @@ class DiagnosisScreen extends ConsumerStatefulWidget {
 class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
   final _picker = ImagePicker();
   final _note = TextEditingController();
+  final _answerKey = GlobalKey();
   XFile? _image;
   bool _busy = false;
-  Map<String, dynamic>? _result;
+  AiResponse? _result;
+
+  /// Rotates through the placeholder answers so repeat checks differ.
+  static int _answerCount = 0;
+
   @override
   void dispose() {
     _note.dispose();
@@ -300,28 +307,35 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
     });
   }
 
+  /// Shows a placeholder diagnosis; the crop AI is not connected yet.
   Future<void> _submit() async {
     if (_image == null) {
       showMessage(context, 'Take or choose a crop photo first.');
       return;
     }
+    FocusScope.of(context).unfocus();
     setState(() => _busy = true);
-    try {
-      final result = await ref
-          .read(offlineSubmissionRepositoryProvider.future)
-          .then(
-            (repository) => repository.submitDiagnosis(
-              farmId: widget.farmId,
-              imagePath: _image!.path,
-              note: _note.text.trim().isEmpty ? null : _note.text.trim(),
-            ),
-          );
-      ref.invalidate(diagnosisHistoryProvider(widget.farmId));
-      if (mounted) setState(() => _result = result);
-    } catch (error) {
-      if (mounted) showMessage(context, friendlyError(error));
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (!mounted) {
+      return;
     }
-    if (mounted) setState(() => _busy = false);
+    setState(() {
+      _busy = false;
+      _result = _pickDiagnosis(_note.text.toLowerCase());
+    });
+    _scrollToAnswer(_answerKey);
+  }
+
+  AiResponse _pickDiagnosis(String note) {
+    if (note.contains('yellow')) {
+      return dummyCropDiagnoses[2];
+    }
+    if (note.contains('hole') ||
+        note.contains('worm') ||
+        note.contains('eat')) {
+      return dummyCropDiagnoses[1];
+    }
+    return dummyCropDiagnoses[_answerCount++ % dummyCropDiagnoses.length];
   }
 
   @override
@@ -397,36 +411,11 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
         ),
       ],
       if (_result != null) ...[
-        const SectionHeading('Your crop check'),
-        _DiagnosisResult(result: _result!),
+        const SizedBox(height: AgriSpacing.lg),
+        AiResponseView(key: ObjectKey(_result), response: _result!),
+        SizedBox(key: _answerKey),
       ],
     ],
-  );
-}
-
-class _DiagnosisResult extends StatelessWidget {
-  const _DiagnosisResult({required this.result});
-  final Map<String, dynamic> result;
-  @override
-  Widget build(BuildContext context) => AgriCard(
-    color: AgriColors.milletSoft,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        StatusPill(result['status']?.toString() ?? 'submitted'),
-        const SizedBox(height: 12),
-        Text(
-          result['diagnosis']?.toString() ?? 'Your photo was received',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          result['recommendation']?.toString() ??
-              'Analysis is running. You can return later to see the result.',
-          style: const TextStyle(height: 1.5),
-        ),
-      ],
-    ),
   );
 }
 
@@ -446,7 +435,11 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
   int _seconds = 0;
   String? _path;
   Timer? _timer;
-  Map<String, dynamic>? _result;
+  final _answerKey = GlobalKey();
+  DummyVoiceExchange? _result;
+
+  /// Rotates through the placeholder answers so repeat questions differ.
+  static int _answerCount = 0;
   @override
   void dispose() {
     _timer?.cancel();
@@ -494,26 +487,20 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
     });
   }
 
+  /// Shows a placeholder answer; the voice AI is not connected yet.
   Future<void> _submit() async {
     if (_path == null) return;
     setState(() => _busy = true);
-    try {
-      final result = await ref
-          .read(offlineSubmissionRepositoryProvider.future)
-          .then(
-            (repository) => repository.submitVoice(
-              audioPath: _path!,
-              sourceLanguage: _source,
-              responseLanguage: _response,
-              farmId: widget.farmId,
-            ),
-          );
-      ref.invalidate(voiceHistoryProvider);
-      if (mounted) setState(() => _result = result);
-    } catch (error) {
-      if (mounted) showMessage(context, friendlyError(error));
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (!mounted) {
+      return;
     }
-    if (mounted) setState(() => _busy = false);
+    setState(() {
+      _busy = false;
+      _result =
+          dummyVoiceExchanges[_answerCount++ % dummyVoiceExchanges.length];
+    });
+    _scrollToAnswer(_answerKey);
   }
 
   @override
@@ -599,29 +586,14 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
         TextButton(onPressed: _toggle, child: const Text('Record again')),
       ],
       if (_result != null) ...[
-        const SectionHeading('AgriShield guidance'),
-        AgriCard(
-          color: AgriColors.indigoSoft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              StatusPill(_result!['status']?.toString() ?? 'submitted'),
-              const SizedBox(height: 12),
-              Text(
-                _result!['guidance']?.toString() ??
-                    'Your recording was received. Guidance is being prepared.',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              if (_result!['safety_note'] != null) ...[
-                const Divider(height: 28),
-                Text(
-                  _result!['safety_note'].toString(),
-                  style: const TextStyle(color: AgriColors.muted),
-                ),
-              ],
-            ],
-          ),
+        const SizedBox(height: AgriSpacing.lg),
+        UserQuestionBubble(
+          text: _result!.question,
+          caption: 'Voice note · ${_seconds}s · transcribed',
         ),
+        const SizedBox(height: AgriSpacing.md),
+        AiResponseView(key: ObjectKey(_result), response: _result!.answer),
+        SizedBox(key: _answerKey),
       ],
     ],
   );
@@ -633,3 +605,17 @@ const _languages = [
   DropdownMenuItem(value: 'yo', child: Text('Yorùbá')),
   DropdownMenuItem(value: 'ig', child: Text('Igbo')),
 ];
+
+/// Brings a freshly shown answer into view.
+void _scrollToAnswer(GlobalKey key) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final answerContext = key.currentContext;
+    if (answerContext != null) {
+      Scrollable.ensureVisible(
+        answerContext,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  });
+}

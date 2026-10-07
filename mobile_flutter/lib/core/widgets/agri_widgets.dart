@@ -22,12 +22,7 @@ class AgriPage extends StatelessWidget {
     floatingActionButton: floatingActionButton,
     body: SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AgriSpacing.md,
-          AgriSpacing.md,
-          AgriSpacing.md,
-          112,
-        ),
+        padding: const EdgeInsets.fromLTRB(20, AgriSpacing.md, 20, 112),
         children: children,
       ),
     ),
@@ -55,9 +50,9 @@ class PageHeading extends StatelessWidget {
             eyebrow!.toUpperCase(),
             style: const TextStyle(
               color: AgriColors.grove,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               fontSize: 11,
-              letterSpacing: 1.2,
+              letterSpacing: 1,
             ),
           ),
         const SizedBox(height: 6),
@@ -65,7 +60,7 @@ class PageHeading extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           description,
-          style: Theme.of(context).textTheme.bodyLarge
+          style: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: AgriColors.muted),
         ),
       ],
@@ -79,7 +74,7 @@ class SectionHeading extends StatelessWidget {
   final Widget? action;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: AgriSpacing.lg, bottom: AgriSpacing.sm),
+    padding: const EdgeInsets.only(top: 28, bottom: 12),
     child: Row(
       children: [
         Expanded(
@@ -139,8 +134,8 @@ class StatusPill extends StatelessWidget {
               label.replaceAll('_', ' ').toUpperCase(),
               style: TextStyle(
                 color: style.foreground,
-                fontWeight: FontWeight.w900,
-                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                fontSize: 10,
                 letterSpacing: .75,
               ),
             ),

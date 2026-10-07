@@ -1,10 +1,12 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
@@ -12,6 +14,7 @@ import '../../core/widgets/agri_widgets.dart';
 import '../../models/models.dart';
 import '../map/map_screen.dart';
 import 'farm_boundary.dart';
+import 'farm_boundary_map.dart';
 
 class FarmsScreen extends ConsumerWidget {
   const FarmsScreen({super.key});
@@ -58,7 +61,7 @@ class FarmsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Stand at the farm, capture your position and choose an estimated field size.',
+                        'Find your field on the satellite map and tap its corners.',
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -143,130 +146,147 @@ class _FarmCard extends StatelessWidget {
 }
 
 class AddFarmScreen extends ConsumerStatefulWidget {
-  const AddFarmScreen({super.key});
+  const AddFarmScreen({
+    super.key,
+    @visibleForTesting this.tileProvider,
+    @visibleForTesting this.initialCenter,
+    @visibleForTesting this.initialZoom,
+  });
+
+  /// Overrides map tile loading, e.g. to avoid network access in tests.
+  final TileProvider? tileProvider;
+  final LatLng? initialCenter;
+  final double? initialZoom;
+
   @override
   ConsumerState<AddFarmScreen> createState() => _AddFarmScreenState();
 }
+
+enum _AddFarmStep { boundary, details }
 
 class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _locality = TextEditingController();
-  final _state = TextEditingController();
-  StreamSubscription<Position>? _walkSubscription;
-  final List<BoundaryPoint> _perimeter = [];
-  double? _lastAccuracy;
-  bool _walking = false;
-  bool _paused = false;
-  bool _finished = false;
+  String? _state;
+  final _mapController = MapController();
+  final List<LatLng> _corners = [];
+  _AddFarmStep _step = _AddFarmStep.boundary;
+  LatLng? _deviceLocation;
+  bool _locating = false;
   bool _busy = false;
+
+  FarmBoundary get _boundary => FarmBoundary([
+    for (final corner in _corners)
+      BoundaryPoint(corner.latitude, corner.longitude),
+  ]);
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCenter == null) {
+      _centerOnDeviceIfAllowed();
+    }
+  }
+
   @override
   void dispose() {
-    _walkSubscription?.cancel();
+    _mapController.dispose();
     _name.dispose();
     _locality.dispose();
-    _state.dispose();
     super.dispose();
   }
 
-  Future<void> _startWalk() async {
-    final enabled = await Geolocator.isLocationServiceEnabled();
-    if (!enabled && mounted) {
-      showMessage(context, 'Turn on Location Services, then try again.');
-      return;
+  /// Jumps to the farmer's position on open, without prompting for access.
+  Future<void> _centerOnDeviceIfAllowed() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission != LocationPermission.always &&
+          permission != LocationPermission.whileInUse) {
+        return;
+      }
+      final position = await Geolocator.getLastKnownPosition();
+      if (position != null && mounted && _corners.isEmpty) {
+        _showDeviceLocation(position);
+      }
+    } catch (_) {
+      // Location is a convenience here; the farmer can still pan the map.
     }
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
+  }
+
+  Future<void> _locateDevice() async {
+    setState(() => _locating = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (mounted) {
+          showMessage(context, 'Turn on Location Services, then try again.');
+        }
+        return;
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          showMessage(
+            context,
+            'Allow location access to jump to where you are, or move the map yourself.',
+          );
+        }
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 20),
+        ),
+      );
+      if (mounted) {
+        _showDeviceLocation(position);
+      }
+    } catch (_) {
       if (mounted) {
         showMessage(
           context,
-          'Location permission is needed to register this field.',
+          'Your location could not be found. Move the map to your farm instead.',
         );
       }
-      return;
+    } finally {
+      if (mounted) {
+        setState(() => _locating = false);
+      }
     }
-    await _walkSubscription?.cancel();
-    setState(() {
-      _perimeter.clear();
-      _lastAccuracy = null;
-      _walking = true;
-      _paused = false;
-      _finished = false;
-    });
-    _walkSubscription =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 5,
-          ),
-        ).listen(
-          _recordPosition,
-          onError: (Object error) {
-            if (!mounted) return;
-            setState(() => _walking = false);
-            showMessage(
-              context,
-              'GPS tracking stopped. Check location access and try again.',
-            );
-          },
-        );
   }
 
-  void _recordPosition(Position position) {
-    if (!mounted || !_walking || _paused) return;
-    setState(() => _lastAccuracy = position.accuracy);
-    if (position.accuracy > 30) return;
-    if (_perimeter.isNotEmpty &&
-        Geolocator.distanceBetween(
-              _perimeter.last.latitude,
-              _perimeter.last.longitude,
-              position.latitude,
-              position.longitude,
-            ) <
-            4) {
-      return;
-    }
-    setState(
-      () =>
-          _perimeter.add(BoundaryPoint(position.latitude, position.longitude)),
-    );
+  void _showDeviceLocation(Position position) {
+    final location = LatLng(position.latitude, position.longitude);
+    setState(() => _deviceLocation = location);
+    _mapController.move(location, 17);
   }
 
-  Future<void> _finishWalk() async {
-    final boundary = FarmBoundary(_perimeter);
-    if (boundary.hasSelfIntersection) {
+  void _addCorner(LatLng point) {
+    if (_mapController.camera.zoom < minimumCornerZoom) {
       showMessage(
         context,
-        'The GPS trail crosses itself. Walk the perimeter again.',
+        'Zoom in closer to your field, then tap its corners.',
       );
       return;
     }
+    setState(() => _corners.add(point));
+  }
+
+  void _continueToDetails() {
+    final boundary = _boundary;
     if (!boundary.isValid) {
-      showMessage(
-        context,
-        'Walk at least three distinct corners before finishing.',
-      );
       return;
     }
-    await _walkSubscription?.cancel();
-    _walkSubscription = null;
-    if (mounted) {
-      setState(() {
-        _walking = false;
-        _finished = true;
-      });
-    }
+    setState(() => _step = _AddFarmStep.details);
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate() || !_finished) {
-      if (!_finished) {
-        showMessage(context, 'Finish a GPS perimeter walk before registering.');
-      }
+    if (!_formKey.currentState!.validate()) {
       return;
     }
     setState(() => _busy = true);
@@ -274,9 +294,9 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
       await ref.read(apiClientProvider).createFarm({
         'name': _name.text.trim(),
         'locality': _locality.text.trim(),
-        'state': _state.text.trim(),
+        'state': _state,
         'country': 'NG',
-        'boundary_geojson': FarmBoundary(_perimeter).toGeoJson(),
+        'boundary_geojson': _boundary.toGeoJson(),
       });
       ref.invalidate(farmsProvider);
       if (mounted) {
@@ -284,26 +304,178 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
         context.pop();
       }
     } catch (error) {
-      if (mounted) showMessage(context, friendlyError(error));
+      if (mounted) {
+        showMessage(context, friendlyError(error));
+      }
     }
-    if (mounted) setState(() => _busy = false);
+    if (mounted) {
+      setState(() => _busy = false);
+    }
   }
 
   @override
-  Widget build(BuildContext context) => AgriPage(
-    appBar: AppBar(title: const Text('Add a crop farm')),
-    children: [
-      const PageHeading(
-        eyebrow: 'Step 1 of 1',
-        title: 'Where is your field?',
-        description: 'Walk the farm perimeter with GPS on. Only positions with accuracy within 30 m are recorded.',
+  Widget build(BuildContext context) => PopScope(
+    canPop: _step == _AddFarmStep.boundary,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) {
+        setState(() => _step = _AddFarmStep.boundary);
+      }
+    },
+    child: _step == _AddFarmStep.boundary
+        ? _buildBoundaryStep(context)
+        : _buildDetailsStep(context),
+  );
+
+  Widget _buildBoundaryStep(BuildContext context) {
+    final boundary = _boundary;
+    final crossing = boundary.hasSelfIntersection;
+    final String guidance;
+    if (_corners.isEmpty) {
+      guidance = 'Zoom in to your field, then tap each corner in order.';
+    } else if (crossing) {
+      guidance = 'Two edges cross. Undo and tap the corners in order around the field.';
+    } else if (_corners.length < 3) {
+      guidance =
+          'Tap ${3 - _corners.length} more corner${_corners.length == 2 ? '' : 's'} to outline the field.';
+    } else {
+      guidance = 'Keep tapping to add corners, or continue when it matches.';
+    }
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        body: Stack(
+          children: [
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: widget.initialCenter ?? nigeriaCenter,
+                initialZoom: widget.initialZoom ?? 6,
+                minZoom: 4,
+                maxZoom: 20,
+                onTap: (_, point) => _addCorner(point),
+                interactionOptions: const InteractionOptions(
+                  // Double-tap gestures would delay every corner tap while
+                  // waiting for a second tap, so zoom is pinch-only here.
+                  flags:
+                      InteractiveFlag.all &
+                      ~InteractiveFlag.rotate &
+                      ~InteractiveFlag.doubleTapZoom &
+                      ~InteractiveFlag.doubleTapDragZoom,
+                ),
+              ),
+              children: [
+                ...satelliteBaseLayers(tileProvider: widget.tileProvider),
+                ...boundaryOverlayLayers(_corners, hasCrossingEdges: crossing),
+                if (_deviceLocation != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _deviceLocation!,
+                        width: 22,
+                        height: 22,
+                        child: const _DeviceLocationDot(),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AgriSpacing.md),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _MapCircleButton(
+                      icon: Icons.arrow_back_rounded,
+                      tooltip: 'Back',
+                      onPressed: () => context.pop(),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _MapHint(
+                        title: 'Mark your farm',
+                        message: guidance,
+                        warning: crossing,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              right: AgriSpacing.md,
+              bottom: 196,
+              child: _MapCircleButton(
+                icon: Icons.my_location_rounded,
+                tooltip: 'Go to my location',
+                busy: _locating,
+                onPressed: _locating ? null : _locateDevice,
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: _BoundaryPanel(
+                corners: _corners.length,
+                hectares: boundary.hectares,
+                canContinue: boundary.isValid,
+                onUndo: _corners.isEmpty
+                    ? null
+                    : () => setState(_corners.removeLast),
+                onClear: _corners.isEmpty
+                    ? null
+                    : () => setState(_corners.clear),
+                onContinue: _continueToDetails,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildDetailsStep(BuildContext context) => AgriPage(
+    appBar: AppBar(
+      title: const Text('Farm details'),
+      leading: IconButton(
+        tooltip: 'Edit boundary',
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () => setState(() => _step = _AddFarmStep.boundary),
+      ),
+    ),
+    children: [
+      BoundaryPreviewMap(
+        corners: List.of(_corners),
+        tileProvider: widget.tileProvider,
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              '${_boundary.hectares.toStringAsFixed(2)} ha · ${_corners.length} corners',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () => setState(() => _step = _AddFarmStep.boundary),
+            icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+            label: const Text('Edit outline'),
+          ),
+        ],
+      ),
+      const Text(
+        'Area from the map is an estimate, not a land survey.',
+        style: TextStyle(color: AgriColors.muted, fontSize: 12),
+      ),
+      const SectionHeading('About this farm'),
       Form(
         key: _formKey,
         child: Column(
           children: [
             TextFormField(
               controller: _name,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
                 labelText: 'Farm name',
                 hintText: 'Example: North maize field',
@@ -315,6 +487,8 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
             const SizedBox(height: 14),
             TextFormField(
               controller: _locality,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
               decoration: const InputDecoration(
                 labelText: 'Village or local area',
               ),
@@ -323,93 +497,225 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
                   : null,
             ),
             const SizedBox(height: 14),
-            TextFormField(
-              controller: _state,
+            DropdownButtonFormField<String>(
+              initialValue: _state,
+              isExpanded: true,
+              menuMaxHeight: 360,
+              borderRadius: BorderRadius.circular(AgriRadius.md),
               decoration: const InputDecoration(
                 labelText: 'State',
-                hintText: 'Kano',
+                prefixIcon: Icon(Icons.map_outlined),
               ),
-              validator: (value) =>
-                  (value?.trim().length ?? 0) < 2 ? 'Enter the state' : null,
-            ),
-          ],
-        ),
-      ),
-      const SectionHeading('Walk the boundary'),
-      AgriCard(
-        color: _finished ? AgriColors.leafSoft : AgriColors.indigoSoft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _finished
-                  ? 'Boundary ready to confirm'
-                  : _walking
-                  ? (_paused ? 'Walk paused' : 'Recording perimeter')
-                  : 'No boundary recorded',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${_perimeter.length} points · ${FarmBoundary(_perimeter).hectares.toStringAsFixed(2)} estimated ha',
-            ),
-            if (_lastAccuracy != null)
-              Text(
-                'Latest GPS accuracy ±${_lastAccuracy!.toStringAsFixed(0)} m${_lastAccuracy! > 30 ? ' — too weak; point skipped' : ''}',
-                style: TextStyle(
-                  color: _lastAccuracy! > 30
-                      ? AgriColors.clay
-                      : AgriColors.grove,
-                ),
-              ),
-            if (_perimeter.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _BoundaryPreview(points: _perimeter),
-            ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (!_walking)
-                  OutlinedButton(
-                    onPressed: _busy ? null : _startWalk,
-                    child: Text(_finished ? 'Start again' : 'Start walk'),
-                  ),
-                if (_walking)
-                  OutlinedButton(
-                    onPressed: () {
-                      setState(() => _paused = !_paused);
-                      if (_paused) {
-                        _walkSubscription?.pause();
-                      } else {
-                        _walkSubscription?.resume();
-                      }
-                    },
-                    child: Text(_paused ? 'Resume' : 'Pause'),
-                  ),
-                if (_walking)
-                  FilledButton(
-                    onPressed: _finishWalk,
-                    child: const Text('Finish walk'),
-                  ),
+              items: [
+                for (final state in nigerianStates)
+                  DropdownMenuItem(value: state, child: Text(state)),
               ],
+              onChanged: (state) => setState(() => _state = state),
+              validator: (state) => state == null ? 'Choose the state' : null,
             ),
           ],
         ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'GPS area is an estimate, not a land survey. Check the outline before saving.',
       ),
       const SizedBox(height: AgriSpacing.lg),
       FilledButton(
-        onPressed: _busy || !_finished ? null : _save,
+        onPressed: _busy ? null : _save,
         child: _busy
-            ? const CircularProgressIndicator()
+            ? const SizedBox.square(
+                dimension: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             : const Text('Register farm'),
       ),
     ],
+  );
+}
+
+class _BoundaryPanel extends StatelessWidget {
+  const _BoundaryPanel({
+    required this.corners,
+    required this.hectares,
+    required this.canContinue,
+    required this.onUndo,
+    required this.onClear,
+    required this.onContinue,
+  });
+
+  final int corners;
+  final double hectares;
+  final bool canContinue;
+  final VoidCallback? onUndo;
+  final VoidCallback? onClear;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.fromLTRB(
+      20,
+      16,
+      20,
+      16 + MediaQuery.paddingOf(context).bottom,
+    ),
+    decoration: const BoxDecoration(
+      color: AgriColors.paper,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 16)],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _PanelStat(value: '$corners', label: 'Corners'),
+            ),
+            Expanded(
+              child: _PanelStat(
+                value: corners < 3 ? '–' : hectares.toStringAsFixed(2),
+                label: 'Hectares (est.)',
+              ),
+            ),
+            IconButton(
+              tooltip: 'Undo last corner',
+              onPressed: onUndo,
+              icon: const Icon(Icons.undo_rounded),
+            ),
+            IconButton(
+              tooltip: 'Clear all corners',
+              onPressed: onClear,
+              icon: const Icon(Icons.delete_outline_rounded),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: canContinue ? onContinue : null,
+          child: const Text('Continue'),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          satelliteCredit,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: AgriColors.muted, fontSize: 10),
+        ),
+      ],
+    ),
+  );
+}
+
+class _PanelStat extends StatelessWidget {
+  const _PanelStat({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        value,
+        style: const TextStyle(
+          color: AgriColors.forest,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(color: AgriColors.muted, fontSize: 12),
+      ),
+    ],
+  );
+}
+
+class _MapHint extends StatelessWidget {
+  const _MapHint({
+    required this.title,
+    required this.message,
+    required this.warning,
+  });
+
+  final String title;
+  final String message;
+  final bool warning;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    decoration: BoxDecoration(
+      color: warning ? AgriColors.claySoft : const Color(0xF2FCFCF8),
+      borderRadius: BorderRadius.circular(AgriRadius.md),
+      boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 10)],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 2),
+        Text(
+          message,
+          style: TextStyle(
+            color: warning ? AgriColors.clay : AgriColors.muted,
+            fontSize: 13,
+            height: 1.35,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _MapCircleButton extends StatelessWidget {
+  const _MapCircleButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.busy = false,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: AgriColors.paper,
+    shape: const CircleBorder(),
+    elevation: 3,
+    child: IconButton(
+      tooltip: tooltip,
+      color: AgriColors.forest,
+      onPressed: onPressed,
+      icon: busy
+          ? const SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(icon),
+    ),
+  );
+}
+
+class _DeviceLocationDot extends StatelessWidget {
+  const _DeviceLocationDot();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xFF2F80ED),
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 3),
+      boxShadow: const [
+        BoxShadow(color: Color(0x552F80ED), blurRadius: 10, spreadRadius: 4),
+      ],
+    ),
   );
 }
 
@@ -793,7 +1099,7 @@ class _FarmHero extends StatelessWidget {
                     style: TextStyle(
                       color: AgriColors.millet,
                       fontSize: 10,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 1,
                     ),
                   ),
@@ -934,7 +1240,7 @@ class _SoilMetric extends StatelessWidget {
           style: const TextStyle(
             color: AgriColors.soil,
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -965,75 +1271,43 @@ class _Metric extends StatelessWidget {
   );
 }
 
-class _BoundaryPreview extends StatelessWidget {
-  const _BoundaryPreview({required this.points});
-
-  final List<BoundaryPoint> points;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 180,
-    width: double.infinity,
-    decoration: BoxDecoration(
-      color: AgriColors.canvas,
-      borderRadius: BorderRadius.circular(AgriRadius.sm),
-    ),
-    child: CustomPaint(painter: _BoundaryPainter(points)),
-  );
-}
-
-class _BoundaryPainter extends CustomPainter {
-  const _BoundaryPainter(this.points);
-
-  final List<BoundaryPoint> points;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) return;
-    final origin = points.first;
-    final longitudeScale = math.cos(origin.latitude * math.pi / 180);
-    final east = points
-        .map((point) => (point.longitude - origin.longitude) * longitudeScale)
-        .toList();
-    final north = points
-        .map((point) => point.latitude - origin.latitude)
-        .toList();
-    final minEast = east.reduce(math.min);
-    final maxEast = east.reduce(math.max);
-    final minNorth = north.reduce(math.min);
-    final maxNorth = north.reduce(math.max);
-    final span = math.max(
-      math.max(maxEast - minEast, maxNorth - minNorth),
-      0.00001,
-    );
-    final scale = math.min(size.width - 32, size.height - 32) / span;
-    final offsets = List.generate(
-      points.length,
-      (index) => Offset(
-        (east[index] - minEast) * scale + 16,
-        size.height - ((north[index] - minNorth) * scale + 16),
-      ),
-    );
-    final path = Path()..moveTo(offsets.first.dx, offsets.first.dy);
-    for (final point in offsets.skip(1)) {
-      path.lineTo(point.dx, point.dy);
-    }
-    if (offsets.length >= 3) path.close();
-    if (offsets.length >= 3) {
-      canvas.drawPath(path, Paint()..color = AgriColors.leafSoft);
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = AgriColors.forest
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5,
-    );
-    for (final point in offsets) {
-      canvas.drawCircle(point, 4, Paint()..color = AgriColors.forest);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _BoundaryPainter oldDelegate) => true;
-}
+/// Nigeria's 36 states and the Federal Capital Territory, alphabetically.
+const nigerianStates = [
+  'Abia',
+  'Adamawa',
+  'Akwa Ibom',
+  'Anambra',
+  'Bauchi',
+  'Bayelsa',
+  'Benue',
+  'Borno',
+  'Cross River',
+  'Delta',
+  'Ebonyi',
+  'Edo',
+  'Ekiti',
+  'Enugu',
+  'Federal Capital Territory',
+  'Gombe',
+  'Imo',
+  'Jigawa',
+  'Kaduna',
+  'Kano',
+  'Katsina',
+  'Kebbi',
+  'Kogi',
+  'Kwara',
+  'Lagos',
+  'Nasarawa',
+  'Niger',
+  'Ogun',
+  'Ondo',
+  'Osun',
+  'Oyo',
+  'Plateau',
+  'Rivers',
+  'Sokoto',
+  'Taraba',
+  'Yobe',
+  'Zamfara',
+];
