@@ -378,7 +378,9 @@ class VoiceRequest {
     required this.sourceLanguage,
     required this.responseLanguage,
     this.transcript,
+    this.translatedTranscript,
     this.guidance,
+    this.safetyNote,
     this.createdAt,
   });
   factory VoiceRequest.fromJson(Json json) => VoiceRequest(
@@ -387,7 +389,9 @@ class VoiceRequest {
     sourceLanguage: json['source_language']?.toString() ?? 'ha',
     responseLanguage: json['response_language']?.toString() ?? 'ha',
     transcript: json['transcript']?.toString(),
+    translatedTranscript: json['translated_transcript']?.toString(),
     guidance: json['guidance']?.toString(),
+    safetyNote: json['safety_note']?.toString(),
     createdAt: json['created_at']?.toString(),
   );
   final String id;
@@ -395,7 +399,9 @@ class VoiceRequest {
   final String sourceLanguage;
   final String responseLanguage;
   final String? transcript;
+  final String? translatedTranscript;
   final String? guidance;
+  final String? safetyNote;
   final String? createdAt;
 }
 

@@ -48,8 +48,10 @@ class SplashScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Practical guidance\nfor every field.',
-                  style: Theme.of(context).textTheme.headlineMedium
-                      ?.copyWith(color: Colors.white, height: 1.05),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    height: 1.05,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 const Row(
@@ -1002,7 +1004,8 @@ const _onboardingSlides = [
     icon: Icons.location_on_outlined,
     eyebrow: 'Made for Northern Nigerian farms',
     title: 'Know what your crop needs. Act with confidence.',
-    body: 'AgriShield helps you make the next field decision with practical, local guidance.',
+    body:
+        'AgriShield helps you make the next field decision with practical, local guidance.',
     semanticLabel: 'Two farmers inspecting sorghum and maize at sunrise',
   ),
   _OnboardingSlide(
@@ -1011,7 +1014,8 @@ const _onboardingSlides = [
     icon: Icons.eco_outlined,
     eyebrow: 'Crop checks',
     title: 'Spot crop problems before they spread.',
-    body: 'Check your plants from your phone and get clear next steps for your field.',
+    body:
+        'Check your plants from your phone and get clear next steps for your field.',
     semanticLabel: 'A farmer in Jigawa checking young plants in sandy soil',
   ),
   _OnboardingSlide(
@@ -1021,7 +1025,8 @@ const _onboardingSlides = [
     icon: Icons.mic_none_rounded,
     eyebrow: 'Farm mapping · Voice guidance',
     title: 'Map your farm. Ask by voice.',
-    body: 'Mark your farm boundaries and ask questions out loud when typing is not convenient.',
+    body:
+        'Mark your farm boundaries and ask questions out loud when typing is not convenient.',
     semanticLabel: 'A farmer tending a green rice field in Kano State',
     credit: 'Photo: Photobyamin · Wikimedia Commons',
   ),
@@ -1084,8 +1089,9 @@ class _SlideCopy extends StatelessWidget {
       const SizedBox(height: AgriSpacing.md),
       Text(
         slide.title,
-        style: Theme.of(context).textTheme.displaySmall
-            ?.copyWith(color: Colors.white, height: 1.04),
+        style: Theme.of(
+          context,
+        ).textTheme.displaySmall?.copyWith(color: Colors.white, height: 1.04),
       ),
       const SizedBox(height: 12),
       Text(

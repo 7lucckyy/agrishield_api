@@ -29,7 +29,7 @@ class ApiClient {
             ),
           ) {
     if (kDebugMode) {
-      _dio.interceptors.add(ApiLogInterceptor(showTokens: true));
+      _dio.interceptors.add(ApiLogInterceptor());
     }
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -77,9 +77,6 @@ class ApiClient {
       _dio.options.headers.remove('Authorization');
     } else {
       _dio.options.headers['Authorization'] = 'Bearer $token';
-      if (kDebugMode) {
-        debugPrint('🔑 API token: $token');
-      }
     }
   }
 
@@ -313,6 +310,18 @@ class ApiClient {
     }
   }
 
+  Future<Diagnosis> diagnosis(String farmId, String diagnosisId) async {
+    try {
+      return Diagnosis.fromJson(
+        (await _dio.get('/farms/$farmId/diagnosis-requests/$diagnosisId'))
+                .data['data']
+            as Json,
+      );
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
   Future<Json> submitVoice({
     required String path,
     required String sourceLanguage,
@@ -357,6 +366,16 @@ class ApiClient {
               )).data['data']
               as List;
       return data.whereType<Json>().map(VoiceRequest.fromJson).toList();
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<VoiceRequest> voiceRequest(String requestId) async {
+    try {
+      return VoiceRequest.fromJson(
+        (await _dio.get('/voice-assistance/$requestId')).data['data'] as Json,
+      );
     } catch (error) {
       _throw(error);
     }

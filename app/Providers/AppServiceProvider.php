@@ -9,6 +9,7 @@ use App\Integrations\Contracts\FarmingInsightsProvider;
 use App\Integrations\Contracts\VoiceTranscriptionProvider;
 use App\Integrations\Fake\FakeFarmerVoiceProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
+use App\Integrations\Gemini\GeminiFarmerVoiceProvider;
 use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
 use App\Integrations\NAtlas\NAtlasVoiceTranscriptionProvider;
 use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
@@ -80,6 +81,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FarmerVoiceProvider::class, function (Application $application): FarmerVoiceProvider {
             if ($application->isProduction()) {
                 return match ((string) config('voice-assistance.provider')) {
+                    'gemini' => $application->make(GeminiFarmerVoiceProvider::class),
                     'n_atlas' => $application->make(NAtlasFarmerVoiceProvider::class),
                     default => throw new InvalidArgumentException('Unknown production voice assistance provider: '.config('voice-assistance.provider')),
                 };
@@ -87,6 +89,7 @@ class AppServiceProvider extends ServiceProvider
 
             return match ((string) config('voice-assistance.provider')) {
                 'fake' => $application->make(FakeFarmerVoiceProvider::class),
+                'gemini' => $application->make(GeminiFarmerVoiceProvider::class),
                 'n_atlas' => $application->make(NAtlasFarmerVoiceProvider::class),
                 default => throw new InvalidArgumentException('Unknown voice assistance provider: '.config('voice-assistance.provider')),
             };

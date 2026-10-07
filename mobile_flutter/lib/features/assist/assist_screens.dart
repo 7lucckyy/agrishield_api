@@ -13,7 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/agri_widgets.dart';
 import '../../models/models.dart';
 import 'ai_response.dart';
-import 'dummy_ai.dart';
+import 'assist_response.dart';
 
 final voiceHistoryProvider = FutureProvider.autoDispose<List<VoiceRequest>>(
   (ref) => ref.read(apiClientProvider).voiceRequests(),
@@ -46,7 +46,8 @@ class AssistScreen extends ConsumerWidget {
           icon: Icons.camera_alt_rounded,
           number: '01',
           title: 'Check a crop photo',
-          description: 'Take a clear photo of the affected leaf, stem or fruit. AgriShield analyses visible symptoms and returns next steps.',
+          description:
+              'Take a clear photo of the affected leaf, stem or fruit. AgriShield analyses visible symptoms and returns next steps.',
           action: 'Open camera',
           onTap: farmId == null
               ? null
@@ -58,7 +59,8 @@ class AssistScreen extends ConsumerWidget {
           icon: Icons.mic_rounded,
           number: '02',
           title: 'Ask by voice',
-          description: 'Speak in Hausa, English, Yoruba or Igbo. Your question is transcribed and answered in your chosen language.',
+          description:
+              'Speak in Hausa, English, Yoruba or Igbo. Your question is transcribed and answered in your chosen language.',
           action: 'Record a question',
           onTap: () => context.push(
             '/voice/new${farmId == null ? '' : '?farmId=$farmId'}',
@@ -277,10 +279,8 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
   final _answerKey = GlobalKey();
   XFile? _image;
   bool _busy = false;
-  AiResponse? _result;
-
-  /// Rotates through the placeholder answers so repeat checks differ.
-  static int _answerCount = 0;
+  Diagnosis? _result;
+  String? _requestStatus;
 
   @override
   void dispose() {
@@ -304,38 +304,64 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
     setState(() {
       _image = image;
       _result = null;
+      _requestStatus = null;
     });
   }
 
-  /// Shows a placeholder diagnosis; the crop AI is not connected yet.
   Future<void> _submit() async {
     if (_image == null) {
       showMessage(context, 'Take or choose a crop photo first.');
       return;
     }
     FocusScope.of(context).unfocus();
-    setState(() => _busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-    if (!mounted) {
-      return;
-    }
     setState(() {
-      _busy = false;
-      _result = _pickDiagnosis(_note.text.toLowerCase());
+      _busy = true;
+      _result = null;
+      _requestStatus = null;
     });
-    _scrollToAnswer(_answerKey);
-  }
-
-  AiResponse _pickDiagnosis(String note) {
-    if (note.contains('yellow')) {
-      return dummyCropDiagnoses[2];
+    try {
+      final api = ref.read(apiClientProvider);
+      final submitted = await api.submitDiagnosis(
+        farmId: widget.farmId,
+        imagePath: _image!.path,
+        note: _note.text.trim().isEmpty ? null : _note.text.trim(),
+      );
+      final requestId = submitted['id'].toString();
+      if (!mounted) return;
+      ref.invalidate(diagnosisHistoryProvider(widget.farmId));
+      setState(() => _requestStatus = 'Analysing your photo…');
+      for (var attempt = 0; attempt < 15; attempt++) {
+        final diagnosis = await api.diagnosis(widget.farmId, requestId);
+        if (!mounted) return;
+        if (diagnosis.status == 'completed') {
+          setState(() {
+            _result = diagnosis;
+            _requestStatus = null;
+          });
+          ref.invalidate(diagnosisHistoryProvider(widget.farmId));
+          _scrollToAnswer(_answerKey);
+          return;
+        }
+        if (diagnosis.status == 'failed' || diagnosis.status == 'expired') {
+          setState(
+            () => _requestStatus =
+                'The photo could not be assessed. Please try another clear photo.',
+          );
+          return;
+        }
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+      if (mounted) {
+        setState(
+          () => _requestStatus =
+              'Your photo is still being analysed. Check Recent requests for the result.',
+        );
+      }
+    } catch (error) {
+      if (mounted) setState(() => _requestStatus = friendlyError(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-    if (note.contains('hole') ||
-        note.contains('worm') ||
-        note.contains('eat')) {
-      return dummyCropDiagnoses[1];
-    }
-    return dummyCropDiagnoses[_answerCount++ % dummyCropDiagnoses.length];
   }
 
   @override
@@ -343,9 +369,10 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
     appBar: AppBar(title: const Text('Crop photo check')),
     children: [
       const PageHeading(
-        eyebrow: 'N-ATLAS crop support',
+        eyebrow: 'Gemini crop support',
         title: 'Show the affected area',
-        description: 'Use daylight, keep the symptom in focus, and include one nearby healthy leaf if possible.',
+        description:
+            'Use daylight, keep the symptom in focus, and include one nearby healthy leaf if possible.',
       ),
       if (_image == null)
         AgriCard(
@@ -410,9 +437,16 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
           label: Text(_busy ? 'Uploading crop photo…' : 'Analyse crop'),
         ),
       ],
+      if (_requestStatus != null) ...[
+        const SizedBox(height: AgriSpacing.md),
+        AgriCard(child: Text(_requestStatus!)),
+      ],
       if (_result != null) ...[
         const SizedBox(height: AgriSpacing.lg),
-        AiResponseView(key: ObjectKey(_result), response: _result!),
+        AiResponseView(
+          key: ObjectKey(_result),
+          response: diagnosisResponse(_result!),
+        ),
         SizedBox(key: _answerKey),
       ],
     ],
@@ -436,10 +470,8 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
   String? _path;
   Timer? _timer;
   final _answerKey = GlobalKey();
-  DummyVoiceExchange? _result;
-
-  /// Rotates through the placeholder answers so repeat questions differ.
-  static int _answerCount = 0;
+  VoiceRequest? _result;
+  String? _requestStatus;
   @override
   void dispose() {
     _timer?.cancel();
@@ -479,6 +511,7 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       _seconds = 0;
       _path = null;
       _result = null;
+      _requestStatus = null;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (!mounted) return;
@@ -487,20 +520,57 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
     });
   }
 
-  /// Shows a placeholder answer; the voice AI is not connected yet.
   Future<void> _submit() async {
     if (_path == null) return;
-    setState(() => _busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-    if (!mounted) {
-      return;
-    }
     setState(() {
-      _busy = false;
-      _result =
-          dummyVoiceExchanges[_answerCount++ % dummyVoiceExchanges.length];
+      _busy = true;
+      _result = null;
+      _requestStatus = null;
     });
-    _scrollToAnswer(_answerKey);
+    try {
+      final api = ref.read(apiClientProvider);
+      final submitted = await api.submitVoice(
+        path: _path!,
+        sourceLanguage: _source,
+        responseLanguage: _response,
+        farmId: widget.farmId,
+      );
+      final requestId = submitted['id'].toString();
+      if (!mounted) return;
+      ref.invalidate(voiceHistoryProvider);
+      setState(() => _requestStatus = 'Preparing your answer…');
+      for (var attempt = 0; attempt < 15; attempt++) {
+        final request = await api.voiceRequest(requestId);
+        if (!mounted) return;
+        if (request.status == 'completed') {
+          setState(() {
+            _result = request;
+            _requestStatus = null;
+          });
+          ref.invalidate(voiceHistoryProvider);
+          _scrollToAnswer(_answerKey);
+          return;
+        }
+        if (request.status == 'failed') {
+          setState(
+            () => _requestStatus =
+                'Your question could not be answered. Please record it again.',
+          );
+          return;
+        }
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+      if (mounted) {
+        setState(
+          () => _requestStatus =
+              'Your answer is still being prepared. Check Recent requests for the result.',
+        );
+      }
+    } catch (error) {
+      if (mounted) setState(() => _requestStatus = friendlyError(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
@@ -510,7 +580,8 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       const PageHeading(
         eyebrow: 'N-ATLAS language support',
         title: 'Speak as you normally do',
-        description: 'Ask one clear farming question. You can receive the guidance in a different supported language.',
+        description:
+            'Ask one clear farming question. You can receive the guidance in a different supported language.',
       ),
       Row(
         children: [
@@ -585,14 +656,21 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
         ),
         TextButton(onPressed: _toggle, child: const Text('Record again')),
       ],
+      if (_requestStatus != null) ...[
+        const SizedBox(height: AgriSpacing.md),
+        AgriCard(child: Text(_requestStatus!)),
+      ],
       if (_result != null) ...[
         const SizedBox(height: AgriSpacing.lg),
         UserQuestionBubble(
-          text: _result!.question,
+          text: _result!.transcript ?? 'Voice question',
           caption: 'Voice note · ${_seconds}s · transcribed',
         ),
         const SizedBox(height: AgriSpacing.md),
-        AiResponseView(key: ObjectKey(_result), response: _result!.answer),
+        AiResponseView(
+          key: ObjectKey(_result),
+          response: voiceResponse(_result!),
+        ),
         SizedBox(key: _answerKey),
       ],
     ],
