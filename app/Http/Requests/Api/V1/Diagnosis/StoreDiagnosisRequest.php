@@ -36,6 +36,7 @@ final class StoreDiagnosisRequest extends FormRequest
             'image' => ['required', 'file', 'max:8192'],
             'farm_crop_cycle_id' => ['nullable', 'integer', Rule::exists('farm_crop_cycles', 'id')->where('farm_id', $this->farmId())],
             'note' => ['nullable', 'string', 'max:1000'],
+            'response_language' => ['sometimes', 'string', Rule::in(array_keys(config('diagnosis.response_languages')))],
         ];
     }
 

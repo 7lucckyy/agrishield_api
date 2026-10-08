@@ -30,12 +30,15 @@ test('a farm viewer uploads a sanitised private image and completes diagnosis wi
     $response = $this->actingAs($owner)->post("/api/v1/farms/{$farm->uuid}/diagnosis-requests", [
         'image' => UploadedFile::fake()->image('leaf.jpg', 300, 300),
         'note' => 'Yellow streaks on lower leaves',
+        'response_language' => 'ha',
     ], ['Accept' => 'application/json'])->assertAccepted()
-        ->assertJsonPath('data.status', DiagnosisStatus::Queued->value);
+        ->assertJsonPath('data.status', DiagnosisStatus::Queued->value)
+        ->assertJsonPath('data.response_language', 'ha');
 
     $diagnosis = DiagnosisRequest::query()->sole();
     Storage::disk('private')->assertExists($diagnosis->image_path);
     expect($diagnosis->image_path)->not->toContain('leaf.jpg')
+        ->and($diagnosis->response_language)->toBe('ha')
         ->and($response->json('data.image.url'))->toContain('/api/v1/media/diagnosis/');
     Queue::assertPushed(SubmitDiagnosisToProvider::class);
 
@@ -77,8 +80,11 @@ test('diagnosis retries use one request and reject a reused key with different c
     Queue::assertPushed(SubmitDiagnosisToProvider::class, 1);
 
     $this->post($url, ['image' => $image, 'note' => 'Different observation'], $headers)->assertConflict();
+    $this->post($url, ['image' => $image, 'note' => 'First observation', 'response_language' => 'ha'], $headers)->assertConflict();
     $this->post($url, ['image' => $image], ['Accept' => 'application/json', 'Idempotency-Key' => 'invalid'])
         ->assertUnprocessable()->assertInvalid('idempotency_key');
+    $this->post($url, ['image' => $image, 'response_language' => 'xx'], ['Accept' => 'application/json'])
+        ->assertUnprocessable()->assertInvalid('response_language');
 });
 
 test('the same farm image submitted by two authorized users creates private requests', function () {

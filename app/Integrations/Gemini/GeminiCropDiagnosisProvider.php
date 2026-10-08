@@ -44,7 +44,7 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
 
         try {
             $image = Storage::disk($request->image_disk)->get($request->image_path);
-            $request->loadMissing(['farm.activeCropCycle.crop:id,name', 'cropCycle.crop:id,name', 'requestedBy:id,locale']);
+            $request->loadMissing(['farm.activeCropCycle.crop:id,name', 'cropCycle.crop:id,name']);
             $response = $this->http->withHeaders(['x-goog-api-key' => $apiKey])->acceptJson()->asJson()
                 ->connectTimeout((int) config('diagnosis.gemini.connect_timeout'))
                 ->timeout((int) config('diagnosis.gemini.read_timeout'))
@@ -61,20 +61,25 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
             $text = $response->json('candidates.0.content.parts.0.text');
             $data = is_string($text) ? json_decode($text, true, flags: JSON_THROW_ON_ERROR) : null;
             if (! is_array($data)) { throw new ProviderContractViolation('Gemini returned no structured crop result.', 'provider_contract_violation', $reference); }
-            $crop = trim((string) ($data['crop'] ?? ''));
             $condition = trim((string) ($data['possible_condition'] ?? ''));
-            $isCrop = (bool) ($data['is_crop_image'] ?? false);
             $visualSigns = $data['visual_signs'] ?? [];
             $signs = is_array($visualSigns) ? array_values(array_filter($visualSigns, 'is_string')) : [];
             $signs = array_values(array_filter(array_map('trim', $signs), fn (string $sign): bool => $sign !== ''));
+            $recommendation = trim((string) ($data['recommendation'] ?? ''));
             $uncertainty = trim((string) ($data['uncertainty'] ?? ''));
-            if ($uncertainty === '') {
-                throw new ProviderContractViolation('Gemini returned no uncertainty statement.', 'provider_contract_violation', $reference);
+            $safetyNote = trim((string) ($data['safety_note'] ?? ''));
+            if ($condition === '' || $recommendation === '' || $uncertainty === '' || $safetyNote === '') {
+                throw new ProviderContractViolation('Gemini returned an incomplete crop assessment.', 'provider_contract_violation', $reference);
             }
             return new DiagnosisResult(
                 DiagnosisResultStatus::Completed,
-                $isCrop && $condition !== '' ? 'Possible diagnosis: '.$condition : 'The image does not clearly show a crop symptom.',
-                trim('Visible signs: '.implode('; ', $signs).'. '.(string) ($data['recommendation'] ?? '').' '.$uncertainty.' Possible visual assessment for demonstration purposes. Please consult an extension worker before treatment.'),
+                $condition,
+                implode("\n\n", array_filter([
+                    $signs === [] ? null : implode('; ', $signs),
+                    $recommendation,
+                    $uncertainty,
+                    $safetyNote,
+                ])),
                 null,
                 null,
                 CarbonImmutable::now(),
@@ -90,14 +95,17 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
         $cropCycle = $request->cropCycle;
         $crop = $cropCycle?->crop->name ?? $request->farm->activeCropCycle?->crop->name ?? 'Not recorded';
         $location = collect([$request->farm->locality, $request->farm->state, $request->farm->country])->filter()->join(', ');
+        $language = (string) data_get(config('diagnosis.response_languages'), $request->response_language, 'English');
 
         return implode("\n", [
             'Assess visible crop symptoms only; this is a demonstration, not a confirmed diagnosis.',
+            "Write every user-visible JSON string value in {$language}, including possible_condition, visual_signs, recommendation, uncertainty and safety_note. Keep JSON keys in English. Do not mix in English boilerplate unless the requested language is English.",
             'Recorded crop: '.$crop,
             'Farm location: '.($location !== '' ? $location : 'Not recorded'),
             'Farmer note: '.($request->note ?: 'None'),
-            'Return JSON with exactly these keys: is_crop_image (boolean), crop (string), possible_condition (string), visual_signs (array of strings), recommendation (string), uncertainty (string).',
-            'Use cautious wording, state what cannot be determined from this image, and give only low-risk inspection steps.',
+            'Return JSON with exactly these keys: is_crop_image (boolean), crop (string), possible_condition (string), visual_signs (array of strings), recommendation (string), uncertainty (string), safety_note (string).',
+            'For a non-crop image, possible_condition must explain that no crop symptom is visible in the requested language.',
+            'Use cautious wording, state what cannot be determined from this image, and give only low-risk inspection steps. The safety_note must say this is not a confirmed diagnosis and advise consulting a local extension worker before treatment.',
         ]);
     }
 }

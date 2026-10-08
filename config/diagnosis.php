@@ -2,6 +2,12 @@
 
 return [
     'provider' => env('DIAGNOSIS_PROVIDER', 'fake'),
+    'response_languages' => [
+        'en' => 'English',
+        'ha' => 'Hausa',
+        'yo' => 'Yoruba',
+        'ig' => 'Igbo',
+    ],
 
     'openai' => [
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),

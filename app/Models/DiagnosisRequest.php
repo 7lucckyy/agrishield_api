@@ -26,6 +26,7 @@ use Illuminate\Support\Str;
  * @property int $image_size_bytes
  * @property string $image_checksum
  * @property string|null $note
+ * @property string $response_language
  * @property DiagnosisStatus $status
  * @property string|null $diagnosis
  * @property string|null $recommendation
@@ -41,14 +42,14 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property-read Farm $farm
  */
-#[Fillable(['uuid', 'client_request_id', 'farm_crop_cycle_id', 'image_disk', 'image_path', 'image_mime', 'image_size_bytes', 'image_checksum', 'note', 'status', 'diagnosis', 'recommendation', 'confidence', 'detected_labels', 'provider_payload', 'external_reference', 'reviewed_at', 'submitted_at', 'completed_at', 'expires_at', 'failure_reason'])]
+#[Fillable(['uuid', 'client_request_id', 'farm_crop_cycle_id', 'image_disk', 'image_path', 'image_mime', 'image_size_bytes', 'image_checksum', 'note', 'response_language', 'status', 'diagnosis', 'recommendation', 'confidence', 'detected_labels', 'provider_payload', 'external_reference', 'reviewed_at', 'submitted_at', 'completed_at', 'expires_at', 'failure_reason'])]
 final class DiagnosisRequest extends Model
 {
     /** @use HasFactory<DiagnosisRequestFactory> */
     use HasFactory;
 
     /** @var array<string, mixed> */
-    protected $attributes = ['status' => 'queued', 'image_disk' => 'private'];
+    protected $attributes = ['status' => 'queued', 'image_disk' => 'private', 'response_language' => 'en'];
 
     /** @return BelongsTo<Farm, $this> */
     public function farm(): BelongsTo

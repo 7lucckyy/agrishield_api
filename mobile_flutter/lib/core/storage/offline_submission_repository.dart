@@ -29,6 +29,7 @@ class OfflineSubmissionRepository {
   Future<Map<String, dynamic>> submitDiagnosis({
     required String farmId,
     required String imagePath,
+    String responseLanguage = 'en',
     String? note,
   }) async {
     _ensureActiveOwner();
@@ -37,6 +38,7 @@ class OfflineSubmissionRepository {
       return await _api.submitDiagnosis(
         farmId: farmId,
         imagePath: imagePath,
+        responseLanguage: responseLanguage,
         note: note,
         idempotencyKey: localId,
       );
@@ -48,7 +50,11 @@ class OfflineSubmissionRepository {
         localId: localId,
         entityType: 'diagnosis',
         operation: 'create',
-        payload: {'farm_id': farmId, 'note': note},
+        payload: {
+          'farm_id': farmId,
+          'note': note,
+          'response_language': responseLanguage,
+        },
         mediaPath: durablePath,
       );
       return {
@@ -156,6 +162,8 @@ class OutboxSyncService {
         'diagnosis' => await _api.submitDiagnosis(
           farmId: operation.payload['farm_id']! as String,
           imagePath: operation.mediaPath!,
+          responseLanguage:
+              operation.payload['response_language'] as String? ?? 'en',
           note: operation.payload['note'] as String?,
           idempotencyKey: operation.localId,
         ),

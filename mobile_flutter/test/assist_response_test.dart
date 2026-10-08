@@ -8,6 +8,7 @@ void main() {
     final diagnosis = Diagnosis.fromJson({
       'id': 'diagnosis-1',
       'status': 'completed',
+      'response_language': 'ha',
       'diagnosis': 'Possible diagnosis: leaf blight',
       'recommendation':
           'Inspect nearby leaves and consult an extension worker.',
@@ -20,6 +21,7 @@ void main() {
       'Possible diagnosis: leaf blight',
     );
     expect(answer.plainText, contains('consult an extension worker'));
+    expect(diagnosis.responseLanguage, 'ha');
   });
 
   test('completed N-ATLaS voice request shows transcript and safety note', () {

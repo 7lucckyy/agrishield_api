@@ -18,7 +18,7 @@ use Throwable;
 
 final class CreateDiagnosisRequest
 {
-    /** @param array{farm_crop_cycle_id?: int|null, note?: string|null} $data */
+    /** @param array{farm_crop_cycle_id?: int|null, note?: string|null, response_language?: string} $data */
     public function execute(Farm $farm, User $user, UploadedFile $upload, array $data, ?string $clientRequestId = null): DiagnosisRequest
     {
         $original = file_get_contents($upload->getRealPath());
@@ -27,10 +27,11 @@ final class CreateDiagnosisRequest
         }
 
         $checksum = hash('sha256', $original);
+        $responseLanguage = $data['response_language'] ?? (array_key_exists($user->locale, config('diagnosis.response_languages')) ? $user->locale : 'en');
         $path = null;
         try {
             /** @var array{DiagnosisRequest, bool} $result */
-            $result = DB::transaction(function () use ($farm, $user, $data, $upload, $original, $checksum, $clientRequestId, &$path): array {
+            $result = DB::transaction(function () use ($farm, $user, $data, $upload, $original, $checksum, $responseLanguage, $clientRequestId, &$path): array {
                 User::query()->whereKey($user->getKey())->lockForUpdate()->firstOrFail();
 
                 if ($clientRequestId !== null) {
@@ -41,7 +42,8 @@ final class CreateDiagnosisRequest
                     if ($existing !== null) {
                         if ($existing->farm_id !== $farm->getKey() || $existing->image_checksum !== $checksum
                             || $existing->farm_crop_cycle_id !== ($data['farm_crop_cycle_id'] ?? null)
-                            || $existing->note !== ($data['note'] ?? null)) {
+                            || $existing->note !== ($data['note'] ?? null)
+                            || $existing->response_language !== $responseLanguage) {
                             throw new ConflictHttpException('The Idempotency-Key belongs to a different diagnosis request.');
                         }
 
@@ -52,6 +54,7 @@ final class CreateDiagnosisRequest
                         ->whereBelongsTo($farm)
                         ->whereBelongsTo($user, 'requestedBy')
                         ->where('image_checksum', $checksum)
+                        ->where('response_language', $responseLanguage)
                         ->first();
                     if ($existing !== null) {
                         return [$existing, false];
@@ -75,6 +78,7 @@ final class CreateDiagnosisRequest
                     'image_size_bytes' => strlen($contents),
                     'image_checksum' => $checksum,
                     'note' => $data['note'] ?? null,
+                    'response_language' => $responseLanguage,
                 ]);
                 $diagnosis->farm()->associate($farm);
                 $diagnosis->requestedBy()->associate($user);

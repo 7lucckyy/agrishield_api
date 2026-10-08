@@ -30,6 +30,7 @@ final class DiagnosisRequestResource extends JsonResource
             'crop_cycle_id' => $diagnosis->farm_crop_cycle_id,
             'status' => $diagnosis->status->value,
             'note' => $diagnosis->note,
+            'response_language' => $diagnosis->response_language,
             'image' => [
                 'url' => URL::temporarySignedRoute('media.diagnosis.image', $expiresAt, ['diagnosis' => $diagnosis]),
                 'expires_at' => $expiresAt->toISOString(),

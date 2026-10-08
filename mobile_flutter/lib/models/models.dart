@@ -353,6 +353,7 @@ class Diagnosis {
   const Diagnosis({
     required this.id,
     required this.status,
+    required this.responseLanguage,
     this.diagnosis,
     this.recommendation,
     this.createdAt,
@@ -360,12 +361,14 @@ class Diagnosis {
   factory Diagnosis.fromJson(Json json) => Diagnosis(
     id: json['id'].toString(),
     status: json['status']?.toString() ?? 'submitted',
+    responseLanguage: json['response_language']?.toString() ?? 'en',
     diagnosis: json['diagnosis']?.toString(),
     recommendation: json['recommendation']?.toString(),
     createdAt: json['created_at']?.toString(),
   );
   final String id;
   final String status;
+  final String responseLanguage;
   final String? diagnosis;
   final String? recommendation;
   final String? createdAt;

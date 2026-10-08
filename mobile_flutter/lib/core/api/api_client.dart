@@ -267,6 +267,7 @@ class ApiClient {
   Future<Json> submitDiagnosis({
     required String farmId,
     required String imagePath,
+    required String responseLanguage,
     String? note,
     String? idempotencyKey,
   }) async {
@@ -274,6 +275,7 @@ class ApiClient {
       final file = File(imagePath);
       final form = FormData.fromMap({
         'note': note,
+        'response_language': responseLanguage,
         'image': await MultipartFile.fromFile(
           imagePath,
           filename: file.uri.pathSegments.last,

@@ -12,7 +12,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class _OfflineApiClient extends ApiClient {
   bool online = false;
   Farm? farmResponse;
-  final List<(int?, String, String?)> submissions = [];
+  final List<(int?, String, String?, String?)> submissions = [];
 
   @override
   Future<List<Farm>> farms({bool activeOnly = false}) async {
@@ -31,11 +31,17 @@ class _OfflineApiClient extends ApiClient {
   Future<Json> submitDiagnosis({
     required String farmId,
     required String imagePath,
+    required String responseLanguage,
     String? note,
     String? idempotencyKey,
   }) async {
     if (!online) throw const ApiException('No connection');
-    submissions.add((authenticatedUserId, 'diagnosis', idempotencyKey));
+    submissions.add((
+      authenticatedUserId,
+      'diagnosis',
+      idempotencyKey,
+      responseLanguage,
+    ));
     return {'id': 'diagnosis-server-id'};
   }
 
@@ -48,7 +54,7 @@ class _OfflineApiClient extends ApiClient {
     String? idempotencyKey,
   }) async {
     if (!online) throw const ApiException('No connection');
-    submissions.add((authenticatedUserId, 'voice', idempotencyKey));
+    submissions.add((authenticatedUserId, 'voice', idempotencyKey, null));
     return {'id': 'voice-server-id'};
   }
 }
@@ -147,6 +153,7 @@ void main() {
         final queuedPhoto = await submissions.submitDiagnosis(
           farmId: 'farm-a',
           imagePath: photo.path,
+          responseLanguage: 'yo',
         );
         final queuedVoice = await submissions.submitVoice(
           audioPath: voice.path,
@@ -219,6 +226,10 @@ void main() {
           'diagnosis',
           'voice',
         });
+        expect(
+          api.submissions.singleWhere((item) => item.$2 == 'diagnosis').$4,
+          'yo',
+        );
         expect(api.submissions.map((item) => item.$3).toSet(), {
           queuedPhoto['local_id'],
           queuedVoice['local_id'],

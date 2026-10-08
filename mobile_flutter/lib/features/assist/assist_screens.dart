@@ -46,8 +46,7 @@ class AssistScreen extends ConsumerWidget {
           icon: Icons.camera_alt_rounded,
           number: '01',
           title: 'Check a crop photo',
-          description:
-              'Take a clear photo of the affected leaf, stem or fruit. AgriShield analyses visible symptoms and returns next steps.',
+          description: 'Take a clear photo of the affected leaf, stem or fruit. AgriShield analyses visible symptoms and returns next steps.',
           action: 'Open camera',
           onTap: farmId == null
               ? null
@@ -59,8 +58,7 @@ class AssistScreen extends ConsumerWidget {
           icon: Icons.mic_rounded,
           number: '02',
           title: 'Ask by voice',
-          description:
-              'Speak in Hausa, English, Yoruba or Igbo. Your question is transcribed and answered in your chosen language.',
+          description: 'Speak in Hausa, English, Yoruba or Igbo. Your question is transcribed and answered in your chosen language.',
           action: 'Record a question',
           onTap: () => context.push(
             '/voice/new${farmId == null ? '' : '?farmId=$farmId'}',
@@ -281,6 +279,16 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
   bool _busy = false;
   Diagnosis? _result;
   String? _requestStatus;
+  late String _responseLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    final locale = ref.read(authControllerProvider).value?.user?.locale;
+    _responseLanguage = {'en', 'ha', 'yo', 'ig'}.contains(locale)
+        ? locale!
+        : 'en';
+  }
 
   @override
   void dispose() {
@@ -324,6 +332,7 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
       final submitted = await api.submitDiagnosis(
         farmId: widget.farmId,
         imagePath: _image!.path,
+        responseLanguage: _responseLanguage,
         note: _note.text.trim().isEmpty ? null : _note.text.trim(),
       );
       final requestId = submitted['id'].toString();
@@ -344,8 +353,7 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
         }
         if (diagnosis.status == 'failed' || diagnosis.status == 'expired') {
           setState(
-            () => _requestStatus =
-                'The photo could not be assessed. Please try another clear photo.',
+            () => _requestStatus = 'The photo could not be assessed. Please try another clear photo.',
           );
           return;
         }
@@ -353,8 +361,7 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
       }
       if (mounted) {
         setState(
-          () => _requestStatus =
-              'Your photo is still being analysed. Check Recent requests for the result.',
+          () => _requestStatus = 'Your photo is still being analysed. Check Recent requests for the result.',
         );
       }
     } catch (error) {
@@ -371,8 +378,7 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
       const PageHeading(
         eyebrow: 'Gemini crop support',
         title: 'Show the affected area',
-        description:
-            'Use daylight, keep the symptom in focus, and include one nearby healthy leaf if possible.',
+        description: 'Use daylight, keep the symptom in focus, and include one nearby healthy leaf if possible.',
       ),
       if (_image == null)
         AgriCard(
@@ -429,6 +435,19 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
             labelText: 'What have you noticed? (optional)',
             hintText: 'Example: yellow spots started three days ago',
           ),
+        ),
+        const SizedBox(height: 14),
+        DropdownButtonFormField<String>(
+          initialValue: _responseLanguage,
+          decoration: const InputDecoration(labelText: 'Receive result in'),
+          items: _languages,
+          onChanged: _busy
+              ? null
+              : (language) {
+                  if (language != null) {
+                    setState(() => _responseLanguage = language);
+                  }
+                },
         ),
         const SizedBox(height: 14),
         FilledButton.icon(
@@ -562,8 +581,7 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       }
       if (mounted) {
         setState(
-          () => _requestStatus =
-              'Your answer is still being prepared. Check Recent requests for the result.',
+          () => _requestStatus = 'Your answer is still being prepared. Check Recent requests for the result.',
         );
       }
     } catch (error) {
@@ -580,8 +598,7 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       const PageHeading(
         eyebrow: 'N-ATLAS language support',
         title: 'Speak as you normally do',
-        description:
-            'Ask one clear farming question. You can receive the guidance in a different supported language.',
+        description: 'Ask one clear farming question. You can receive the guidance in a different supported language.',
       ),
       Row(
         children: [

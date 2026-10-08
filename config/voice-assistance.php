@@ -1,5 +1,7 @@
 <?php
 
+$nAtlasAsrBaseUrl = rtrim((string) env('NATLAS_ASR_BASE_URL', ''), '/');
+
 return [
     'provider' => env('VOICE_ASSISTANCE_PROVIDER', 'fake'),
     'transcription_provider' => env('VOICE_TRANSCRIPTION_PROVIDER', 'n_atlas'),
@@ -15,10 +17,10 @@ return [
         'api_key' => env('NATLAS_API_KEY'),
         'model' => env('NATLAS_MODEL', 'NCAIR1/N-ATLaS'),
         'asr_endpoints' => [
-            'en' => env('NATLAS_ENGLISH_ASR_URL'),
-            'ha' => env('NATLAS_HAUSA_ASR_URL'),
-            'yo' => env('NATLAS_YORUBA_ASR_URL'),
-            'ig' => env('NATLAS_IGBO_ASR_URL'),
+            'en' => $nAtlasAsrBaseUrl !== '' ? $nAtlasAsrBaseUrl.'/v1/transcriptions/en' : env('NATLAS_ENGLISH_ASR_URL'),
+            'ha' => $nAtlasAsrBaseUrl !== '' ? $nAtlasAsrBaseUrl.'/v1/transcriptions/ha' : env('NATLAS_HAUSA_ASR_URL'),
+            'yo' => $nAtlasAsrBaseUrl !== '' ? $nAtlasAsrBaseUrl.'/v1/transcriptions/yo' : env('NATLAS_YORUBA_ASR_URL'),
+            'ig' => $nAtlasAsrBaseUrl !== '' ? $nAtlasAsrBaseUrl.'/v1/transcriptions/ig' : env('NATLAS_IGBO_ASR_URL'),
         ],
         'connect_timeout' => (int) env('NATLAS_CONNECT_TIMEOUT', 10),
         'read_timeout' => (int) env('NATLAS_READ_TIMEOUT', 90),

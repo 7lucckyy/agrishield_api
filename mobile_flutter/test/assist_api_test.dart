@@ -1,8 +1,57 @@
+import 'dart:io';
+
 import 'package:agrishield_ai/core/api/api_client.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'uploads a photo with the selected language to the deployed API',
+    () async {
+      final directory = await Directory.systemTemp.createTemp('crop-language-');
+      final image = File('${directory.path}/leaf.jpg');
+      await image.writeAsBytes([0xff, 0xd8, 0xff, 0xd9]);
+      final dio = Dio(BaseOptions(baseUrl: defaultApiBaseUrl));
+      String? requestedUrl;
+      String? responseLanguage;
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            requestedUrl = options.uri.toString();
+            responseLanguage = (options.data as FormData).fields
+                .firstWhere((field) => field.key == 'response_language')
+                .value;
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 202,
+                data: {
+                  'data': {'id': 'diagnosis-1'},
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      try {
+        await ApiClient(dio: dio).submitDiagnosis(
+          farmId: 'farm-1',
+          imagePath: image.path,
+          responseLanguage: 'ha',
+        );
+
+        expect(
+          requestedUrl,
+          'https://agrishield.ng/api/v1/farms/farm-1/diagnosis-requests',
+        );
+        expect(responseLanguage, 'ha');
+      } finally {
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
   test(
     'loads completed crop and voice results from their API endpoints',
     () async {

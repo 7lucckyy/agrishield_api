@@ -25,6 +25,7 @@ class DiagnosisRequestFactory extends Factory
             'image_mime' => 'image/jpeg',
             'image_size_bytes' => 1024,
             'image_checksum' => hash('sha256', fake()->unique()->uuid()),
+            'response_language' => 'en',
             'status' => DiagnosisStatus::Queued,
         ];
     }
