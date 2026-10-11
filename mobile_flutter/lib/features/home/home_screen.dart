@@ -236,9 +236,9 @@ class _IntelligenceBrief extends ConsumerWidget {
               const SectionHeading('Field actions'),
               _FieldActions(farm: focusFarm),
               const SectionHeading('Access for productivity'),
-              _LoansRow(onTap: () => context.push('/loans')),
+              _LoansRow(onTap: () => context.push('/finance')),
               const SizedBox(height: 10),
-              _FinanceRow(onTap: () => context.push('/finance')),
+              _FinanceRow(onTap: () => context.push('/agronomy')),
             ],
           );
         }
@@ -291,9 +291,9 @@ class _IntelligenceBrief extends ConsumerWidget {
             const SectionHeading('Field actions'),
             _FieldActions(farm: focusFarm),
             const SectionHeading('Access for productivity'),
-            _LoansRow(onTap: () => context.push('/loans')),
+            _LoansRow(onTap: () => context.push('/finance')),
             const SizedBox(height: 10),
-            _FinanceRow(onTap: () => context.push('/finance')),
+            _FinanceRow(onTap: () => context.push('/agronomy')),
           ],
         );
       },
@@ -833,12 +833,12 @@ class _LoansRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Farm loans',
+                    'Farm equipment',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 3),
                   Text(
-                    'Tools, tractors, seeds and inputs. Repay after harvest.',
+                    'Tools matched to your farm, season and irrigation.',
                     style: TextStyle(color: AgriColors.muted, fontSize: 12),
                   ),
                 ],
@@ -868,12 +868,12 @@ class _FinanceRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Equipment and input programmes',
+                'AI agronomist',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               SizedBox(height: 3),
               Text(
-                'Explore verified options for registered farms.',
+                'Ask field questions in Nigerian languages.',
                 style: TextStyle(color: AgriColors.muted, fontSize: 12),
               ),
             ],

@@ -168,6 +168,7 @@ final class SyncFarmInsights
     {
         $capturedAt = SatelliteObservation::query()
             ->whereBelongsTo($farm)
+            ->whereNull('farm_section_id')
             ->whereIn('metric_type', $metricTypes)
             ->max('captured_at');
 

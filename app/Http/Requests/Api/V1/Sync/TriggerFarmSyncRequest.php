@@ -51,6 +51,10 @@ final class TriggerFarmSyncRequest extends FormRequest
     /** @return list<SyncType> */
     private function availableTypes(): array
     {
+        if ((string) config('farming.provider') === 'copernicus') {
+            return [SyncType::Weather, SyncType::CropHealth];
+        }
+
         return [SyncType::SoilHealth, SyncType::Weather, SyncType::CropHealth, SyncType::WaterStress,
             SyncType::SoilMoisture, SyncType::IrrigationAdvisory, SyncType::PestForewarning, SyncType::CropPractices];
     }

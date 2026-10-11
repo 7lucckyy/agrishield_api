@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -48,7 +49,7 @@ class FarmMapScreen extends ConsumerWidget {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Pan and zoom the recorded farm outlines below. This is a geo-referenced outline view, not a satellite image or surveyed basemap. Farms without location data remain in the list.',
+                      'Pan and zoom your recorded farm outlines on Google Maps. Boundaries are farmer-recorded, not surveyed. Farms without location data remain in the list.',
                       style: TextStyle(height: 1.45),
                     ),
                   ),
@@ -92,10 +93,12 @@ class FarmOutlineMap extends StatefulWidget {
     super.key,
     required this.farms,
     this.sections = const [],
+    this.productivityZones,
   });
 
   final List<Farm> farms;
   final List<FarmSection> sections;
+  final Json? productivityZones;
 
   @override
   State<FarmOutlineMap> createState() => _FarmOutlineMapState();
@@ -115,6 +118,21 @@ class _FarmOutlineMapState extends State<FarmOutlineMap> {
         )
         .toList();
     if (located.isEmpty) return const SizedBox.shrink();
+
+    final rawGroups = widget.productivityZones?['crop_groups'];
+    final zoneBySectionId = <int, String>{};
+    if (rawGroups is Map) {
+      for (final group in rawGroups.values.whereType<Map>()) {
+        if (group['state'] != 'ready') continue;
+        for (final zone in (group['zones'] as List? ?? []).whereType<Map>()) {
+          final sectionId = zone['section_id'];
+          final label = zone['zone'];
+          if (sectionId is int && label is String) {
+            zoneBySectionId[sectionId] = label;
+          }
+        }
+      }
+    }
 
     return AgriCard(
       child: Column(
@@ -146,193 +164,152 @@ class _FarmOutlineMapState extends State<FarmOutlineMap> {
             child: SizedBox(
               height: 300,
               width: double.infinity,
-              child: LayoutBuilder(
-                builder: (context, constraints) => InteractiveViewer(
-                  minScale: 1,
-                  maxScale: 8,
-                  child: CustomPaint(
-                    size: Size(constraints.maxWidth, 300),
-                    painter: _FarmOutlinePainter(
-                      located,
-                      widget.sections,
-                      _showOutlines,
-                      _showNames,
-                    ),
+              child: google.GoogleMap(
+                mapType: google.MapType.hybrid,
+                initialCameraPosition: google.CameraPosition(
+                  target: google.LatLng(
+                    located.first.latitude ?? 9.082,
+                    located.first.longitude ?? 8.6753,
                   ),
+                  zoom: 12,
                 ),
+                zoomControlsEnabled: false,
+                onMapCreated: (controller) {
+                  final points = <MapCoordinate>[
+                    for (final farm in located) ...[
+                      if (farm.latitude != null && farm.longitude != null)
+                        MapCoordinate(farm.latitude!, farm.longitude!),
+                      for (final polygon
+                          in FarmMapGeometry.fromGeoJson(farm.boundaryGeoJson)
+                                  ?.polygons ??
+                              <List<MapCoordinate>>[])
+                        ...polygon,
+                    ],
+                    for (final section in widget.sections)
+                      for (final polygon
+                          in FarmMapGeometry.fromGeoJson(
+                                section.boundaryGeoJson,
+                              )?.polygons ??
+                              <List<MapCoordinate>>[])
+                        ...polygon,
+                  ];
+                  if (points.isEmpty) return;
+                  controller.moveCamera(
+                    google.CameraUpdate.newLatLngBounds(
+                      google.LatLngBounds(
+                        southwest: google.LatLng(
+                          points
+                              .map((point) => point.latitude)
+                              .reduce(math.min),
+                          points
+                              .map((point) => point.longitude)
+                              .reduce(math.min),
+                        ),
+                        northeast: google.LatLng(
+                          points
+                              .map((point) => point.latitude)
+                              .reduce(math.max),
+                          points
+                              .map((point) => point.longitude)
+                              .reduce(math.max),
+                        ),
+                      ),
+                      32,
+                    ),
+                  );
+                },
+                polygons: _showOutlines
+                    ? {
+                        for (final farm in located)
+                          for (
+                            var index = 0;
+                            index <
+                                (FarmMapGeometry.fromGeoJson(
+                                      farm.boundaryGeoJson,
+                                    )?.polygons.length ??
+                                    0);
+                            index++
+                          )
+                            google.Polygon(
+                              polygonId: google.PolygonId('${farm.id}-$index'),
+                              points: [
+                                for (final point in FarmMapGeometry.fromGeoJson(
+                                  farm.boundaryGeoJson,
+                                )!.polygons[index])
+                                  google.LatLng(
+                                    point.latitude,
+                                    point.longitude,
+                                  ),
+                              ],
+                              strokeColor: AgriColors.forest,
+                              strokeWidth: 2,
+                              fillColor: AgriColors.forest.withValues(
+                                alpha: .16,
+                              ),
+                            ),
+                        for (final section in widget.sections)
+                          for (
+                            var index = 0;
+                            index <
+                                (FarmMapGeometry.fromGeoJson(
+                                      section.boundaryGeoJson,
+                                    )?.polygons.length ??
+                                    0);
+                            index++
+                          )
+                            google.Polygon(
+                              polygonId: google.PolygonId(
+                                'section-${section.id}-$index',
+                              ),
+                              points: [
+                                for (final point in FarmMapGeometry.fromGeoJson(
+                                  section.boundaryGeoJson,
+                                )!.polygons[index])
+                                  google.LatLng(
+                                    point.latitude,
+                                    point.longitude,
+                                  ),
+                              ],
+                              strokeColor: AgriColors.clay,
+                              strokeWidth: 2,
+                              fillColor: switch (zoneBySectionId[section.id]) {
+                                'lower_relative_vigor' =>
+                                  AgriColors.clay.withValues(alpha: .48),
+                                'higher_relative_vigor' =>
+                                  AgriColors.forest.withValues(alpha: .48),
+                                'middle_relative_vigor' =>
+                                  AgriColors.millet.withValues(alpha: .48),
+                                _ => Colors.transparent,
+                              },
+                            ),
+                      }
+                    : {},
+                markers: _showNames
+                    ? {
+                        for (final farm in located)
+                          if (farm.latitude != null && farm.longitude != null)
+                            google.Marker(
+                              markerId: google.MarkerId(farm.id),
+                              position: google.LatLng(
+                                farm.latitude!,
+                                farm.longitude!,
+                              ),
+                              infoWindow: google.InfoWindow(title: farm.name),
+                            ),
+                      }
+                    : {},
               ),
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Recorded positions only · pinch to zoom · tap a farm below for details',
+            'Recorded boundaries · pinch to zoom · tap a farm below for details',
             style: TextStyle(color: AgriColors.muted, fontSize: 12),
           ),
         ],
       ),
     );
   }
-}
-
-class _FarmOutlinePainter extends CustomPainter {
-  const _FarmOutlinePainter(
-    this.farms,
-    this.sections,
-    this.showOutlines,
-    this.showNames,
-  );
-
-  final List<Farm> farms;
-  final List<FarmSection> sections;
-  final bool showOutlines;
-  final bool showNames;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = AgriColors.leafSoft);
-    final geometries = {
-      for (final farm in farms)
-        farm.id: FarmMapGeometry.fromGeoJson(farm.boundaryGeoJson),
-    };
-    final sectionGeometries = {
-      for (final section in sections)
-        section.id: FarmMapGeometry.fromGeoJson(section.boundaryGeoJson),
-    };
-    final allPoints = <MapCoordinate>[
-      for (final farm in farms) ...[
-        for (final polygon
-            in geometries[farm.id]?.polygons ?? <List<MapCoordinate>>[])
-          ...polygon,
-        if (farm.latitude != null && farm.longitude != null)
-          MapCoordinate(farm.latitude!, farm.longitude!),
-      ],
-      for (final section in sections)
-        for (final polygon
-            in sectionGeometries[section.id]?.polygons ??
-                <List<MapCoordinate>>[])
-          ...polygon,
-    ];
-    if (allPoints.isEmpty) return;
-    final meanLatitude =
-        allPoints.map((point) => point.latitude).reduce((a, b) => a + b) /
-        allPoints.length;
-    final longitudeScale = math.cos(meanLatitude * math.pi / 180);
-    double x(MapCoordinate point) => point.longitude * longitudeScale;
-    final minX = allPoints.map(x).reduce(math.min);
-    final maxX = allPoints.map(x).reduce(math.max);
-    final minY = allPoints.map((point) => point.latitude).reduce(math.min);
-    final maxY = allPoints.map((point) => point.latitude).reduce(math.max);
-    final spanX = math.max(maxX - minX, 0.0001);
-    final spanY = math.max(maxY - minY, 0.0001);
-    final scale = math.min(
-      (size.width - 48) / spanX,
-      (size.height - 48) / spanY,
-    );
-    Offset project(MapCoordinate point) => Offset(
-      24 + (x(point) - minX) * scale,
-      size.height - 24 - (point.latitude - minY) * scale,
-    );
-
-    for (final farm in farms) {
-      final geometry = geometries[farm.id];
-      if (showOutlines && geometry != null) {
-        for (final polygon in geometry.polygons) {
-          final boundary = Path();
-          var isFirstPoint = true;
-          for (final point in polygon) {
-            final offset = project(point);
-            if (isFirstPoint) {
-              boundary.moveTo(offset.dx, offset.dy);
-              isFirstPoint = false;
-            } else {
-              boundary.lineTo(offset.dx, offset.dy);
-            }
-          }
-          boundary.close();
-          canvas.drawPath(
-            boundary,
-            Paint()..color = AgriColors.forest.withValues(alpha: 0.16),
-          );
-          canvas.drawPath(
-            boundary,
-            Paint()
-              ..color = AgriColors.forest
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 2,
-          );
-        }
-      }
-      MapCoordinate? marker;
-      if (farm.latitude != null && farm.longitude != null) {
-        marker = MapCoordinate(farm.latitude!, farm.longitude!);
-      } else if (geometry != null && geometry.polygons.isNotEmpty) {
-        marker = geometry.polygons.first.first;
-      }
-      if (marker == null) continue;
-      final offset = project(marker);
-      canvas.drawCircle(offset, 5, Paint()..color = AgriColors.forest);
-      if (showNames) {
-        final label = TextPainter(
-          text: TextSpan(
-            text: farm.name,
-            style: const TextStyle(
-              color: AgriColors.ink,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-          maxLines: 1,
-          ellipsis: '…',
-        )..layout(maxWidth: 130);
-        label.paint(canvas, offset + const Offset(9, -8));
-      }
-    }
-    if (showOutlines) {
-      for (final section in sections) {
-        final geometry = sectionGeometries[section.id];
-        if (geometry == null) continue;
-        for (final polygon in geometry.polygons) {
-          final boundary = Path();
-          for (var index = 0; index < polygon.length; index++) {
-            final offset = project(polygon[index]);
-            if (index == 0) {
-              boundary.moveTo(offset.dx, offset.dy);
-            } else {
-              boundary.lineTo(offset.dx, offset.dy);
-            }
-          }
-          boundary.close();
-          canvas.drawPath(
-            boundary,
-            Paint()
-              ..color = AgriColors.clay
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 2,
-          );
-          if (showNames) {
-            final label = TextPainter(
-              text: TextSpan(
-                text: section.name,
-                style: const TextStyle(
-                  color: AgriColors.clay,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              textDirection: TextDirection.ltr,
-              maxLines: 1,
-              ellipsis: '…',
-            )..layout(maxWidth: 130);
-            label.paint(canvas, project(polygon.first) + const Offset(8, 6));
-          }
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _FarmOutlinePainter oldDelegate) => true;
 }
 
 class _FarmLocationList extends StatelessWidget {

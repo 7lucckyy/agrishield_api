@@ -28,3 +28,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/.codex-build
+/.codex-finalizer
+/.codex-output
+/artifacts
+/tmp/
+/agrishield-docs/

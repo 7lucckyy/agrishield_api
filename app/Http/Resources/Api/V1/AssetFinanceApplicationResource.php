@@ -29,7 +29,14 @@ final class AssetFinanceApplicationResource extends JsonResource
             'organization_id' => $application->organization_id,
             'farm' => ['id' => $application->farm->uuid, 'name' => $application->farm->name],
             'crop_cycle_id' => $application->farm_crop_cycle_id,
-            'product' => new AssetFinanceProductResource($application->product),
+            'product' => $application->organization_id === null
+                ? [
+                    'id' => $application->product->getKey(),
+                    'name' => $application->product->name,
+                    'category' => $application->product->category->value,
+                ]
+                : new AssetFinanceProductResource($application->product),
+            'acquisition_mode' => $application->acquisition_mode->value,
             'status' => $application->status->value,
             'quantity' => $application->quantity,
             'requested_amount' => (float) $application->requested_amount,
@@ -39,7 +46,7 @@ final class AssetFinanceApplicationResource extends JsonResource
                 'version' => $application->consent_version,
                 'recorded_at' => $application->consented_at->toISOString(),
             ],
-            'partner_reference' => $application->partner_reference,
+            'partner_reference' => $application->organization_id === null ? null : $application->partner_reference,
             'decision_note' => $application->decision_note,
             'delivery_verified_at' => $application->delivery_verified_at?->toISOString(),
             'repayment' => [

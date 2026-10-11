@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\AssetFinanceStatus;
+use App\Enums\EquipmentAcquisitionMode;
 use App\Enums\RepaymentStatus;
 use App\Models\AssetFinanceApplication;
 use App\Models\AssetFinanceProduct;
@@ -31,6 +32,7 @@ class AssetFinanceApplicationFactory extends Factory
             'farm_id' => Farm::factory(),
             'applicant_user_id' => User::factory(),
             'asset_finance_product_id' => AssetFinanceProduct::factory(),
+            'acquisition_mode' => EquipmentAcquisitionMode::FinancePurchase,
             'status' => AssetFinanceStatus::Submitted,
             'quantity' => 1,
             'requested_amount' => 750000,

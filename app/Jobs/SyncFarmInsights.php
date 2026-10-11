@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Actions\Sync\RecordSyncRun;
+use App\Actions\Sync\SyncCopernicusSections;
 use App\Actions\Sync\SyncFarmInsights as PersistFarmInsights;
 use App\Enums\SyncType;
 use App\Exceptions\Provider\ProviderException;
@@ -51,6 +52,7 @@ final class SyncFarmInsights implements ShouldBeUnique, ShouldQueue
         CircuitBreaker $circuitBreaker,
         RecordSyncRun $recordSyncRun,
         PersistFarmInsights $syncFarmInsights,
+        SyncCopernicusSections $syncCopernicusSections,
     ): void {
         $farm = Farm::query()->findOrFail($this->farmId);
         $syncRun = SyncRun::query()->findOrFail($this->syncRunId);
@@ -65,6 +67,9 @@ final class SyncFarmInsights implements ShouldBeUnique, ShouldQueue
 
         try {
             $recordsWritten = $syncFarmInsights->execute($farm, $this->type, $provider);
+            if ($this->type === SyncType::CropHealth && $provider->name() === 'copernicus') {
+                $recordsWritten += $syncCopernicusSections->execute($farm);
+            }
             $recordSyncRun->succeed($syncRun, $recordsWritten);
             $circuitBreaker->recordSuccess($provider->name());
             $farm->forceFill(['last_synced_at' => now()])->save();

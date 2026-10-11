@@ -71,6 +71,8 @@ class OfflineSubmissionRepository {
     required String sourceLanguage,
     required String responseLanguage,
     String? farmId,
+    String purpose = 'general',
+    String? diagnosisId,
   }) async {
     _ensureActiveOwner();
     final localId = const Uuid().v4();
@@ -80,6 +82,8 @@ class OfflineSubmissionRepository {
         sourceLanguage: sourceLanguage,
         responseLanguage: responseLanguage,
         farmId: farmId,
+        purpose: purpose,
+        diagnosisId: diagnosisId,
         idempotencyKey: localId,
       );
     } on ApiException catch (error) {
@@ -92,6 +96,8 @@ class OfflineSubmissionRepository {
         operation: 'create',
         payload: {
           'farm_id': farmId,
+          'purpose': purpose,
+          'diagnosis_id': diagnosisId,
           'source_language': sourceLanguage,
           'response_language': responseLanguage,
         },
@@ -172,6 +178,8 @@ class OutboxSyncService {
           sourceLanguage: operation.payload['source_language']! as String,
           responseLanguage: operation.payload['response_language']! as String,
           farmId: operation.payload['farm_id'] as String?,
+          purpose: operation.payload['purpose'] as String? ?? 'general',
+          diagnosisId: operation.payload['diagnosis_id'] as String?,
           idempotencyKey: operation.localId,
         ),
         _ => throw ApiException(

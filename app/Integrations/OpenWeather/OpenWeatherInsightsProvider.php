@@ -28,7 +28,6 @@ use App\Models\Farm;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -121,7 +120,7 @@ final class OpenWeatherInsightsProvider implements FarmingInsightsProvider
                 windSpeed: self::average($day['wind_speed']),
                 windDirection: self::average($day['wind_direction']),
                 cloudCover: self::average($day['cloud_cover']),
-                conditionCode: $day['condition_code'] ?? null,
+                conditionCode: $day['condition_code'],
                 hourly: $day['hourly'],
             ), $days);
 
@@ -133,18 +132,65 @@ final class OpenWeatherInsightsProvider implements FarmingInsightsProvider
         });
     }
 
-    public function registerFarm(Farm $farm, string $idempotencyKey): ProviderFarmReference { $this->unsupported('farm registration'); }
-    public function registerCropCycle(CropCycle $cycle): ProviderFarmReference { $this->unsupported('crop-cycle registration'); }
-    public function fetchSoilHealth(Farm $farm, ?CarbonInterface $since = null): SoilHealthData { $this->unsupported('soil health'); }
-    public function fetchCropHealth(Farm $farm, ?CarbonInterface $since = null): CropHealthData { $this->unsupported('crop health'); }
-    public function fetchWaterStress(Farm $farm, ?CarbonInterface $since = null): WaterStressData { $this->unsupported('water stress'); }
-    public function fetchSoilMoisture(Farm $farm, ?CarbonInterface $since = null): SoilMoistureData { $this->unsupported('soil moisture'); }
-    public function fetchIrrigationAdvisory(Farm $farm): AdvisoryCollection { $this->unsupported('irrigation advisories'); }
-    public function fetchPestForewarning(Farm $farm): AdvisoryCollection { $this->unsupported('pest forewarning'); }
-    public function fetchCropPractices(CropCycle $cycle): AdvisoryCollection { $this->unsupported('crop practices'); }
-    public function submitDiagnosis(DiagnosisRequest $request, string $idempotencyKey): DiagnosisSubmission { $this->unsupported('diagnosis submission'); }
-    public function fetchDiagnosisResult(DiagnosisRequest $request): DiagnosisResult { $this->unsupported('diagnosis results'); }
-    public function healthCheck(): ProviderHealth { return new ProviderHealth(true, 0, now(), 'OpenWeather is configured.'); }
+    public function registerFarm(Farm $farm, string $idempotencyKey): ProviderFarmReference
+    {
+        $this->unsupported('farm registration');
+    }
+
+    public function registerCropCycle(CropCycle $cycle): ProviderFarmReference
+    {
+        $this->unsupported('crop-cycle registration');
+    }
+
+    public function fetchSoilHealth(Farm $farm, ?CarbonInterface $since = null): SoilHealthData
+    {
+        $this->unsupported('soil health');
+    }
+
+    public function fetchCropHealth(Farm $farm, ?CarbonInterface $since = null): CropHealthData
+    {
+        $this->unsupported('crop health');
+    }
+
+    public function fetchWaterStress(Farm $farm, ?CarbonInterface $since = null): WaterStressData
+    {
+        $this->unsupported('water stress');
+    }
+
+    public function fetchSoilMoisture(Farm $farm, ?CarbonInterface $since = null): SoilMoistureData
+    {
+        $this->unsupported('soil moisture');
+    }
+
+    public function fetchIrrigationAdvisory(Farm $farm): AdvisoryCollection
+    {
+        $this->unsupported('irrigation advisories');
+    }
+
+    public function fetchPestForewarning(Farm $farm): AdvisoryCollection
+    {
+        $this->unsupported('pest forewarning');
+    }
+
+    public function fetchCropPractices(CropCycle $cycle): AdvisoryCollection
+    {
+        $this->unsupported('crop practices');
+    }
+
+    public function submitDiagnosis(DiagnosisRequest $request, string $idempotencyKey): DiagnosisSubmission
+    {
+        $this->unsupported('diagnosis submission');
+    }
+
+    public function fetchDiagnosisResult(DiagnosisRequest $request): DiagnosisResult
+    {
+        $this->unsupported('diagnosis results');
+    }
+
+    public function healthCheck(): ProviderHealth
+    {
+        return new ProviderHealth(true, 0, now(), 'OpenWeather is configured.');
+    }
 
     /** @param list<float|null> $values */
     private static function average(array $values): ?float

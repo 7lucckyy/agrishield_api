@@ -135,6 +135,12 @@ final class Farm extends Model
         return $this->hasMany(Advisory::class);
     }
 
+    /** @return HasMany<AgronomyAdvice, $this> */
+    public function agronomyAdvice(): HasMany
+    {
+        return $this->hasMany(AgronomyAdvice::class);
+    }
+
     /** @return HasMany<DiagnosisRequest, $this> */
     public function diagnosisRequests(): HasMany
     {

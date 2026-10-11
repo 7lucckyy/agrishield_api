@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Api\V1\AssetFinance;
 
+use App\Enums\EquipmentAcquisitionMode;
 use App\Models\AssetFinanceProduct;
 use App\Models\CropCycle;
 use App\Models\Farm;
@@ -35,6 +38,7 @@ final class StoreFarmerAssetFinanceApplicationRequest extends FormRequest
             ],
             'farm_crop_cycle_id' => ['nullable', 'integer', Rule::exists((new CropCycle)->getTable(), 'id')],
             'asset_finance_product_id' => ['required', 'integer', Rule::exists((new AssetFinanceProduct)->getTable(), 'id')->where('is_active', true)],
+            'acquisition_mode' => ['required', Rule::enum(EquipmentAcquisitionMode::class)],
             'quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'requested_amount' => ['required', 'numeric', 'min:1', 'max:999999999999.99'],
             'purpose' => ['required', 'string', 'min:20', 'max:2000'],

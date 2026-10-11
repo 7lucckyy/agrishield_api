@@ -36,7 +36,7 @@ final class SubmitDiagnosisToProvider implements ShouldBeUnique, ShouldQueue
         }
 
         try {
-            $submission = $provider->submitDiagnosis($diagnosis, $diagnosis->image_checksum);
+            $submission = $provider->submitDiagnosis($diagnosis, $diagnosis->uuid);
             $diagnosis->fill([
                 'status' => DiagnosisStatus::Submitted,
                 'external_reference' => $submission->providerCaseId,

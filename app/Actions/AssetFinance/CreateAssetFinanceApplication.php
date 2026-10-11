@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\AssetFinance;
 
 use App\Enums\AssetFinanceStatus;
+use App\Enums\EquipmentAcquisitionMode;
 use App\Enums\RepaymentStatus;
 use App\Models\AssetFinanceApplication;
 use App\Models\AssetFinanceProduct;
@@ -12,12 +13,15 @@ use App\Models\CropCycle;
 use App\Models\Farm;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Equipment\RecommendEquipment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 final class CreateAssetFinanceApplication
 {
+    public function __construct(private readonly RecommendEquipment $recommendEquipment) {}
+
     /** @param array<string, mixed> $data */
     public function execute(?Organization $organization, Farm $farm, User $applicant, AssetFinanceProduct $product, array $data): AssetFinanceApplication
     {
@@ -29,8 +33,24 @@ final class CreateAssetFinanceApplication
             throw ValidationException::withMessages(['farm_id' => 'Select a farm you own.']);
         }
 
+        if ($organization === null) {
+            abort_unless(config('equipment.requests_enabled'), 503, 'Equipment requests are not available yet.');
+        }
+
         if (! $product->is_active || ! $product->financePartner()->where('is_active', true)->exists()) {
             throw ValidationException::withMessages(['asset_finance_product_id' => 'This finance programme is not accepting applications.']);
+        }
+
+        if ($organization === null) {
+            $eligibleProduct = $this->recommendEquipment->forFarm($farm)
+                ->firstWhere('id', $product->getKey());
+            if ($eligibleProduct === null) {
+                throw ValidationException::withMessages(['asset_finance_product_id' => 'This equipment does not match the selected farm.']);
+            }
+            $allowedModes = $eligibleProduct->getAttribute('acquisition_options');
+            if (! in_array($data['acquisition_mode'] ?? null, $allowedModes, true)) {
+                throw ValidationException::withMessages(['acquisition_mode' => 'Choose an available option for this equipment.']);
+            }
         }
 
         $cropCycleId = $data['farm_crop_cycle_id'] ?? null;
@@ -43,6 +63,7 @@ final class CreateAssetFinanceApplication
                 'uuid' => (string) Str::uuid(),
                 'farm_crop_cycle_id' => $cropCycleId,
                 'asset_finance_product_id' => $product->getKey(),
+                'acquisition_mode' => $data['acquisition_mode'] ?? EquipmentAcquisitionMode::FinancePurchase,
                 'status' => AssetFinanceStatus::Submitted,
                 'quantity' => $data['quantity'],
                 'requested_amount' => $data['requested_amount'],

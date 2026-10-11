@@ -13,7 +13,7 @@ class UserController extends Controller
     {
         $search = trim($request->string('search')->toString());
         $users = User::query()
-            ->with(['organizations:id,name'])
+            ->with(['organizations:id,name', 'roles:id,name'])
             ->withCount('farms')
             ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match
                 ->where('name', 'ilike', "%{$search}%")

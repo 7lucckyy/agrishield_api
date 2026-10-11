@@ -3,10 +3,15 @@
 declare(strict_types=1);
 
 use App\Data\VoiceAssistanceResult;
+use App\Data\VoiceTranscriptionResult;
+use App\Enums\DiagnosisStatus;
 use App\Enums\OrganizationRole;
 use App\Enums\VoiceAssistanceStatus;
 use App\Integrations\Contracts\FarmerVoiceProvider;
+use App\Integrations\Contracts\VoiceTranscriptionProvider;
 use App\Jobs\ProcessVoiceAssistanceRequest;
+use App\Models\AgronomyAdvice;
+use App\Models\DiagnosisRequest;
 use App\Models\Farm;
 use App\Models\Organization;
 use App\Models\User;
@@ -36,6 +41,115 @@ test('an authenticated user can submit a private voice note and receive guidance
     expect($voiceRequest->user_id)->toBe($user->id)
         ->and($voiceRequest->audio_path)->not->toBeEmpty();
     Storage::disk('private')->assertExists($voiceRequest->audio_path);
+});
+
+test('a farm voice question is transcribed into retained agronomy advice', function () {
+    Storage::fake('private');
+    config()->set('agronomy.provider', 'fake');
+    app()->bind(VoiceTranscriptionProvider::class, fn (): VoiceTranscriptionProvider => new class implements VoiceTranscriptionProvider
+    {
+        public function transcribe(string $absoluteAudioPath, string $mimeType, string $sourceLanguage): VoiceTranscriptionResult
+        {
+            return new VoiceTranscriptionResult('Should I inspect the maize before watering again?');
+        }
+
+        public function name(): string
+        {
+            return 'test';
+        }
+    });
+    $farmer = User::factory()->create();
+    $farm = Farm::factory()->for($farmer, 'owner')->create();
+
+    $response = $this->actingAs($farmer)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('question.webm', 120, 'audio/webm'),
+        'source_language' => 'ha',
+        'response_language' => 'ha',
+        'farm_id' => $farm->uuid,
+        'purpose' => 'agronomy',
+    ])->assertCreated()->assertJsonPath('data.purpose', 'agronomy')
+        ->assertJsonPath('data.status', 'completed');
+
+    $advice = AgronomyAdvice::query()->sole();
+    expect($advice->question)->toBe('Should I inspect the maize before watering again?')
+        ->and($advice->farm_id)->toBe($farm->id)
+        ->and($response->json('data.guidance'))->toBe($advice->answer);
+});
+
+test('crop photo voice follow-up uses only a completed diagnosis from the selected farm', function () {
+    Storage::fake('private');
+    config()->set('agronomy.provider', 'fake');
+    app()->bind(VoiceTranscriptionProvider::class, fn (): VoiceTranscriptionProvider => new class implements VoiceTranscriptionProvider
+    {
+        public function transcribe(string $absoluteAudioPath, string $mimeType, string $sourceLanguage): VoiceTranscriptionResult
+        {
+            return new VoiceTranscriptionResult('What should I inspect next?');
+        }
+
+        public function name(): string
+        {
+            return 'test';
+        }
+    });
+    $farmer = User::factory()->create();
+    $farm = Farm::factory()->for($farmer, 'owner')->create();
+    $otherFarm = Farm::factory()->create();
+    $diagnosis = DiagnosisRequest::factory()->for($farm)->create([
+        'status' => DiagnosisStatus::Completed,
+        'diagnosis' => 'Possible leaf spot',
+        'recommendation' => 'Inspect nearby plants',
+    ]);
+
+    $this->actingAs($farmer)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('followup.webm', 120, 'audio/webm'),
+        'source_language' => 'en',
+        'response_language' => 'en',
+        'farm_id' => $farm->uuid,
+        'purpose' => 'diagnosis_followup',
+        'diagnosis_id' => $diagnosis->uuid,
+    ])->assertCreated()->assertJsonPath('data.status', 'completed');
+
+    expect(AgronomyAdvice::query()->sole()->context_snapshot['crop_photo_observation'])->toBe('Possible leaf spot');
+
+    $this->actingAs($farmer)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('other.webm', 120, 'audio/webm'),
+        'source_language' => 'en',
+        'response_language' => 'en',
+        'farm_id' => $otherFarm->uuid,
+        'purpose' => 'diagnosis_followup',
+        'diagnosis_id' => $diagnosis->uuid,
+    ])->assertForbidden();
+});
+
+test('farm-specific voice requests require a farm and reject unrelated diagnosis data', function () {
+    $farmer = User::factory()->create();
+    $farm = Farm::factory()->for($farmer, 'owner')->create();
+    $diagnosis = DiagnosisRequest::factory()->for($farm)->create();
+
+    $this->actingAs($farmer)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('question.webm', 120, 'audio/webm'),
+        'source_language' => 'en',
+        'response_language' => 'en',
+        'purpose' => 'agronomy',
+    ])->assertUnprocessable()->assertInvalid('farm_id');
+
+    $this->actingAs($farmer)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('question.webm', 120, 'audio/webm'),
+        'source_language' => 'en',
+        'response_language' => 'en',
+        'farm_id' => $farm->uuid,
+        'purpose' => 'agronomy',
+        'diagnosis_id' => $diagnosis->uuid,
+    ])->assertUnprocessable()->assertInvalid('diagnosis_id');
+
+    $this->actingAs($farmer)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('followup.webm', 120, 'audio/webm'),
+        'source_language' => 'en',
+        'response_language' => 'en',
+        'farm_id' => $farm->uuid,
+        'purpose' => 'diagnosis_followup',
+        'diagnosis_id' => $diagnosis->uuid,
+    ])->assertUnprocessable()->assertInvalid('diagnosis_id');
 });
 
 test('voice processing reads a private storage stream without requiring a local disk path', function () {
@@ -80,7 +194,7 @@ test('voice processing reads a private storage stream without requiring a local 
         }
     };
 
-    (new ProcessVoiceAssistanceRequest($request->getKey()))->handle($provider);
+    app()->call([new ProcessVoiceAssistanceRequest($request->getKey()), 'handle'], ['provider' => $provider]);
 
     expect($request->refresh()->status)->toBe(VoiceAssistanceStatus::Completed)
         ->and($provider->temporaryPath)->not->toBeNull()
@@ -151,6 +265,19 @@ test('voice intake validates language and audio content type', function () {
         'source_language' => 'unsupported',
         'response_language' => 'auto',
     ])->assertUnprocessable()->assertInvalid(['audio', 'source_language', 'response_language']);
+});
+
+test('voice intake accepts the Android M4A recording format', function () {
+    Storage::fake('private');
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('farmer-question.m4a', 120, 'audio/mp4'),
+        'source_language' => 'ha',
+        'response_language' => 'en',
+    ])->assertCreated();
+
+    expect(VoiceAssistanceRequest::query()->sole()->audio_mime)->toBe('audio/mp4');
 });
 
 test('voice intake limits generated replies to N-ATLaS languages', function () {

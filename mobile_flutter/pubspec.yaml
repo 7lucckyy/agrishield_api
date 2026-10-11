@@ -43,12 +43,14 @@ dependencies:
   geolocator: ^14.1.1
   image_picker: ^1.2.3
   record: ^7.1.1
+  flutter_tts: ^4.2.5
   path_provider: ^2.1.6
   uuid: ^4.6.0
   intl: ^0.20.3
   sqflite: ^2.4.4
   path: ^1.9.1
   flutter_map: ^8.3.2
+  google_maps_flutter: ^2.18.2
   latlong2: ^0.10.1
 
 dev_dependencies:

@@ -4,6 +4,14 @@ return [
     'provider' => env('FARMING_PROVIDER', 'fake'),
 
     'providers' => [
+        'copernicus' => [
+            'client_id' => env('COPERNICUS_CLIENT_ID'),
+            'client_secret' => env('COPERNICUS_CLIENT_SECRET'),
+            'token_url' => env('COPERNICUS_TOKEN_URL', 'https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token'),
+            'statistics_url' => env('COPERNICUS_STATISTICS_URL', 'https://sh.dataspace.copernicus.eu/statistics/v1'),
+            'connect_timeout' => (int) env('COPERNICUS_CONNECT_TIMEOUT', 10),
+            'read_timeout' => (int) env('COPERNICUS_READ_TIMEOUT', 45),
+        ],
         'openweather' => [
             'base_url' => env('OPENWEATHER_BASE_URL', 'https://api.openweathermap.org/data/2.5'),
             'api_key' => env('OPENWEATHER_API_KEY'),

@@ -11,6 +11,7 @@ use App\Models\DiagnosisRequest;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Throwable;
 
 final class PollDiagnosisResult implements ShouldBeUnique, ShouldQueue
 {
@@ -49,7 +50,7 @@ final class PollDiagnosisResult implements ShouldBeUnique, ShouldQueue
                 'recommendation' => $result->recommendation,
                 'confidence' => $result->confidence,
                 'detected_labels' => $result->detectedLabels,
-                'external_reference' => $result->providerRequestId ?? $diagnosis->external_reference,
+                'external_reference' => $result->providerRequestId ?: $diagnosis->external_reference,
                 'completed_at' => $result->completedAt ?? now(),
                 'failure_reason' => null,
             ])->save();
@@ -65,5 +66,20 @@ final class PollDiagnosisResult implements ShouldBeUnique, ShouldQueue
 
         $diagnosis->fill(['status' => DiagnosisStatus::Processing])->save();
         self::dispatch($diagnosis->getKey())->delay(now()->addMinutes(5));
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        $diagnosis = DiagnosisRequest::query()->find($this->diagnosisRequestId);
+        if ($diagnosis !== null && in_array($diagnosis->status, [DiagnosisStatus::Submitted, DiagnosisStatus::Processing], true)) {
+            $diagnosis->fill([
+                'status' => DiagnosisStatus::Failed,
+                'failure_reason' => 'The crop assessment service could not complete this request.',
+            ])->save();
+        }
+
+        if ($exception !== null) {
+            report($exception);
+        }
     }
 }

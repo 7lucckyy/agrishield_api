@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Enums\DiagnosisResultStatus;
-use App\Exceptions\Provider\ProviderContractViolation;
 use App\Integrations\Gemini\GeminiCropDiagnosisProvider;
 use App\Models\DiagnosisRequest;
 use App\Models\Farm;
@@ -106,6 +105,33 @@ test('Gemini returns the whole crop assessment in the selected local language', 
     expect($result->diagnosis)->toBe('Mai yiwuwa ƙarancin abinci ga shuka')
         ->and($result->recommendation)->toContain('A duba danshin ƙasa.')
         ->toContain('A tuntubi jami’in noma kafin magani.')
-        ->not->toContain('Possible visual assessment');
+        ->not->toContain('Possible visual assessment')
+        ->and($result->providerRequestId)->toBeNull();
     Http::assertSent(fn (Request $request): bool => str_contains((string) $request['contents'][0]['parts'][0]['text'], 'Hausa'));
+});
+
+test('Gemini retries a temporary crop assessment failure', function () {
+    Storage::fake('private');
+    config()->set('diagnosis.gemini.api_key', 'gemini-test-key');
+    $diagnosis = makeCropDiagnosisRequest('diagnoses/retry-crop.jpg');
+    Storage::disk('private')->put($diagnosis->image_path, 'crop-image-bytes');
+    Http::preventStrayRequests();
+    Http::fakeSequence()
+        ->push(['error' => ['message' => 'Temporarily unavailable']], 500)
+        ->push(['candidates' => [[
+            'content' => ['parts' => [[
+                'text' => json_encode([
+                    'possible_condition' => 'Possible nutrient stress',
+                    'visual_signs' => ['yellow leaves'],
+                    'recommendation' => 'Inspect several plants.',
+                    'uncertainty' => 'A photo cannot confirm the cause.',
+                    'safety_note' => 'Ask an extension worker before treatment.',
+                ], JSON_THROW_ON_ERROR),
+            ]]],
+        ]]], 200);
+
+    $result = app(GeminiCropDiagnosisProvider::class)->fetchDiagnosisResult($diagnosis);
+
+    expect($result->status)->toBe(DiagnosisResultStatus::Completed);
+    Http::assertSentCount(2);
 });

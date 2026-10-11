@@ -16,7 +16,7 @@ final class ListSatelliteObservationController extends Controller
 {
     public function __invoke(ListSatelliteObservationRequest $request, Farm $farm, FreshnessCalculator $freshnessCalculator): AnonymousResourceCollection
     {
-        $query = SatelliteObservation::query()->whereBelongsTo($farm);
+        $query = SatelliteObservation::query()->whereBelongsTo($farm)->whereNull('farm_section_id');
         $metricTypes = $request->metricTypes();
         $query->when($metricTypes !== [], fn ($builder) => $builder->whereIn('metric_type', $metricTypes));
         $query->when($request->validated('filter.from'), fn ($builder, $date) => $builder->whereDate('captured_at', '>=', $date));
@@ -26,12 +26,13 @@ final class ListSatelliteObservationController extends Controller
         if ($request->boolean('latest_only')) {
             $query->whereIn('id', SatelliteObservation::query()
                 ->whereBelongsTo($farm)
+                ->whereNull('farm_section_id')
                 ->selectRaw('MAX(id)')
                 ->groupBy('metric_type'));
         }
         $direction = $request->validated('sort', '-captured_at') === 'captured_at' ? 'asc' : 'desc';
         $paginator = $query->orderBy('captured_at', $direction)->orderBy('id')->paginate((int) $request->validated('per_page', 25));
-        $latest = SatelliteObservation::query()->whereBelongsTo($farm)->latest('captured_at')->first();
+        $latest = SatelliteObservation::query()->whereBelongsTo($farm)->whereNull('farm_section_id')->latest('captured_at')->first();
         $freshnessKey = match ($latest?->metric_type?->value) {
             'lswi' => 'lswi',
             'soil_moisture' => 'soil_moisture',
@@ -41,7 +42,7 @@ final class ListSatelliteObservationController extends Controller
         return SatelliteObservationResource::collection($paginator)->additional(['meta' => [
             'state' => $latest === null ? 'pending_first_sync' : 'ready',
             'freshness' => $freshnessCalculator->calculate($freshnessKey, $latest?->captured_at, $latest?->fetched_at),
-            'metrics_available' => SatelliteObservation::query()->whereBelongsTo($farm)->distinct()->pluck('metric_type')->all(),
+            'metrics_available' => SatelliteObservation::query()->whereBelongsTo($farm)->whereNull('farm_section_id')->distinct()->pluck('metric_type')->all(),
         ]]);
     }
 }

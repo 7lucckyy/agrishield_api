@@ -9,6 +9,9 @@ use App\Http\Controllers\Web\Organization\ShowVoiceAudioController;
 use App\Http\Controllers\Web\Organization\TeamController as OrganizationTeamController;
 use App\Http\Controllers\Web\Organization\VoiceAssistanceController as OrganizationVoiceAssistanceController;
 use App\Http\Controllers\Web\Platform\DashboardController as PlatformDashboardController;
+use App\Http\Controllers\Web\Platform\EquipmentCatalogueController;
+use App\Http\Controllers\Web\Platform\EquipmentManagerRoleController;
+use App\Http\Controllers\Web\Platform\EquipmentRequestController;
 use App\Http\Controllers\Web\Platform\OperationsController as PlatformOperationsController;
 use App\Http\Controllers\Web\Platform\OrganizationController as PlatformOrganizationController;
 use App\Http\Controllers\Web\Platform\UserController as PlatformUserController;
@@ -36,7 +39,16 @@ Route::prefix('platform')->name('platform.')->middleware(['auth', 'can:accessPla
     Route::get('/organizations', [PlatformOrganizationController::class, 'index'])->name('organizations.index');
     Route::get('/organizations/{organization}', [PlatformOrganizationController::class, 'show'])->name('organizations.show');
     Route::get('/users', PlatformUserController::class)->name('users');
+    Route::patch('/users/{user}/equipment-manager', EquipmentManagerRoleController::class)->middleware('throttle:writes')->name('users.equipment-manager.update');
     Route::get('/operations', PlatformOperationsController::class)->name('operations');
+});
+
+Route::prefix('platform')->name('platform.')->middleware(['auth', 'can:manageEquipment'])->group(function (): void {
+    Route::get('/equipment', [EquipmentRequestController::class, 'index'])->name('equipment.index');
+    Route::patch('/equipment/{assetFinanceApplication}', [EquipmentRequestController::class, 'update'])
+        ->middleware('throttle:writes')->name('equipment.update');
+    Route::patch('/equipment/products/{assetFinanceProduct}', [EquipmentCatalogueController::class, 'update'])
+        ->middleware('throttle:writes')->name('equipment.products.update');
 });
 
 Route::prefix('organization/{organization}')->name('organization.')->middleware('auth')->scopeBindings()->group(function (): void {

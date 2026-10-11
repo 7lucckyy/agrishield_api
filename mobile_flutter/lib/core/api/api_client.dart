@@ -264,6 +264,17 @@ class ApiClient {
     }
   }
 
+  Future<Json> productivityZones(String farmId) async {
+    try {
+      return Map<String, dynamic>.from(
+        (await _dio.get('/farms/$farmId/productivity-zones')).data['data']
+            as Map,
+      );
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
   Future<Json> submitDiagnosis({
     required String farmId,
     required String imagePath,
@@ -329,6 +340,8 @@ class ApiClient {
     required String sourceLanguage,
     required String responseLanguage,
     String? farmId,
+    String purpose = 'general',
+    String? diagnosisId,
     String? idempotencyKey,
   }) async {
     try {
@@ -337,9 +350,12 @@ class ApiClient {
         'source_language': sourceLanguage,
         'response_language': responseLanguage,
         'farm_id': farmId,
+        'purpose': purpose,
+        'diagnosis_id': ?diagnosisId,
         'audio': await MultipartFile.fromFile(
           path,
           filename: file.uri.pathSegments.last,
+          contentType: DioMediaType('audio', 'mp4'),
         ),
       });
       return Map<String, dynamic>.from(
@@ -383,11 +399,44 @@ class ApiClient {
     }
   }
 
-  Future<List<FinanceProduct>> financeProducts() async {
+  Future<List<FinanceProduct>> financeProducts(String farmId) async {
     try {
       final data =
-          (await _dio.get('/asset-finance/products')).data['data'] as List;
+          (await _dio.get(
+                '/asset-finance/products',
+                queryParameters: {'farm_id': farmId},
+              )).data['data']
+              as List;
       return data.whereType<Json>().map(FinanceProduct.fromJson).toList();
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<List<AgronomyAdvice>> agronomyAdvice(String farmId) async {
+    try {
+      final data =
+          (await _dio.get('/farms/$farmId/agronomy-advice')).data['data']
+              as List;
+      return data.whereType<Json>().map(AgronomyAdvice.fromJson).toList();
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<AgronomyAdvice> askAgronomist(
+    String farmId,
+    String question,
+    String language,
+  ) async {
+    try {
+      return AgronomyAdvice.fromJson(
+        (await _dio.post(
+              '/farms/$farmId/agronomy-advice',
+              data: {'question': question, 'language': language},
+            )).data['data']
+            as Json,
+      );
     } catch (error) {
       _throw(error);
     }

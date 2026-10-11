@@ -6,6 +6,7 @@ namespace App\Actions\VoiceAssistance;
 
 use App\Integrations\Contracts\FarmerVoiceProvider;
 use App\Jobs\ProcessVoiceAssistanceRequest;
+use App\Models\DiagnosisRequest;
 use App\Models\Farm;
 use App\Models\Organization;
 use App\Models\User;
@@ -21,7 +22,7 @@ final readonly class CreateVoiceAssistanceRequest
 {
     public function __construct(private FarmerVoiceProvider $provider) {}
 
-    public function execute(User $user, UploadedFile $audio, string $sourceLanguage, string $responseLanguage, ?Farm $farm = null, ?Organization $organization = null, ?string $clientRequestId = null): VoiceAssistanceRequest
+    public function execute(User $user, UploadedFile $audio, string $sourceLanguage, string $responseLanguage, ?Farm $farm = null, ?Organization $organization = null, ?string $clientRequestId = null, string $purpose = 'general', ?DiagnosisRequest $diagnosis = null): VoiceAssistanceRequest
     {
         $contents = file_get_contents($audio->getRealPath());
         if ($contents === false) {
@@ -32,7 +33,7 @@ final readonly class CreateVoiceAssistanceRequest
         $path = null;
         try {
             /** @var array{VoiceAssistanceRequest, bool} $result */
-            $result = DB::transaction(function () use ($user, $audio, $contents, $checksum, $sourceLanguage, $responseLanguage, $farm, $organization, $clientRequestId, &$path): array {
+            $result = DB::transaction(function () use ($user, $audio, $contents, $checksum, $sourceLanguage, $responseLanguage, $farm, $organization, $clientRequestId, $purpose, $diagnosis, &$path): array {
                 User::query()->whereKey($user->getKey())->lockForUpdate()->firstOrFail();
 
                 if ($clientRequestId !== null) {
@@ -41,7 +42,8 @@ final readonly class CreateVoiceAssistanceRequest
                         ->first();
                     if ($existing !== null) {
                         if ($existing->farm_id !== $farm?->getKey() || $existing->audio_checksum !== $checksum
-                            || $existing->source_language !== $sourceLanguage || $existing->response_language !== $responseLanguage) {
+                            || $existing->source_language !== $sourceLanguage || $existing->response_language !== $responseLanguage
+                            || $existing->purpose !== $purpose || $existing->diagnosis_request_id !== $diagnosis?->getKey()) {
                             throw new ConflictHttpException('The Idempotency-Key belongs to a different voice request.');
                         }
 
@@ -59,6 +61,7 @@ final readonly class CreateVoiceAssistanceRequest
                 $request->fill([
                     'uuid' => (string) Str::uuid(),
                     'client_request_id' => $clientRequestId,
+                    'purpose' => $purpose,
                     'source_language' => $sourceLanguage,
                     'response_language' => $responseLanguage,
                     'audio_disk' => 'private',
@@ -71,6 +74,7 @@ final readonly class CreateVoiceAssistanceRequest
                 $request->user()->associate($user);
                 $request->organization()->associate($organization ?? $farm?->organization);
                 $request->farm()->associate($farm);
+                $request->diagnosisRequest()->associate($diagnosis);
                 $request->save();
 
                 return [$request, true];

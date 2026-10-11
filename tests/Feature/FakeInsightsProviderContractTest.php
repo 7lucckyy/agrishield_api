@@ -68,6 +68,16 @@ test('metric readings expose only platform metric and quality enums', function (
     }
 });
 
+test('fake provider observations have farm-specific external references', function () {
+    $firstFarm = Farm::factory()->create();
+    $secondFarm = Farm::factory()->create();
+
+    $firstReference = fakeContractProvider()->fetchCropHealth($firstFarm)->readings[0]->externalReference;
+    $secondReference = fakeContractProvider()->fetchCropHealth($secondFarm)->readings[0]->externalReference;
+
+    expect($firstReference)->not->toBe($secondReference);
+});
+
 test('every fake insight capability returns a typed domain DTO', function () {
     $farm = Farm::factory()->create();
     $cycle = CropCycle::factory()->for($farm)->create();

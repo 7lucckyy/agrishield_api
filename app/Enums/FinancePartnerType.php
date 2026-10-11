@@ -6,6 +6,7 @@ namespace App\Enums;
 
 enum FinancePartnerType: string
 {
+    case EquipmentDesk = 'equipment_desk';
     case NonInterestBank = 'non_interest_bank';
     case DevelopmentFinanceInstitution = 'development_finance_institution';
     case DepositMoneyBank = 'deposit_money_bank';

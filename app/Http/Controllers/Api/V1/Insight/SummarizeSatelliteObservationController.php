@@ -20,6 +20,7 @@ final class SummarizeSatelliteObservationController extends Controller
         $to = $request->date('filter.to') ?? today();
         $observations = SatelliteObservation::query()
             ->whereBelongsTo($farm)
+            ->whereNull('farm_section_id')
             ->whereBetween('captured_at', [$from->startOfDay(), $to->endOfDay()])
             ->orderByDesc('captured_at')
             ->get();

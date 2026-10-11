@@ -98,7 +98,7 @@ test('the public website uses one restrained editorial design system', function 
         ->assertSee('class="marketing-page gs-site', escape: false)
         ->assertSee('class="gs-hero gs-container"', escape: false)
         ->assertSee('class="gs-capability-list"', escape: false)
-        ->assertSee('class="gs-product-frame"', escape: false)
+        ->assertSee('class="gs-product-frame gs-product-desk"', escape: false)
         ->assertDontSee('class="agri-kicker', escape: false)
         ->assertDontSee('class="audience-card', escape: false)
         ->assertDontSee('class="capability-module', escape: false);
@@ -112,6 +112,26 @@ test('the public website uses one restrained editorial design system', function 
     $this->get(route('solutions'))->assertSuccessful()->assertSee('class="gs-platform-hero"', escape: false);
     $this->get(route('partners'))->assertSuccessful()->assertSee('class="gs-partner-hero"', escape: false);
     $this->get(route('contact'))->assertSuccessful()->assertSee('class="gs-contact-intro gs-container"', escape: false);
+});
+
+test('the public product desk presents implemented workflows accessibly', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('data-product-showcase', escape: false)
+        ->assertSee('role="tablist"', escape: false)
+        ->assertSee('role="tab"', escape: false)
+        ->assertSee('role="tabpanel"', escape: false)
+        ->assertSee('aria-controls="product-panel-0"', escape: false)
+        ->assertSee('aria-labelledby="product-tab-4"', escape: false)
+        ->assertSeeInOrder([
+            'Satellite crop monitoring',
+            'Crop image diagnosis',
+            'Voice notes from the field',
+            'Access to farm loans',
+        ])
+        ->assertSee('kaduna-tomato-farm.webp')
+        ->assertSee('Hausa voice note')
+        ->assertSee('Application requested');
 });
 
 test('the public website keeps workflow and field voice inside the core journey', function () {

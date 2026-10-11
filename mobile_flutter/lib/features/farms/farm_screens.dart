@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +16,7 @@ import '../../models/models.dart';
 import '../map/map_screen.dart';
 import 'farm_boundary.dart';
 import 'farm_boundary_map.dart';
+import 'soil_guidance.dart';
 
 class FarmsScreen extends ConsumerWidget {
   const FarmsScreen({super.key});
@@ -170,6 +172,8 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
   final _locality = TextEditingController();
   String? _state;
   final _mapController = MapController();
+  google.GoogleMapController? _googleMapController;
+  double _googleZoom = 6;
   final List<LatLng> _corners = [];
   _AddFarmStep _step = _AddFarmStep.boundary;
   LatLng? _deviceLocation;
@@ -192,6 +196,7 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
   @override
   void dispose() {
     _mapController.dispose();
+    _googleMapController?.dispose();
     _name.dispose();
     _locality.dispose();
     super.dispose();
@@ -264,10 +269,19 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
     final location = LatLng(position.latitude, position.longitude);
     setState(() => _deviceLocation = location);
     _mapController.move(location, 17);
+    _googleMapController?.animateCamera(
+      google.CameraUpdate.newLatLngZoom(
+        google.LatLng(location.latitude, location.longitude),
+        17,
+      ),
+    );
   }
 
   void _addCorner(LatLng point) {
-    if (_mapController.camera.zoom < minimumCornerZoom) {
+    if ((widget.tileProvider == null
+            ? _googleZoom
+            : _mapController.camera.zoom) <
+        minimumCornerZoom) {
       showMessage(
         context,
         'Zoom in closer to your field, then tap its corners.',
@@ -345,40 +359,107 @@ class _AddFarmScreenState extends ConsumerState<AddFarmScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: widget.initialCenter ?? nigeriaCenter,
-                initialZoom: widget.initialZoom ?? 6,
-                minZoom: 4,
-                maxZoom: 20,
-                onTap: (_, point) => _addCorner(point),
-                interactionOptions: const InteractionOptions(
-                  // Double-tap gestures would delay every corner tap while
-                  // waiting for a second tap, so zoom is pinch-only here.
-                  flags:
-                      InteractiveFlag.all &
-                      ~InteractiveFlag.rotate &
-                      ~InteractiveFlag.doubleTapZoom &
-                      ~InteractiveFlag.doubleTapDragZoom,
-                ),
-              ),
-              children: [
-                ...satelliteBaseLayers(tileProvider: widget.tileProvider),
-                ...boundaryOverlayLayers(_corners, hasCrossingEdges: crossing),
-                if (_deviceLocation != null)
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: _deviceLocation!,
-                        width: 22,
-                        height: 22,
-                        child: const _DeviceLocationDot(),
-                      ),
-                    ],
+            if (widget.tileProvider == null)
+              google.GoogleMap(
+                mapType: google.MapType.hybrid,
+                initialCameraPosition: google.CameraPosition(
+                  target: google.LatLng(
+                    (widget.initialCenter ?? nigeriaCenter).latitude,
+                    (widget.initialCenter ?? nigeriaCenter).longitude,
                   ),
-              ],
-            ),
+                  zoom: widget.initialZoom ?? 6,
+                ),
+                onMapCreated: (controller) {
+                  _googleMapController = controller;
+                  if (_deviceLocation case final location?) {
+                    controller.animateCamera(
+                      google.CameraUpdate.newLatLngZoom(
+                        google.LatLng(location.latitude, location.longitude),
+                        17,
+                      ),
+                    );
+                  }
+                },
+                onCameraMove: (position) => _googleZoom = position.zoom,
+                onTap: (point) =>
+                    _addCorner(LatLng(point.latitude, point.longitude)),
+                zoomControlsEnabled: false,
+                polygons: _corners.length < 3
+                    ? {}
+                    : {
+                        google.Polygon(
+                          polygonId: const google.PolygonId('farm'),
+                          points: [
+                            for (final corner in _corners)
+                              google.LatLng(corner.latitude, corner.longitude),
+                          ],
+                          strokeColor: crossing
+                              ? AgriColors.clay
+                              : AgriColors.millet,
+                          strokeWidth: 3,
+                          fillColor: AgriColors.millet.withValues(alpha: .28),
+                        ),
+                      },
+                markers: {
+                  for (var index = 0; index < _corners.length; index++)
+                    google.Marker(
+                      markerId: google.MarkerId('corner-$index'),
+                      position: google.LatLng(
+                        _corners[index].latitude,
+                        _corners[index].longitude,
+                      ),
+                      infoWindow: google.InfoWindow(
+                        title: 'Corner ${index + 1}',
+                      ),
+                    ),
+                  if (_deviceLocation case final location?)
+                    google.Marker(
+                      markerId: const google.MarkerId('you'),
+                      position: google.LatLng(
+                        location.latitude,
+                        location.longitude,
+                      ),
+                    ),
+                },
+              )
+            else
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: widget.initialCenter ?? nigeriaCenter,
+                  initialZoom: widget.initialZoom ?? 6,
+                  minZoom: 4,
+                  maxZoom: 20,
+                  onTap: (_, point) => _addCorner(point),
+                  interactionOptions: const InteractionOptions(
+                    // Double-tap gestures would delay every corner tap while
+                    // waiting for a second tap, so zoom is pinch-only here.
+                    flags:
+                        InteractiveFlag.all &
+                        ~InteractiveFlag.rotate &
+                        ~InteractiveFlag.doubleTapZoom &
+                        ~InteractiveFlag.doubleTapDragZoom,
+                  ),
+                ),
+                children: [
+                  ...satelliteBaseLayers(tileProvider: widget.tileProvider),
+                  ...boundaryOverlayLayers(
+                    _corners,
+                    hasCrossingEdges: crossing,
+                  ),
+                  if (_deviceLocation != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _deviceLocation!,
+                          width: 22,
+                          height: 22,
+                          child: const _DeviceLocationDot(),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(AgriSpacing.md),
@@ -733,11 +814,13 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
       List<WeatherDay> weather,
       List<Advisory> advisories,
       Json soil,
+      Json productivityZones,
       bool savedFarm,
       DateTime farmUpdatedAt,
       bool weatherUnavailable,
       bool advisoriesUnavailable,
       bool soilUnavailable,
+      bool productivityZonesUnavailable,
     })
   >
   _future;
@@ -755,9 +838,11 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
       var weather = <WeatherDay>[];
       var advisories = <Advisory>[];
       var soil = <String, dynamic>{};
+      var productivityZones = <String, dynamic>{};
       var weatherUnavailable = false;
       var advisoriesUnavailable = false;
       var soilUnavailable = false;
+      var productivityZonesUnavailable = false;
 
       try {
         weather = await api.weather(widget.farmId);
@@ -774,17 +859,24 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
       } catch (_) {
         soilUnavailable = true;
       }
+      try {
+        productivityZones = await api.productivityZones(widget.farmId);
+      } catch (_) {
+        productivityZonesUnavailable = true;
+      }
 
       return (
         farm: farmResult.farm,
         weather: weather,
         advisories: advisories,
         soil: soil,
+        productivityZones: productivityZones,
         savedFarm: farmResult.isOffline,
         farmUpdatedAt: farmResult.updatedAt,
         weatherUnavailable: weatherUnavailable,
         advisoriesUnavailable: advisoriesUnavailable,
         soilUnavailable: soilUnavailable,
+        productivityZonesUnavailable: productivityZonesUnavailable,
       );
     })();
   }
@@ -849,11 +941,13 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
       List<WeatherDay> weather,
       List<Advisory> advisories,
       Json soil,
+      Json productivityZones,
       bool savedFarm,
       DateTime farmUpdatedAt,
       bool weatherUnavailable,
       bool advisoriesUnavailable,
       bool soilUnavailable,
+      bool productivityZonesUnavailable,
     })
     data,
   ) {
@@ -866,6 +960,7 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
           child: FarmOutlineMap(
             farms: [data.farm],
             sections: data.farm.sections,
+            productivityZones: data.productivityZones,
           ),
         ),
       if (data.savedFarm)
@@ -932,6 +1027,11 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
         ),
       ),
       _FarmSectionsPreview(farm: data.farm),
+      const SectionHeading('Productivity zones'),
+      _ProductivityZonesCard(
+        data: data.productivityZones,
+        unavailable: data.productivityZonesUnavailable,
+      ),
       const SectionHeading('Crop actions'),
       Row(
         children: [
@@ -999,7 +1099,7 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
                 ),
               ),
             ),
-      const SectionHeading('Soil intelligence'),
+      const SectionHeading('What your soil needs'),
       if (data.soilUnavailable)
         const AgriCard(
           child: Text(
@@ -1007,8 +1107,81 @@ class _FarmDetailScreenState extends ConsumerState<FarmDetailScreen> {
           ),
         )
       else
-        _SoilSnapshot(data: data.soil),
+        _SoilSnapshot(data: data.soil, farmId: data.farm.id),
     ];
+  }
+}
+
+class _ProductivityZonesCard extends StatelessWidget {
+  const _ProductivityZonesCard({required this.data, required this.unavailable});
+
+  final Json data;
+  final bool unavailable;
+
+  @override
+  Widget build(BuildContext context) {
+    if (unavailable) {
+      return const AgriCard(
+        child: Text(
+          'Productivity zones are unavailable. Reconnect to check current section measurements.',
+        ),
+      );
+    }
+
+    final groups = data['crop_groups'];
+    final entries = groups is Map
+        ? groups.values.whereType<Map>().toList()
+        : <Map>[];
+    final zones = entries
+        .where((group) => group['state'] == 'ready')
+        .expand((group) => (group['zones'] as List? ?? []).whereType<Map>())
+        .toList();
+
+    if (zones.isEmpty) {
+      return const AgriCard(
+        child: Text(
+          'No reliable zones yet. Three or more mapped sections of the same crop need recent, comparable satellite measurements.',
+        ),
+      );
+    }
+
+    return AgriCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final zone in zones)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.circle,
+                    size: 13,
+                    color: switch (zone['zone']) {
+                      'lower_relative_vigor' => AgriColors.clay,
+                      'higher_relative_vigor' => AgriColors.forest,
+                      _ => AgriColors.millet,
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(zone['section_name']?.toString() ?? 'Section'),
+                  ),
+                  Text(switch (zone['zone']) {
+                    'lower_relative_vigor' => 'Check in field',
+                    'higher_relative_vigor' => 'Higher vigor',
+                    _ => 'Middle vigor',
+                  }),
+                ],
+              ),
+            ),
+          const Text(
+            'Relative NDVI only. Check lower-vigor sections in person before changing fertiliser or irrigation.',
+            style: TextStyle(color: AgriColors.muted),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1157,9 +1330,10 @@ class _FarmHero extends StatelessWidget {
 }
 
 class _SoilSnapshot extends StatelessWidget {
-  const _SoilSnapshot({required this.data});
+  const _SoilSnapshot({required this.data, required this.farmId});
 
   final Json data;
+  final String farmId;
 
   @override
   Widget build(BuildContext context) {
@@ -1182,13 +1356,152 @@ class _SoilSnapshot extends StatelessWidget {
       );
     }
 
+    final guidance = buildSoilGuidance(metrics);
+
+    return Column(
+      children: [
+        AgriCard(
+          color: AgriColors.milletSoft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.touch_app_rounded, color: AgriColors.forest),
+                  SizedBox(width: 8),
+                  StatusPill(
+                    'Action first',
+                    warning: true,
+                    icon: Icons.directions_walk_rounded,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                guidance.headline,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 6),
+              Text(guidance.summary),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => context.push('/voice/new?farmId=$farmId'),
+                icon: const Icon(Icons.volume_up_rounded),
+                label: const Text('Ask about this by voice'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (final signal in guidance.signals) ...[
+          _SoilAction(signal: signal),
+          const SizedBox(height: 10),
+        ],
+        Card(
+          child: ExpansionTile(
+            leading: const Icon(Icons.science_outlined, color: AgriColors.soil),
+            title: const Text(
+              'See soil measurements',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+            subtitle: const Text('For an extension worker or input adviser'),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            children: [
+              for (var index = 0; index < metrics.length; index++) ...[
+                _SoilMetric(metric: metrics[index]),
+                if (index < metrics.length - 1) const Divider(height: 24),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        const AgriCard(
+          color: AgriColors.skySoft,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline_rounded, color: AgriColors.sky),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'These are field estimates, not a fertiliser prescription. Confirm with a local soil test before spending money.',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SoilAction extends StatelessWidget {
+  const _SoilAction({required this.signal});
+
+  final SoilSignal signal;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, iconColor, background) = switch (signal.level) {
+      SoilSignalLevel.good => (
+        Icons.check_circle_rounded,
+        AgriColors.grove,
+        AgriColors.leafSoft,
+      ),
+      SoilSignalLevel.attention => (
+        Icons.priority_high_rounded,
+        const Color(0xFF76510F),
+        AgriColors.milletSoft,
+      ),
+      SoilSignalLevel.unknown => (
+        Icons.help_outline_rounded,
+        AgriColors.sky,
+        AgriColors.skySoft,
+      ),
+    };
+
     return AgriCard(
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var index = 0; index < metrics.length; index++) ...[
-            _SoilMetric(metric: metrics[index]),
-            if (index < metrics.length - 1) const Divider(height: 24),
-          ],
+          Semantics(
+            label: signal.status,
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(AgriRadius.md),
+              ),
+              child: Icon(icon, color: iconColor, size: 30),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  signal.title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  signal.status,
+                  style: TextStyle(
+                    color: iconColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  signal.action,
+                  style: const TextStyle(color: AgriColors.muted),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1236,7 +1549,7 @@ class _SoilMetric extends StatelessWidget {
           ),
         ),
         Text(
-          value == null ? '—' : '$value $unit'.trim(),
+          value == null ? '—' : _friendlySoilValue(value, unit),
           style: const TextStyle(
             color: AgriColors.soil,
             fontSize: 18,
@@ -1246,6 +1559,15 @@ class _SoilMetric extends StatelessWidget {
       ],
     );
   }
+}
+
+String _friendlySoilValue(Object value, String unit) {
+  final number = value is num ? value.toDouble() : double.tryParse('$value');
+  if (number == null) return '$value $unit'.trim();
+  final decimals = unit == 'pH' || unit == 'percent' ? 1 : 0;
+  final friendlyUnit = unit == 'percent' ? '%' : unit;
+
+  return '${number.toStringAsFixed(decimals)} $friendlyUnit'.trim();
 }
 
 class _Metric extends StatelessWidget {

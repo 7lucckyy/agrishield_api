@@ -5,12 +5,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/assist/assist_screens.dart';
+import '../features/assist/agronomy_screen.dart';
 import '../features/auth/auth_screens.dart';
 import '../features/farms/farm_screens.dart';
 import '../features/farms/farm_sections_screen.dart';
 import '../features/finance/finance_screens.dart';
 import '../features/home/home_screen.dart';
-import '../features/loans/loan_screens.dart';
 import '../features/map/map_screen.dart';
 import '../features/more/more_screen.dart';
 import 'providers.dart';
@@ -110,23 +110,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/voice/new',
-        builder: (_, state) =>
-            VoiceScreen(farmId: state.uri.queryParameters['farmId']),
-      ),
-      GoRoute(path: '/finance', builder: (_, _) => const FinanceScreen()),
-      GoRoute(path: '/loans', builder: (_, _) => const LoansScreen()),
-      GoRoute(
-        path: '/loans/request/:category',
-        builder: (_, state) => LoanRequestScreen(
-          category: LoanCategory.values.byName(
-            state.pathParameters['category']!,
-          ),
+        builder: (_, state) => VoiceScreen(
+          farmId: state.uri.queryParameters['farmId'],
+          purpose: state.uri.queryParameters['purpose'] ?? 'general',
+          diagnosisId: state.uri.queryParameters['diagnosisId'],
         ),
       ),
+      GoRoute(path: '/finance', builder: (_, _) => const FinanceScreen()),
+      GoRoute(path: '/agronomy', builder: (_, _) => const AgronomyScreen()),
+      GoRoute(path: '/loans', redirect: (_, _) => '/finance'),
+      GoRoute(path: '/loans/request/:category', redirect: (_, _) => '/finance'),
       GoRoute(
         path: '/finance/apply/:id',
         builder: (_, state) => FinanceApplyScreen(
           productId: int.parse(state.pathParameters['id']!),
+          farmId: state.uri.queryParameters['farmId'] ?? '',
         ),
       ),
     ],

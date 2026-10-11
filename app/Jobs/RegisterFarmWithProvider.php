@@ -66,6 +66,15 @@ final class RegisterFarmWithProvider implements ShouldBeUnique, ShouldQueue
             ->where('provider', $provider->name())
             ->first();
 
+        if ($integrationAccount === null && $provider->name() === 'copernicus'
+            && (string) config('farming.providers.copernicus.client_id') !== ''
+            && (string) config('farming.providers.copernicus.client_secret') !== '') {
+            $integrationAccount = IntegrationAccount::query()->firstOrCreate(
+                ['provider' => 'copernicus'],
+                ['label' => 'Copernicus Sentinel Hub', 'status' => IntegrationStatus::Active, 'credentials_ref' => 'COPERNICUS_CLIENT_ID/COPERNICUS_CLIENT_SECRET'],
+            );
+        }
+
         if ($integrationAccount === null) {
             $recordSyncRun->skip($syncRun, 'integration_not_configured');
 
@@ -129,7 +138,7 @@ final class RegisterFarmWithProvider implements ShouldBeUnique, ShouldQueue
             if ($registered) {
                 $recordSyncRun->succeed($syncRun, recordsWritten: 1);
                 $queueInsightSync ??= app(QueueInsightSync::class);
-                foreach ($this->initialSyncTypes($farm) as $type) {
+                foreach ($this->initialSyncTypes($farm, $provider) as $type) {
                     $queueInsightSync->execute(
                         $farm,
                         $type,
@@ -192,8 +201,12 @@ final class RegisterFarmWithProvider implements ShouldBeUnique, ShouldQueue
     }
 
     /** @return list<SyncType> */
-    private function initialSyncTypes(Farm $farm): array
+    private function initialSyncTypes(Farm $farm, FarmingInsightsProvider $provider): array
     {
+        if ($provider->name() === 'copernicus') {
+            return [SyncType::Weather, SyncType::CropHealth];
+        }
+
         $types = [SyncType::SoilHealth, SyncType::Weather, SyncType::CropHealth, SyncType::WaterStress,
             SyncType::SoilMoisture, SyncType::IrrigationAdvisory, SyncType::PestForewarning];
 

@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $farm_id
+ * @property int|null $farm_section_id
  * @property int|null $farm_crop_cycle_id
  * @property MetricType $metric_type
  * @property string|null $value
@@ -30,7 +31,7 @@ use Illuminate\Support\Carbon;
  * @property string $source
  * @property string|null $external_reference
  */
-#[Fillable(['metric_type', 'value', 'unit', 'map_url', 'statistics', 'resolution_meters', 'captured_at', 'fetched_at', 'next_expected_update_at', 'quality_flag', 'source', 'external_reference', 'raw_payload'])]
+#[Fillable(['farm_section_id', 'metric_type', 'value', 'unit', 'map_url', 'statistics', 'resolution_meters', 'captured_at', 'fetched_at', 'next_expected_update_at', 'quality_flag', 'source', 'external_reference', 'raw_payload'])]
 final class SatelliteObservation extends Model
 {
     /** @use HasFactory<SatelliteObservationFactory> */
@@ -46,6 +47,12 @@ final class SatelliteObservation extends Model
     public function cropCycle(): BelongsTo
     {
         return $this->belongsTo(CropCycle::class, 'farm_crop_cycle_id');
+    }
+
+    /** @return BelongsTo<FarmSection, $this> */
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(FarmSection::class, 'farm_section_id');
     }
 
     /** @return array<string, string> */

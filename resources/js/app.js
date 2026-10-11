@@ -51,6 +51,42 @@ if ('IntersectionObserver' in window && ! window.matchMedia('(prefers-reduced-mo
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+document.querySelectorAll('[data-product-showcase]').forEach((showcase) => {
+    const tabs = Array.from(showcase.querySelectorAll('[data-product-tab]'));
+    const panels = Array.from(showcase.querySelectorAll('[data-product-panel]'));
+
+    const selectProductPanel = (selectedTab) => {
+        tabs.forEach((tab) => {
+            const isSelected = tab === selectedTab;
+            tab.setAttribute('aria-selected', String(isSelected));
+            tab.tabIndex = isSelected ? 0 : -1;
+        });
+
+        panels.forEach((panel) => {
+            panel.hidden = panel.dataset.productPanel !== selectedTab.dataset.productTab;
+        });
+    };
+
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => selectProductPanel(tab));
+        tab.addEventListener('keydown', (event) => {
+            if (! ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+                return;
+            }
+
+            event.preventDefault();
+            const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+            const nextIndex = event.key === 'Home'
+                ? 0
+                : event.key === 'End'
+                    ? tabs.length - 1
+                    : (index + direction + tabs.length) % tabs.length;
+            selectProductPanel(tabs[nextIndex]);
+            tabs[nextIndex].focus();
+        });
+    });
+});
+
 const depthCards = document.querySelectorAll('[data-motion="depth-card"]');
 
 if (! reducedMotion.matches && window.matchMedia('(pointer: fine)').matches) {

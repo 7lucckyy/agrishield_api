@@ -18,6 +18,7 @@ final class FakeDataGenerator
      */
     public function seasonalIndexSeries(
         int $seed,
+        string $farmReference,
         MetricType $metric,
         CarbonInterface $since,
         int $cadenceDays,
@@ -49,7 +50,7 @@ final class FakeDataGenerator
                     quality: $cloudRatio < $cloudProbability + 0.1
                         ? QualityFlag::PartialCloud
                         : QualityFlag::Good,
-                    externalReference: 'fake-'.$metric->value.'-'.$cursor->format('Ymd'),
+                    externalReference: 'fake-'.$farmReference.'-'.$metric->value.'-'.$cursor->format('Ymd'),
                 );
             }
 
@@ -87,7 +88,7 @@ final class FakeDataGenerator
     }
 
     /** @return list<MetricReading> */
-    public function soilHealth(int $seed, CarbonInterface $capturedAt): array
+    public function soilHealth(int $seed, string $farmReference, CarbonInterface $capturedAt): array
     {
         $metrics = [
             [MetricType::SoilNitrogen, 'ppm', 15.0, 60.0],
@@ -106,7 +107,7 @@ final class FakeDataGenerator
                 unit: $unit,
                 capturedAt: CarbonImmutable::instance($capturedAt),
                 resolutionMeters: 10,
-                externalReference: 'fake-soil-'.$metric->value.'-'.$capturedAt->format('Ymd'),
+                externalReference: 'fake-'.$farmReference.'-soil-'.$metric->value.'-'.$capturedAt->format('Ymd'),
             );
         }
 

@@ -76,15 +76,8 @@ class MoreScreen extends ConsumerWidget {
             _SettingsTile(
               icon: Icons.payments_outlined,
               tint: AgriColors.millet,
-              title: 'Farm loans',
-              subtitle: 'Tools, tractors, seeds and inputs',
-              onTap: () => context.push('/loans'),
-            ),
-            _SettingsTile(
-              icon: Icons.agriculture_outlined,
-              tint: AgriColors.indigo,
-              title: 'Asset access',
-              subtitle: 'Equipment, inputs and finance programmes',
+              title: 'Farm equipment',
+              subtitle: 'Tools chosen for your farm and season',
               onTap: () => context.push('/finance'),
             ),
           ],
@@ -104,11 +97,12 @@ class MoreScreen extends ConsumerWidget {
               title: 'Data protection',
               value: 'Encrypted on device',
             ),
-            const _SettingsTile(
+            _SettingsTile(
               icon: Icons.auto_awesome_outlined,
               tint: AgriColors.water,
-              title: 'AI support',
-              value: 'N-ATLaS + crop vision',
+              title: 'AI agronomist',
+              subtitle: 'Ask about your farm in Nigerian languages',
+              onTap: () => context.push('/agronomy'),
             ),
           ],
         ),

@@ -9,11 +9,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
 import '../../app/providers.dart';
+import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/agri_widgets.dart';
 import '../../models/models.dart';
 import 'ai_response.dart';
+import 'agronomy_screen.dart';
 import 'assist_response.dart';
+import 'submission_result.dart';
+import 'speech_answer_button.dart';
 
 final voiceHistoryProvider = FutureProvider.autoDispose<List<VoiceRequest>>(
   (ref) => ref.read(apiClientProvider).voiceRequests(),
@@ -120,6 +124,10 @@ class AssistScreen extends ConsumerWidget {
                     title: item.diagnosis ?? 'Crop photo check',
                     detail:
                         item.recommendation ?? 'Analysis is being prepared.',
+                    speechText: item.status == 'completed'
+                        ? '${item.diagnosis ?? ''}. ${item.recommendation ?? ''}'
+                        : null,
+                    speechLanguage: item.responseLanguage,
                   ),
                 ),
               ),
@@ -133,6 +141,8 @@ class AssistScreen extends ConsumerWidget {
                     status: item.status,
                     title: item.transcript ?? 'Voice question',
                     detail: item.guidance ?? 'Guidance is being prepared.',
+                    speechText: item.guidance,
+                    speechLanguage: item.responseLanguage,
                   ),
                 ),
               ),
@@ -148,11 +158,15 @@ class _HistoryItem extends StatelessWidget {
     required this.status,
     required this.title,
     required this.detail,
+    this.speechText,
+    this.speechLanguage,
   });
   final IconData icon;
   final String status;
   final String title;
   final String detail;
+  final String? speechText;
+  final String? speechLanguage;
   @override
   Widget build(BuildContext context) => AgriCard(
     child: Row(
@@ -179,6 +193,11 @@ class _HistoryItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: AgriColors.muted),
               ),
+              if (speechText != null && speechText!.trim().isNotEmpty)
+                SpeechAnswerButton(
+                  text: speechText!,
+                  language: speechLanguage ?? 'en',
+                ),
             ],
           ),
         ),
@@ -300,13 +319,15 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
     final image = await _picker.pickImage(
       source: source,
       imageQuality: 88,
-      maxWidth: 2400,
-      maxHeight: 2400,
+      maxWidth: 1200,
+      maxHeight: 1200,
     );
     if (image == null) return;
     final bytes = await image.length();
-    if (bytes > 8 * 1024 * 1024) {
-      if (mounted) showMessage(context, 'Choose a photo smaller than 8 MB.');
+    if (bytes > 1800 * 1024) {
+      if (mounted) {
+        showMessage(context, 'Choose a clear photo smaller than 1.8 MB.');
+      }
       return;
     }
     setState(() {
@@ -328,15 +349,29 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
       _requestStatus = null;
     });
     try {
-      final api = ref.read(apiClientProvider);
-      final submitted = await api.submitDiagnosis(
+      final repository = await ref.read(
+        offlineSubmissionRepositoryProvider.future,
+      );
+      final submitted = await repository.submitDiagnosis(
         farmId: widget.farmId,
         imagePath: _image!.path,
         responseLanguage: _responseLanguage,
         note: _note.text.trim().isEmpty ? null : _note.text.trim(),
       );
-      final requestId = submitted['id'].toString();
+      final submission = SubmissionResult.fromJson(submitted);
       if (!mounted) return;
+      if (submission.isPendingSync) {
+        ref.invalidate(outboxStatusProvider);
+        setState(
+          () => _requestStatus = 'Saved on this device. Your crop photo will upload automatically when AgriShield reconnects.',
+        );
+        return;
+      }
+      final requestId = submission.remoteId;
+      if (requestId == null) {
+        throw ApiException('The server did not return a crop request ID.');
+      }
+      final api = ref.read(apiClientProvider);
       ref.invalidate(diagnosisHistoryProvider(widget.farmId));
       setState(() => _requestStatus = 'Analysing your photo…');
       for (var attempt = 0; attempt < 15; attempt++) {
@@ -462,6 +497,18 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
       ],
       if (_result != null) ...[
         const SizedBox(height: AgriSpacing.lg),
+        SpeechAnswerButton(
+          key: ValueKey('diagnosis-speech-${_result!.id}'),
+          text: '${_result!.diagnosis ?? ''}. ${_result!.recommendation ?? ''}',
+          language: _responseLanguage,
+        ),
+        OutlinedButton.icon(
+          onPressed: () => context.push(
+            '/voice/new?farmId=${widget.farmId}&purpose=diagnosis_followup&diagnosisId=${_result!.id}',
+          ),
+          icon: const Icon(Icons.mic_rounded),
+          label: const Text('Ask a follow-up by voice'),
+        ),
         AiResponseView(
           key: ObjectKey(_result),
           response: diagnosisResponse(_result!),
@@ -473,8 +520,15 @@ class _DiagnosisScreenState extends ConsumerState<DiagnosisScreen> {
 }
 
 class VoiceScreen extends ConsumerStatefulWidget {
-  const VoiceScreen({super.key, this.farmId});
+  const VoiceScreen({
+    super.key,
+    this.farmId,
+    this.purpose = 'general',
+    this.diagnosisId,
+  });
   final String? farmId;
+  final String purpose;
+  final String? diagnosisId;
   @override
   ConsumerState<VoiceScreen> createState() => _VoiceScreenState();
 }
@@ -547,15 +601,31 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       _requestStatus = null;
     });
     try {
-      final api = ref.read(apiClientProvider);
-      final submitted = await api.submitVoice(
-        path: _path!,
+      final repository = await ref.read(
+        offlineSubmissionRepositoryProvider.future,
+      );
+      final submitted = await repository.submitVoice(
+        audioPath: _path!,
         sourceLanguage: _source,
         responseLanguage: _response,
         farmId: widget.farmId,
+        purpose: widget.purpose,
+        diagnosisId: widget.diagnosisId,
       );
-      final requestId = submitted['id'].toString();
+      final submission = SubmissionResult.fromJson(submitted);
       if (!mounted) return;
+      if (submission.isPendingSync) {
+        ref.invalidate(outboxStatusProvider);
+        setState(
+          () => _requestStatus = 'Saved on this device. Your voice question will upload automatically when AgriShield reconnects.',
+        );
+        return;
+      }
+      final requestId = submission.remoteId;
+      if (requestId == null) {
+        throw ApiException('The server did not return a voice request ID.');
+      }
+      final api = ref.read(apiClientProvider);
       ref.invalidate(voiceHistoryProvider);
       setState(() => _requestStatus = 'Preparing your answer…');
       for (var attempt = 0; attempt < 15; attempt++) {
@@ -567,6 +637,9 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
             _requestStatus = null;
           });
           ref.invalidate(voiceHistoryProvider);
+          if (widget.farmId != null && widget.purpose != 'general') {
+            ref.invalidate(agronomyHistoryProvider(widget.farmId!));
+          }
           _scrollToAnswer(_answerKey);
           return;
         }
@@ -593,12 +666,26 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
 
   @override
   Widget build(BuildContext context) => AgriPage(
-    appBar: AppBar(title: const Text('Ask by voice')),
+    appBar: AppBar(
+      title: Text(
+        widget.purpose == 'diagnosis_followup'
+            ? 'Ask about this crop photo'
+            : widget.purpose == 'agronomy'
+            ? 'Ask the agronomist by voice'
+            : 'Ask by voice',
+      ),
+    ),
     children: [
-      const PageHeading(
-        eyebrow: 'N-ATLAS language support',
+      PageHeading(
+        eyebrow: widget.purpose == 'general'
+            ? 'Voice support'
+            : 'Farm-specific voice support',
         title: 'Speak as you normally do',
-        description: 'Ask one clear farming question. You can receive the guidance in a different supported language.',
+        description: widget.purpose == 'diagnosis_followup'
+            ? 'Ask a question about your crop photo. Your previous diagnosis and farm details will be considered.'
+            : widget.purpose == 'agronomy'
+            ? 'Ask about your farm in English, Hausa, Yorùbá, or Igbo. Your answer will be saved in AI agronomist history.'
+            : 'Ask in English, Hausa, Yorùbá, or Igbo. You can receive the guidance in a different supported language.',
       ),
       Row(
         children: [
@@ -679,6 +766,12 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       ],
       if (_result != null) ...[
         const SizedBox(height: AgriSpacing.lg),
+        SpeechAnswerButton(
+          key: ValueKey('voice-speech-${_result!.id}'),
+          text: _result!.guidance ?? '',
+          language: _response,
+          autoPlay: true,
+        ),
         UserQuestionBubble(
           text: _result!.transcript ?? 'Voice question',
           caption: 'Voice note · ${_seconds}s · transcribed',

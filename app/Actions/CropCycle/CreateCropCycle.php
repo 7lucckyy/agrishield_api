@@ -50,7 +50,9 @@ final class CreateCropCycle
             throw $exception;
         }
 
-        if ($cropCycle->status === CropCycleStatus::Active && $farm->provider_status === ProviderStatus::Registered) {
+        if ($cropCycle->status === CropCycleStatus::Active
+            && $farm->provider_status === ProviderStatus::Registered
+            && (string) config('farming.provider') !== 'copernicus') {
             $this->queueInsightSync->execute(
                 $farm,
                 SyncType::CropPractices,

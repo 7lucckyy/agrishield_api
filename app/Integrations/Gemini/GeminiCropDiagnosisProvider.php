@@ -13,6 +13,7 @@ use App\Integrations\Support\ProviderExceptionMapper;
 use App\Models\DiagnosisRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -24,7 +25,10 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
         private ProviderExceptionMapper $exceptionMapper,
     ) {}
 
-    public function name(): string { return 'gemini'; }
+    public function name(): string
+    {
+        return 'gemini';
+    }
 
     public function submitDiagnosis(DiagnosisRequest $request, string $idempotencyKey): DiagnosisSubmission
     {
@@ -48,6 +52,8 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
             $response = $this->http->withHeaders(['x-goog-api-key' => $apiKey])->acceptJson()->asJson()
                 ->connectTimeout((int) config('diagnosis.gemini.connect_timeout'))
                 ->timeout((int) config('diagnosis.gemini.read_timeout'))
+                ->retry(3, 500, fn (Throwable $exception): bool => $exception instanceof RequestException
+                    && ($exception->response->serverError() || $exception->response->status() === 429), throw: false)
                 ->post(rtrim((string) config('diagnosis.gemini.base_url'), '/').'/models/'.config('diagnosis.gemini.model').':generateContent', [
                     'systemInstruction' => ['parts' => [['text' => 'You provide cautious crop-photo decision support. Describe only visible evidence and possible causes. Never call a disease confirmed, never provide a confidence percentage, never prescribe pesticides or dosage, and return JSON only.']]],
                     'contents' => [['parts' => [
@@ -56,11 +62,15 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
                     ]]],
                     'generationConfig' => ['responseMimeType' => 'application/json'],
                 ]);
-            $reference = $response->header('x-request-id');
-            if ($response->failed()) { throw $this->exceptionMapper->fromResponse($response, $reference); }
+            $reference = trim((string) $response->header('x-request-id')) ?: null;
+            if ($response->failed()) {
+                throw $this->exceptionMapper->fromResponse($response, $reference);
+            }
             $text = $response->json('candidates.0.content.parts.0.text');
             $data = is_string($text) ? json_decode($text, true, flags: JSON_THROW_ON_ERROR) : null;
-            if (! is_array($data)) { throw new ProviderContractViolation('Gemini returned no structured crop result.', 'provider_contract_violation', $reference); }
+            if (! is_array($data)) {
+                throw new ProviderContractViolation('Gemini returned no structured crop result.', 'provider_contract_violation', $reference);
+            }
             $condition = trim((string) ($data['possible_condition'] ?? ''));
             $visualSigns = $data['visual_signs'] ?? [];
             $signs = is_array($visualSigns) ? array_values(array_filter($visualSigns, 'is_string')) : [];
@@ -71,6 +81,7 @@ final readonly class GeminiCropDiagnosisProvider implements CropDiagnosisProvide
             if ($condition === '' || $recommendation === '' || $uncertainty === '' || $safetyNote === '') {
                 throw new ProviderContractViolation('Gemini returned an incomplete crop assessment.', 'provider_contract_violation', $reference);
             }
+
             return new DiagnosisResult(
                 DiagnosisResultStatus::Completed,
                 $condition,

@@ -1,10 +1,18 @@
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 val releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+val mapsKeyFromProject = file("../../../.env").takeIf { it.exists() }
+    ?.readLines()
+    ?.firstOrNull { it.startsWith("GOOGLE_MAPS_API_KEY=") }
+    ?.substringAfter('=')
+    ?.trim()
+    ?.trim('"', '\'')
+val googleMapsApiKey = System.getenv("GOOGLE_MAPS_API_KEY") ?: mapsKeyFromProject.orEmpty()
 val releaseKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
@@ -18,6 +26,10 @@ val releaseSigningConfigured = listOf(
 val requestedTasks = gradle.startParameter.taskNames
 val buildsRelease = requestedTasks.any { it.contains("Release", ignoreCase = true) }
 val buildsPlayBundle = requestedTasks.any { it.contains("bundle", ignoreCase = true) }
+
+if (buildsRelease && googleMapsApiKey.isBlank()) {
+    throw GradleException("GOOGLE_MAPS_API_KEY is required for release maps.")
+}
 
 // Play Store bundles must use the real upload key. Release APKs for testing on
 // devices fall back to the debug key when no keystore is configured.
@@ -41,6 +53,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "ng.agrishield.agrishield_ai"
+        manifestPlaceholders["googleMapsApiKey"] = googleMapsApiKey
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

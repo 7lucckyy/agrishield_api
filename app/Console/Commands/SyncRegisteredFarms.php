@@ -60,7 +60,9 @@ final class SyncRegisteredFarms extends Command
             ->where('provider_status', ProviderStatus::Registered);
 
         return match ($type) {
-            SyncType::Weather => $query->whereDoesntHave('weatherForecasts', fn (Builder $forecasts): Builder => $forecasts->whereDate('fetched_at', today())),
+            SyncType::Weather => $query->whereDoesntHave('weatherForecasts', fn (Builder $forecasts): Builder => $forecasts
+                ->where('source', (string) config('farming.provider') === 'copernicus' ? 'openweather' : (string) config('farming.provider'))
+                ->whereDate('fetched_at', today())),
             SyncType::CropHealth => $this->withoutCurrentObservation($query, MetricType::Ndvi),
             SyncType::WaterStress => $this->withoutCurrentObservation($query, MetricType::Lswi),
             SyncType::SoilMoisture => $this->withoutCurrentObservation($query, MetricType::SoilMoisture),
@@ -81,12 +83,17 @@ final class SyncRegisteredFarms extends Command
     {
         return $query->whereDoesntHave('satelliteObservations', fn (Builder $observations): Builder => $observations
             ->where('metric_type', $metricType)
+            ->where('source', (string) config('farming.provider'))
             ->where('next_expected_update_at', '>', now()));
     }
 
     /** @return list<SyncType> */
     private function scheduledTypes(): array
     {
+        if ((string) config('farming.provider') === 'copernicus') {
+            return [SyncType::Weather, SyncType::CropHealth];
+        }
+
         return [
             SyncType::SoilHealth,
             SyncType::Weather,

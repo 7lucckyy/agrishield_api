@@ -282,9 +282,19 @@ class ErrorPanel extends StatelessWidget {
   );
 }
 
-String friendlyError(Object? error) => error is ApiException
-    ? error.message
-    : 'Check your connection and try again.';
+String friendlyError(Object? error) {
+  if (error is! ApiException) {
+    return 'Check your connection and try again.';
+  }
+
+  for (final messages in error.errors.values) {
+    if (messages.isNotEmpty) {
+      return messages.first;
+    }
+  }
+
+  return error.message;
+}
 
 void showMessage(BuildContext context, String message) =>
     ScaffoldMessenger.of(context)

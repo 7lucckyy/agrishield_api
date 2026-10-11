@@ -11,8 +11,8 @@ test('seasonal fake data is deterministic for the same seed and dates', function
     $since = CarbonImmutable::parse('2026-06-01');
     CarbonImmutable::setTestNow('2026-08-01');
 
-    $first = $generator->seasonalIndexSeries(1337, MetricType::Ndvi, $since, 5, 10, 0.25);
-    $second = $generator->seasonalIndexSeries(1337, MetricType::Ndvi, $since, 5, 10, 0.25);
+    $first = $generator->seasonalIndexSeries(1337, 'farm-1', MetricType::Ndvi, $since, 5, 10, 0.25);
+    $second = $generator->seasonalIndexSeries(1337, 'farm-1', MetricType::Ndvi, $since, 5, 10, 0.25);
 
     expect($second)->toEqual($first);
 });
@@ -23,6 +23,7 @@ test('generated vegetation indices remain in the valid range', function () {
 
     $readings = $generator->seasonalIndexSeries(
         42,
+        'farm-1',
         MetricType::Ndvi,
         CarbonImmutable::parse('2025-08-01'),
         5,

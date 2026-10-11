@@ -23,6 +23,7 @@ final class VoiceAssistanceResource extends JsonResource
             'farm' => $this->whenLoaded('farm', fn (): ?array => $this->resource->farm === null ? null : ['id' => $this->resource->farm->uuid, 'name' => $this->resource->farm->name]),
             'source_language' => $this->resource->source_language,
             'response_language' => $this->resource->response_language,
+            'purpose' => $this->resource->purpose,
             'status' => $this->resource->status->value,
             'transcript' => $this->resource->transcript,
             'translated_transcript' => $this->resource->translated_transcript,

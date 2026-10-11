@@ -13,6 +13,7 @@ class _OfflineApiClient extends ApiClient {
   bool online = false;
   Farm? farmResponse;
   final List<(int?, String, String?, String?)> submissions = [];
+  final List<(String?, String, String?)> voiceContexts = [];
 
   @override
   Future<List<Farm>> farms({bool activeOnly = false}) async {
@@ -51,10 +52,13 @@ class _OfflineApiClient extends ApiClient {
     required String sourceLanguage,
     required String responseLanguage,
     String? farmId,
+    String purpose = 'general',
+    String? diagnosisId,
     String? idempotencyKey,
   }) async {
     if (!online) throw const ApiException('No connection');
     submissions.add((authenticatedUserId, 'voice', idempotencyKey, null));
+    voiceContexts.add((farmId, purpose, diagnosisId));
     return {'id': 'voice-server-id'};
   }
 }
@@ -159,9 +163,16 @@ void main() {
           audioPath: voice.path,
           sourceLanguage: 'ha',
           responseLanguage: 'ha',
+          farmId: 'farm-a',
+          purpose: 'diagnosis_followup',
+          diagnosisId: 'diagnosis-a',
         );
         final pendingA = await accountA.pendingOperations();
         expect(pendingA, hasLength(2));
+        expect(
+          pendingA.singleWhere((item) => item.entityType == 'voice').payload,
+          containsPair('purpose', 'diagnosis_followup'),
+        );
         expect(pendingA.every((item) => item.ownerUserId == 1), isTrue);
         expect(
           pendingA.every((item) => File(item.mediaPath!).existsSync()),
@@ -221,6 +232,9 @@ void main() {
           documentsDirectory: () async => directory,
         ).synchronize();
         expect(api.submissions, hasLength(2));
+        expect(api.voiceContexts, [
+          ('farm-a', 'diagnosis_followup', 'diagnosis-a'),
+        ]);
         expect(api.submissions.every((item) => item.$1 == 1), isTrue);
         expect(api.submissions.map((item) => item.$2).toSet(), {
           'diagnosis',

@@ -71,7 +71,7 @@ final readonly class FakeInsightsProvider implements FarmingInsightsProvider
 
         return new SoilHealthData(
             farmReference: $farm->uuid,
-            readings: $this->generator->soilHealth($this->seed($farm, 'soil'), $capturedAt),
+            readings: $this->generator->soilHealth($this->seed($farm, 'soil'), $farm->uuid, $capturedAt),
             capturedAt: $capturedAt,
             source: $this->name(),
         );
@@ -94,6 +94,7 @@ final readonly class FakeInsightsProvider implements FarmingInsightsProvider
         $this->simulateLatencyAndFailure('ndvi|'.$farm->uuid);
         $readings = $this->generator->seasonalIndexSeries(
             seed: $this->seed($farm, 'ndvi'),
+            farmReference: $farm->uuid,
             metric: MetricType::Ndvi,
             since: $since ?? CarbonImmutable::now()->subDays(30),
             cadenceDays: 5,
@@ -109,6 +110,7 @@ final readonly class FakeInsightsProvider implements FarmingInsightsProvider
         $this->simulateLatencyAndFailure('lswi|'.$farm->uuid);
         $readings = $this->generator->seasonalIndexSeries(
             seed: $this->seed($farm, 'lswi'),
+            farmReference: $farm->uuid,
             metric: MetricType::Lswi,
             since: $since ?? CarbonImmutable::now()->subDays(30),
             cadenceDays: 5,
@@ -124,6 +126,7 @@ final readonly class FakeInsightsProvider implements FarmingInsightsProvider
         $this->simulateLatencyAndFailure('moisture|'.$farm->uuid);
         $readings = $this->generator->seasonalIndexSeries(
             seed: $this->seed($farm, 'moisture'),
+            farmReference: $farm->uuid,
             metric: MetricType::SoilMoisture,
             since: $since ?? CarbonImmutable::now()->subDays(30),
             cadenceDays: 12,

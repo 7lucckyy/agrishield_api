@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\DTOs\Provider\DiagnosisResult;
+use App\Enums\DiagnosisResultStatus;
 use App\Enums\DiagnosisStatus;
 use App\Enums\OrganizationRole;
 use App\Integrations\Contracts\CropDiagnosisProvider;
@@ -114,6 +116,55 @@ test('diagnosis requests become expired after the provider SLA', function () {
     (new PollDiagnosisResult($diagnosis->getKey()))->handle(app(CropDiagnosisProvider::class));
 
     expect($diagnosis->refresh()->status)->toBe(DiagnosisStatus::Expired);
+});
+
+test('a completed diagnosis keeps its case reference when the provider omits a request ID', function () {
+    $diagnosis = DiagnosisRequest::factory()->create([
+        'status' => DiagnosisStatus::Submitted,
+        'external_reference' => 'gemini-case-123',
+    ]);
+    $provider = Mockery::mock(CropDiagnosisProvider::class);
+    $provider->shouldReceive('fetchDiagnosisResult')->once()->andReturn(new DiagnosisResult(
+        status: DiagnosisResultStatus::Completed,
+        diagnosis: 'Possible heat stress',
+        recommendation: 'Check soil moisture.',
+        providerRequestId: '',
+    ));
+
+    (new PollDiagnosisResult($diagnosis->getKey()))->handle($provider);
+
+    expect($diagnosis->refresh()->status)->toBe(DiagnosisStatus::Completed)
+        ->and($diagnosis->external_reference)->toBe('gemini-case-123');
+});
+
+test('separate requests for the same crop image receive distinct provider case references', function () {
+    $checksum = hash('sha256', 'same-demo-crop-photo');
+    $first = DiagnosisRequest::factory()->create([
+        'status' => DiagnosisStatus::Queued,
+        'image_checksum' => $checksum,
+    ]);
+    $second = DiagnosisRequest::factory()->create([
+        'status' => DiagnosisStatus::Queued,
+        'image_checksum' => $checksum,
+    ]);
+
+    (new SubmitDiagnosisToProvider($first->getKey()))->handle(app(CropDiagnosisProvider::class));
+    (new SubmitDiagnosisToProvider($second->getKey()))->handle(app(CropDiagnosisProvider::class));
+
+    expect($first->refresh()->status)->toBe(DiagnosisStatus::Submitted)
+        ->and($second->refresh()->status)->toBe(DiagnosisStatus::Submitted)
+        ->and($first->external_reference)->not->toBe($second->external_reference);
+});
+
+test('a diagnosis is marked failed after polling exhausts its retries', function () {
+    $diagnosis = DiagnosisRequest::factory()->create([
+        'status' => DiagnosisStatus::Processing,
+    ]);
+
+    (new PollDiagnosisResult($diagnosis->getKey()))->failed(new RuntimeException('Provider unavailable'));
+
+    expect($diagnosis->refresh()->status)->toBe(DiagnosisStatus::Failed)
+        ->and($diagnosis->failure_reason)->toBe('The crop assessment service could not complete this request.');
 });
 
 test('organization agronomists override completed diagnoses with an audit trail', function () {

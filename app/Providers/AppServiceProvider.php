@@ -3,19 +3,24 @@
 namespace App\Providers;
 
 use App\Enums\GlobalRole;
+use App\Integrations\Contracts\AgronomyAdvisor;
 use App\Integrations\Contracts\CropDiagnosisProvider;
 use App\Integrations\Contracts\FarmerVoiceProvider;
 use App\Integrations\Contracts\FarmingInsightsProvider;
 use App\Integrations\Contracts\VoiceTranscriptionProvider;
+use App\Integrations\Copernicus\CopernicusInsightsProvider;
+use App\Integrations\Fake\FakeAgronomyAdvisor;
 use App\Integrations\Fake\FakeFarmerVoiceProvider;
 use App\Integrations\Fake\FakeInsightsProvider;
+use App\Integrations\Gemini\GeminiAgronomyAdvisor;
+use App\Integrations\Gemini\GeminiCropDiagnosisProvider;
 use App\Integrations\Gemini\GeminiFarmerVoiceProvider;
+use App\Integrations\Gemini\GeminiVoiceTranscriptionProvider;
 use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
 use App\Integrations\NAtlas\NAtlasVoiceTranscriptionProvider;
-use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
 use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
-use App\Integrations\Gemini\GeminiCropDiagnosisProvider;
 use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
+use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
 use App\Integrations\Satyukt\SatyuktInsightsProvider;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -34,8 +39,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(AgronomyAdvisor::class, function (Application $application): AgronomyAdvisor {
+            return match ((string) config('agronomy.provider')) {
+                'gemini' => $application->make(GeminiAgronomyAdvisor::class),
+                'fake' => $application->isProduction()
+                    ? throw new InvalidArgumentException('A live agronomy provider is required in production.')
+                    : $application->make(FakeAgronomyAdvisor::class),
+                default => throw new InvalidArgumentException('Unknown agronomy provider: '.config('agronomy.provider')),
+            };
+        });
+
         $this->app->bind(VoiceTranscriptionProvider::class, function (Application $application): VoiceTranscriptionProvider {
             return match ((string) config('voice-assistance.transcription_provider')) {
+                'gemini' => $application->make(GeminiVoiceTranscriptionProvider::class),
                 'n_atlas' => $application->make(NAtlasVoiceTranscriptionProvider::class),
                 'openai' => $application->make(OpenAIVoiceTranscriptionProvider::class),
                 default => throw new InvalidArgumentException('Unknown voice transcription provider: '.config('voice-assistance.transcription_provider')),
@@ -46,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
             if ($application->isProduction()) {
                 return match ((string) config('farming.provider')) {
                     'openweather' => $application->make(OpenWeatherInsightsProvider::class),
+                    'copernicus' => $application->make(CopernicusInsightsProvider::class),
                     'satyukt' => $application->make(SatyuktInsightsProvider::class),
                     default => throw new InvalidArgumentException('Unknown production farming provider: '.config('farming.provider')),
                 };
@@ -54,6 +71,7 @@ class AppServiceProvider extends ServiceProvider
             return match ((string) config('farming.provider')) {
                 'fake' => $application->make(FakeInsightsProvider::class),
                 'openweather' => $application->make(OpenWeatherInsightsProvider::class),
+                'copernicus' => $application->make(CopernicusInsightsProvider::class),
                 'satyukt' => $application->make(SatyuktInsightsProvider::class),
                 default => throw new InvalidArgumentException('Unknown farming provider: '.config('farming.provider')),
             };
@@ -104,6 +122,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewDetailedHealth', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
         Gate::define('manageIntegrations', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
         Gate::define('accessPlatform', fn (User $user): bool => $user->hasRole(GlobalRole::PlatformAdmin->value));
+        Gate::define('manageEquipment', fn (User $user): bool => $user->hasAnyRole([
+            GlobalRole::PlatformAdmin->value,
+            GlobalRole::EquipmentManager->value,
+        ]));
 
         Password::defaults(function (): Password {
             $rule = Password::min(8);
@@ -135,6 +157,9 @@ class AppServiceProvider extends ServiceProvider
             ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
 
         RateLimiter::for('voice-assistance', fn (Request $request): Limit => Limit::perHour(12)
+            ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        RateLimiter::for('agronomy', fn (Request $request): Limit => Limit::perHour(20)
             ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip())));
     }
 }

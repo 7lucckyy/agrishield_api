@@ -38,14 +38,14 @@ use Illuminate\Support\Str;
  * @property-read Farm|null $farm
  * @property-read Organization|null $organization
  */
-#[Fillable(['uuid', 'client_request_id', 'source_language', 'response_language', 'audio_disk', 'audio_path', 'audio_mime', 'audio_size_bytes', 'audio_checksum', 'status', 'transcript', 'translated_transcript', 'guidance', 'safety_note', 'provider', 'provider_reference', 'failure_reason', 'completed_at'])]
+#[Fillable(['uuid', 'client_request_id', 'purpose', 'source_language', 'response_language', 'audio_disk', 'audio_path', 'audio_mime', 'audio_size_bytes', 'audio_checksum', 'status', 'transcript', 'translated_transcript', 'guidance', 'safety_note', 'provider', 'provider_reference', 'failure_reason', 'completed_at'])]
 final class VoiceAssistanceRequest extends Model
 {
     /** @use HasFactory<VoiceAssistanceRequestFactory> */
     use HasFactory;
 
     /** @var array<string, mixed> */
-    protected $attributes = ['audio_disk' => 'private', 'status' => 'processing'];
+    protected $attributes = ['audio_disk' => 'private', 'status' => 'processing', 'purpose' => 'general'];
 
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
@@ -57,6 +57,12 @@ final class VoiceAssistanceRequest extends Model
     public function farm(): BelongsTo
     {
         return $this->belongsTo(Farm::class);
+    }
+
+    /** @return BelongsTo<DiagnosisRequest, $this> */
+    public function diagnosisRequest(): BelongsTo
+    {
+        return $this->belongsTo(DiagnosisRequest::class);
     }
 
     /** @return BelongsTo<Organization, $this> */

@@ -4,7 +4,7 @@ $nAtlasAsrBaseUrl = rtrim((string) env('NATLAS_ASR_BASE_URL', ''), '/');
 
 return [
     'provider' => env('VOICE_ASSISTANCE_PROVIDER', 'fake'),
-    'transcription_provider' => env('VOICE_TRANSCRIPTION_PROVIDER', 'n_atlas'),
+    'transcription_provider' => env('VOICE_TRANSCRIPTION_PROVIDER', 'gemini'),
     'openai' => [
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
         'api_key' => env('OPENAI_API_KEY'),
@@ -29,8 +29,9 @@ return [
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
         'api_key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-3.8-flash'),
+        'transcription_model' => env('GEMINI_TRANSCRIPTION_MODEL', 'gemini-3.5-transcribe'),
         'connect_timeout' => (int) env('GEMINI_CONNECT_TIMEOUT', 10),
-        'read_timeout' => (int) env('GEMINI_READ_TIMEOUT', 45),
+        'read_timeout' => (int) env('GEMINI_READ_TIMEOUT', 120),
     ],
     'languages' => [
         'auto' => 'Detect automatically',

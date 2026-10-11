@@ -8,6 +8,7 @@ use App\Actions\VoiceAssistance\CreateVoiceAssistanceRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\VoiceAssistance\StoreVoiceAssistanceRequest;
 use App\Http\Resources\Api\V1\VoiceAssistanceResource;
+use App\Models\DiagnosisRequest;
 use App\Models\Farm;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,7 @@ final class StoreVoiceAssistanceController extends Controller
         /** @var UploadedFile $audio */
         $audio = $request->file('audio');
         $farm = $request->filled('farm_id') ? Farm::query()->where('uuid', $request->string('farm_id')->toString())->firstOrFail() : null;
+        $diagnosis = $request->filled('diagnosis_id') ? DiagnosisRequest::query()->where('uuid', $request->string('diagnosis_id')->toString())->firstOrFail() : null;
         $clientRequestId = $request->header('Idempotency-Key');
         if ($clientRequestId !== null && ! Str::isUuid($clientRequestId)) {
             throw ValidationException::withMessages([
@@ -37,6 +39,8 @@ final class StoreVoiceAssistanceController extends Controller
             $request->string('response_language')->toString(),
             $farm,
             clientRequestId: $clientRequestId,
+            purpose: $request->string('purpose', 'general')->toString(),
+            diagnosis: $diagnosis,
         );
 
         return (new VoiceAssistanceResource($voiceRequest))->response()->setStatusCode(201);

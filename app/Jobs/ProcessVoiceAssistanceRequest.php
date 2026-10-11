@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Actions\Agronomy\CreateAgronomyAdvice;
+use App\Enums\DiagnosisStatus;
 use App\Enums\VoiceAssistanceStatus;
 use App\Integrations\Contracts\FarmerVoiceProvider;
+use App\Integrations\Contracts\VoiceTranscriptionProvider;
 use App\Models\VoiceAssistanceRequest;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -19,7 +22,7 @@ final class ProcessVoiceAssistanceRequest implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 150;
+    public int $timeout = 300;
 
     public function __construct(public readonly int $voiceAssistanceRequestId)
     {
@@ -32,7 +35,7 @@ final class ProcessVoiceAssistanceRequest implements ShouldQueue
         return [10, 30, 60];
     }
 
-    public function handle(FarmerVoiceProvider $provider): void
+    public function handle(FarmerVoiceProvider $provider, VoiceTranscriptionProvider $transcriber, CreateAgronomyAdvice $createAdvice): void
     {
         $request = VoiceAssistanceRequest::query()->with('farm:id,name,locality,state')->findOrFail($this->voiceAssistanceRequestId);
         if ($request->status !== VoiceAssistanceStatus::Processing) {
@@ -80,13 +83,53 @@ final class ProcessVoiceAssistanceRequest implements ShouldQueue
                 fclose($destination);
             }
 
-            $result = $provider->assist(
-                $audioPath,
-                $request->audio_mime,
-                $request->source_language,
-                $request->response_language,
-                $farmContext,
-            );
+            if ($request->purpose === 'general') {
+                $result = $provider->assist(
+                    $audioPath,
+                    $request->audio_mime,
+                    $request->source_language,
+                    $request->response_language,
+                    $farmContext,
+                );
+                $request->update([
+                    'status' => VoiceAssistanceStatus::Completed,
+                    'transcript' => $result->transcript,
+                    'translated_transcript' => $result->translatedTranscript,
+                    'guidance' => $result->guidance,
+                    'safety_note' => $result->safetyNote,
+                    'provider_reference' => $result->reference,
+                    'failure_reason' => null,
+                    'completed_at' => now(),
+                ]);
+            } else {
+                $transcription = $transcriber->transcribe($audioPath, $request->audio_mime, $request->source_language);
+                $context = [];
+                if ($request->purpose === 'diagnosis_followup') {
+                    $diagnosis = $request->diagnosisRequest;
+                    if ($diagnosis === null || $diagnosis->status !== DiagnosisStatus::Completed) {
+                        throw new RuntimeException('The referenced crop diagnosis is not ready for a follow-up.');
+                    }
+                    $context = [
+                        'crop_photo_observation' => $diagnosis->diagnosis,
+                        'crop_photo_previous_recommendation' => $diagnosis->recommendation,
+                        'crop_photo_confidence' => $diagnosis->confidence,
+                    ];
+                }
+                if ($request->farm === null) {
+                    throw new RuntimeException('A farm is required for agronomy voice guidance.');
+                }
+                $advice = $createAdvice->execute($request->farm, $request->user, $transcription->transcript, $request->response_language, $context);
+                $request->update([
+                    'status' => VoiceAssistanceStatus::Completed,
+                    'transcript' => $transcription->transcript,
+                    'guidance' => $advice->answer,
+                    'safety_note' => $advice->safety_note,
+                    'provider' => $advice->provider,
+                    'provider_reference' => $transcription->reference,
+                    'failure_reason' => null,
+                    'completed_at' => now(),
+                ]);
+            }
         } finally {
             fclose($source);
             if (is_file($audioPath)) {
@@ -97,16 +140,6 @@ final class ProcessVoiceAssistanceRequest implements ShouldQueue
             }
         }
 
-        $request->update([
-            'status' => VoiceAssistanceStatus::Completed,
-            'transcript' => $result->transcript,
-            'translated_transcript' => $result->translatedTranscript,
-            'guidance' => $result->guidance,
-            'safety_note' => $result->safetyNote,
-            'provider_reference' => $result->reference,
-            'failure_reason' => null,
-            'completed_at' => now(),
-        ]);
     }
 
     public function failed(?Throwable $exception): void

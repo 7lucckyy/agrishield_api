@@ -46,6 +46,10 @@ class SessionController extends Controller
             return redirect()->route('platform.dashboard');
         }
 
+        if ($user?->hasRole(GlobalRole::EquipmentManager->value)) {
+            return redirect()->route('platform.equipment.index');
+        }
+
         $organizationId = $user?->primaryOrganizationId();
 
         if ($organizationId !== null) {

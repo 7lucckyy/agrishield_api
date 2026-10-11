@@ -90,13 +90,56 @@
         </div>
     </section>
 
-    <section class="gs-section gs-container gs-product">
+    <section class="gs-section gs-container gs-product" data-product-showcase>
         <header class="gs-section-head"><h2>{{ __('marketing.home.product_title') }}</h2><p>{{ __('marketing.home.product_body') }}</p></header>
-        <div class="gs-product-frame">
-            <header><div><img src="{{ asset('brand/agrishield-mark.svg') }}" alt="" width="28" height="28"><strong>{{ __('marketing.home.dashboard.farm') }}</strong></div><span>{{ __('marketing.home.dashboard.season') }}</span></header>
-            <div class="gs-product-body">
-                <div class="gs-product-map"><svg viewBox="0 0 620 320" aria-hidden="true"><path d="M68 68 245 31l111 72-20 163-219 18-64-106Z"/><path d="m245 31 111 72 180-29 47 106-58 105-189-19 20-163Z"/><path d="m73 178 64 106 199-18 189 19 58-105-31 116-397 4Z"/><circle cx="410" cy="132" r="9"/></svg><span>{{ __('marketing.home.dashboard.rain') }}</span></div>
-                <div class="gs-product-summary"><small>{{ __('marketing.home.dashboard.attention') }}</small><h3>{{ __('marketing.home.dashboard.alert_title') }}</h3><p>{{ __('marketing.home.dashboard.alert_body') }}</p><a href="#workflow">{{ __('marketing.home.dashboard.action') }} →</a></div>
+        <div class="gs-product-frame gs-product-desk">
+            <header class="gs-product-bar">
+                <div><img src="{{ asset('brand/agrishield-mark.svg') }}" alt="" width="28" height="28"><strong>{{ __('marketing.home.dashboard.farm') }}</strong></div>
+                <span><i aria-hidden="true"></i>{{ __('marketing.home.dashboard.status') }}</span>
+                <small>{{ __('marketing.home.dashboard.season') }}</small>
+            </header>
+            <div class="gs-product-workspace">
+                <div class="gs-product-rail" role="tablist" aria-label="{{ __('marketing.home.product_title') }}">
+                    @foreach([0, 2, 3, 4] as $showcaseIndex)
+                        @php($feature = __('marketing.home.capabilities.'.$showcaseIndex))
+                        <button id="product-tab-{{ $showcaseIndex }}" type="button" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="product-panel-{{ $showcaseIndex }}" tabindex="{{ $loop->first ? '0' : '-1' }}" data-product-tab="{{ $showcaseIndex }}">
+                            <span>{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                            <span><small>{{ $feature['code'] }}</small><strong>{{ $feature['title'] }}</strong></span>
+                        </button>
+                    @endforeach
+                </div>
+                <div class="gs-product-stage">
+                    <section id="product-panel-0" role="tabpanel" aria-labelledby="product-tab-0" data-product-panel="0">
+                        <div class="gs-product-map">
+                            <svg viewBox="0 0 620 320" role="img" aria-label="{{ __('marketing.home.allocated') }}"><path d="M68 68 245 31l111 72-20 163-219 18-64-106Z"/><path d="m245 31 111 72 180-29 47 106-58 105-189-19 20-163Z"/><path d="m73 178 64 106 199-18 189 19 58-105-31 116-397 4Z"/><circle cx="410" cy="132" r="9"/></svg>
+                            <span>{{ __('marketing.home.dashboard.rain') }}</span>
+                        </div>
+                        <aside class="gs-product-summary"><small>{{ __('marketing.home.dashboard.attention') }}</small><h3>{{ __('marketing.home.dashboard.alert_title') }}</h3><p>{{ __('marketing.home.dashboard.alert_body') }}</p><a href="#workflow">{{ __('marketing.home.dashboard.action') }} →</a></aside>
+                    </section>
+                    <section id="product-panel-2" role="tabpanel" aria-labelledby="product-tab-2" data-product-panel="2" hidden>
+                        <div class="gs-case-media"><img src="{{ asset('images/field/commons/kaduna-tomato-farm.webp') }}" alt="" width="1900" height="1200" loading="lazy"><span>{{ __('marketing.home.capabilities.2.code') }}</span></div>
+                        <aside class="gs-product-summary"><small>{{ __('marketing.home.capabilities.2.label') }}</small><h3>{{ __('marketing.home.capabilities.2.value') }}</h3><p>{{ __('marketing.home.capabilities.2.body') }}</p><div class="gs-confidence"><span></span><span></span><span></span><span></span><i></i></div></aside>
+                    </section>
+                    <section id="product-panel-3" role="tabpanel" aria-labelledby="product-tab-3" data-product-panel="3" hidden>
+                        <div class="gs-voice-surface">
+                            <span class="gs-voice-time">{{ __('marketing.home.capabilities.3.value') }}</span>
+                            <div class="gs-waveform" aria-hidden="true">@foreach([22, 46, 32, 74, 54, 88, 42, 68, 36, 80, 52, 30, 64, 44, 72, 28, 58, 40] as $height)<i style="--wave-height: {{ $height }}%"></i>@endforeach</div>
+                            <strong>{{ __('marketing.home.capabilities.3.label') }}</strong>
+                        </div>
+                        <aside class="gs-product-summary"><small>{{ __('marketing.home.capabilities.3.code') }}</small><h3>{{ __('marketing.home.capabilities.3.title') }}</h3><p>{{ __('marketing.home.capabilities.3.body') }}</p><span class="gs-review-state">{{ __('marketing.home.dashboard.status') }}</span></aside>
+                    </section>
+                    <section id="product-panel-4" role="tabpanel" aria-labelledby="product-tab-4" data-product-panel="4" hidden>
+                        <div class="gs-finance-surface">
+                            <div><small>{{ __('marketing.home.dashboard.farm') }}</small><strong>{{ __('marketing.home.capabilities.4.value') }}</strong></div>
+                            <ol>
+                                <li><span>01</span><strong>{{ __('marketing.home.sections.0.crop') }}</strong><small>{{ __('marketing.home.sections.0.area') }}</small></li>
+                                <li><span>02</span><strong>{{ __('marketing.home.sections.1.crop') }}</strong><small>{{ __('marketing.home.sections.1.area') }}</small></li>
+                                <li><span>03</span><strong>{{ __('marketing.home.sections.2.crop') }}</strong><small>{{ __('marketing.home.sections.2.area') }}</small></li>
+                            </ol>
+                        </div>
+                        <aside class="gs-product-summary"><small>{{ __('marketing.home.capabilities.4.code') }}</small><h3>{{ __('marketing.home.capabilities.4.title') }}</h3><p>{{ __('marketing.home.capabilities.4.body') }}</p><span class="gs-review-state">{{ __('marketing.home.capabilities.4.label') }}</span></aside>
+                    </section>
+                </div>
             </div>
             <footer>{{ __('marketing.home.dashboard.note') }}</footer>
         </div>

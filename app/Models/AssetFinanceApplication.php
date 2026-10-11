@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AssetFinanceStatus;
+use App\Enums\EquipmentAcquisitionMode;
 use App\Enums\RepaymentStatus;
 use Database\Factories\AssetFinanceApplicationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,6 +25,7 @@ use Illuminate\Support\Str;
  * @property int|null $farm_crop_cycle_id
  * @property int $applicant_user_id
  * @property int $asset_finance_product_id
+ * @property EquipmentAcquisitionMode $acquisition_mode
  * @property AssetFinanceStatus $status
  * @property int $quantity
  * @property string $requested_amount
@@ -48,7 +50,7 @@ use Illuminate\Support\Str;
  * @property-read AssetFinanceProduct $product
  * @property-read Collection<int, AssetFinanceEvent> $events
  */
-#[Fillable(['uuid', 'farm_crop_cycle_id', 'asset_finance_product_id', 'status', 'quantity', 'requested_amount', 'purpose', 'consent_channel', 'consent_version', 'consented_at', 'partner_reference', 'decision_note', 'submitted_at', 'reviewed_at', 'approved_at', 'delivery_verified_at', 'delivery_verified_by_user_id', 'repayment_status', 'outstanding_amount', 'next_payment_due_at', 'last_partner_sync_at', 'metadata'])]
+#[Fillable(['uuid', 'farm_crop_cycle_id', 'asset_finance_product_id', 'acquisition_mode', 'status', 'quantity', 'requested_amount', 'purpose', 'consent_channel', 'consent_version', 'consented_at', 'partner_reference', 'decision_note', 'submitted_at', 'reviewed_at', 'approved_at', 'delivery_verified_at', 'delivery_verified_by_user_id', 'repayment_status', 'outstanding_amount', 'next_payment_due_at', 'last_partner_sync_at', 'metadata'])]
 final class AssetFinanceApplication extends Model
 {
     /** @use HasFactory<AssetFinanceApplicationFactory> */
@@ -58,6 +60,7 @@ final class AssetFinanceApplication extends Model
     protected $attributes = [
         'status' => 'submitted',
         'quantity' => 1,
+        'acquisition_mode' => 'finance_purchase',
         'consent_channel' => 'organization_portal',
         'consent_version' => 'asset-access-v1',
         'repayment_status' => 'not_started',
@@ -124,6 +127,7 @@ final class AssetFinanceApplication extends Model
     {
         return [
             'status' => AssetFinanceStatus::class,
+            'acquisition_mode' => EquipmentAcquisitionMode::class,
             'requested_amount' => 'decimal:2',
             'consented_at' => 'datetime',
             'submitted_at' => 'datetime',

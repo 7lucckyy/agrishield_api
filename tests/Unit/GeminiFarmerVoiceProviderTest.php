@@ -10,6 +10,7 @@ use Tests\TestCase;
 uses(TestCase::class);
 
 test('Gemini returns guidance from an official N-ATLaS transcription', function () {
+    config()->set('voice-assistance.transcription_provider', 'n_atlas');
     config()->set('voice-assistance.n_atlas.asr_endpoints.ha', 'http://127.0.0.1:8090/v1/transcriptions/ha');
     config()->set('voice-assistance.n_atlas.api_key', 'local-development-key');
     config()->set('voice-assistance.gemini.api_key', 'gemini-test-key');

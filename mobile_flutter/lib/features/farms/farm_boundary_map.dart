@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
 import 'package:latlong2/latlong.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -145,23 +146,81 @@ class BoundaryPreviewMap extends StatelessWidget {
     borderRadius: BorderRadius.circular(AgriRadius.md),
     child: SizedBox(
       height: height,
-      child: FlutterMap(
-        options: MapOptions(
-          initialCameraFit: CameraFit.coordinates(
-            coordinates: corners,
-            padding: const EdgeInsets.all(28),
-            maxZoom: 19,
-          ),
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.none,
-          ),
-        ),
-        children: [
-          ...satelliteBaseLayers(tileProvider: tileProvider),
-          ...boundaryOverlayLayers(corners, showCornerNumbers: false),
-          const SatelliteAttribution(),
-        ],
-      ),
+      child: tileProvider == null
+          ? google.GoogleMap(
+              mapType: google.MapType.hybrid,
+              initialCameraPosition: google.CameraPosition(
+                target: google.LatLng(
+                  corners.isEmpty
+                      ? nigeriaCenter.latitude
+                      : corners.first.latitude,
+                  corners.isEmpty
+                      ? nigeriaCenter.longitude
+                      : corners.first.longitude,
+                ),
+                zoom: 16,
+              ),
+              onMapCreated: (controller) {
+                if (corners.isEmpty) return;
+                controller.moveCamera(
+                  google.CameraUpdate.newLatLngBounds(
+                    google.LatLngBounds(
+                      southwest: google.LatLng(
+                        corners
+                            .map((point) => point.latitude)
+                            .reduce((a, b) => a < b ? a : b),
+                        corners
+                            .map((point) => point.longitude)
+                            .reduce((a, b) => a < b ? a : b),
+                      ),
+                      northeast: google.LatLng(
+                        corners
+                            .map((point) => point.latitude)
+                            .reduce((a, b) => a > b ? a : b),
+                        corners
+                            .map((point) => point.longitude)
+                            .reduce((a, b) => a > b ? a : b),
+                      ),
+                    ),
+                    28,
+                  ),
+                );
+              },
+              zoomControlsEnabled: false,
+              scrollGesturesEnabled: false,
+              zoomGesturesEnabled: false,
+              rotateGesturesEnabled: false,
+              tiltGesturesEnabled: false,
+              polygons: {
+                google.Polygon(
+                  polygonId: const google.PolygonId('farm'),
+                  points: [
+                    for (final point in corners)
+                      google.LatLng(point.latitude, point.longitude),
+                  ],
+                  strokeColor: AgriColors.millet,
+                  strokeWidth: 3,
+                  fillColor: AgriColors.millet.withValues(alpha: .28),
+                ),
+              },
+            )
+          : FlutterMap(
+              options: MapOptions(
+                initialCameraFit: CameraFit.coordinates(
+                  coordinates: corners,
+                  padding: const EdgeInsets.all(28),
+                  maxZoom: 19,
+                ),
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
+              ),
+              children: [
+                ...satelliteBaseLayers(tileProvider: tileProvider),
+                ...boundaryOverlayLayers(corners, showCornerNumbers: false),
+                const SatelliteAttribution(),
+              ],
+            ),
     ),
   );
 }

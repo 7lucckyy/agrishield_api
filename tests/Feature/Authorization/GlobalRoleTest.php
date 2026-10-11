@@ -11,6 +11,7 @@ test('the global role seeder creates the platform roles idempotently', function 
 
     expect(Role::query()->pluck('name')->sort()->values()->all())->toBe([
         GlobalRole::Agronomist->value,
+        GlobalRole::EquipmentManager->value,
         GlobalRole::PlatformAdmin->value,
     ]);
 });

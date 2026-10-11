@@ -320,33 +320,64 @@ class FinanceProduct {
     required this.id,
     required this.name,
     required this.category,
-    required this.currency,
-    required this.partnerName,
-    this.eligibility,
-    this.minimumAmount,
-    this.maximumAmount,
-    this.maximumTenorMonths,
+    required this.acquisitionOptions,
+    required this.reasons,
+    this.description,
+    this.capacity,
+    this.matchScore,
   });
   factory FinanceProduct.fromJson(Json json) => FinanceProduct(
     id: (json['id'] as num).toInt(),
     name: json['name']?.toString() ?? '',
     category: json['category']?.toString() ?? '',
-    currency: json['currency']?.toString() ?? 'NGN',
-    partnerName: (json['partner'] as Json?)?['name']?.toString() ?? 'Partner',
-    eligibility: json['eligibility_summary']?.toString(),
-    minimumAmount: (json['minimum_amount'] as num?)?.toDouble(),
-    maximumAmount: (json['maximum_amount'] as num?)?.toDouble(),
-    maximumTenorMonths: (json['maximum_tenor_months'] as num?)?.toInt(),
+    acquisitionOptions: (json['acquisition_options'] as List? ?? const [])
+        .map((value) => value.toString())
+        .toList(),
+    reasons: (json['why_recommended'] as List? ?? const [])
+        .map((value) => value.toString())
+        .toList(),
+    description: json['description']?.toString(),
+    capacity: json['capacity']?.toString(),
+    matchScore: (json['match_score'] as num?)?.toInt(),
   );
   final int id;
   final String name;
   final String category;
-  final String currency;
-  final String partnerName;
-  final String? eligibility;
-  final double? minimumAmount;
-  final double? maximumAmount;
-  final int? maximumTenorMonths;
+  final List<String> acquisitionOptions;
+  final List<String> reasons;
+  final String? description;
+  final String? capacity;
+  final int? matchScore;
+}
+
+class AgronomyAdvice {
+  const AgronomyAdvice({
+    required this.id,
+    required this.language,
+    required this.question,
+    required this.answer,
+    required this.nextSteps,
+    required this.uncertainty,
+    required this.safetyNote,
+  });
+  factory AgronomyAdvice.fromJson(Json json) => AgronomyAdvice(
+    id: json['id']?.toString() ?? '',
+    language: json['language']?.toString() ?? 'en',
+    question: json['question']?.toString() ?? '',
+    answer: json['answer']?.toString() ?? '',
+    nextSteps: (json['next_steps'] as List? ?? const [])
+        .map((value) => value.toString())
+        .toList(),
+    uncertainty: json['uncertainty']?.toString() ?? '',
+    safetyNote: json['safety_note']?.toString() ?? '',
+  );
+  final String id;
+  final String language;
+  final String question;
+  final String answer;
+  final List<String> nextSteps;
+  final String uncertainty;
+  final String safetyNote;
 }
 
 class Diagnosis {
@@ -415,6 +446,7 @@ class FinanceApplication {
     required this.productName,
     required this.farmName,
     required this.purpose,
+    this.decisionNote,
   });
   factory FinanceApplication.fromJson(Json json) => FinanceApplication(
     id: json['id'].toString(),
@@ -424,10 +456,12 @@ class FinanceApplication {
         'Equipment application',
     farmName: (json['farm'] as Json?)?['name']?.toString() ?? 'Farm',
     purpose: json['purpose']?.toString() ?? '',
+    decisionNote: json['decision_note']?.toString(),
   );
   final String id;
   final String status;
   final String productName;
   final String farmName;
   final String purpose;
+  final String? decisionNote;
 }

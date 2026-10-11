@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\Advisory\AcknowledgeAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\ListAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\ShowAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\StoreAdvisoryController;
+use App\Http\Controllers\Api\V1\Agronomy\ListAgronomyAdviceController;
+use App\Http\Controllers\Api\V1\Agronomy\StoreAgronomyAdviceController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceApplicationController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceProductController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListFarmerAssetFinanceApplicationController;
@@ -44,8 +46,10 @@ use App\Http\Controllers\Api\V1\FarmSection\UpdateFarmSectionController;
 use App\Http\Controllers\Api\V1\Health\ShowDetailedHealthController;
 use App\Http\Controllers\Api\V1\Health\ShowHealthController;
 use App\Http\Controllers\Api\V1\Insight\ListSatelliteObservationController;
+use App\Http\Controllers\Api\V1\Insight\ShowProductivityZonesController;
 use App\Http\Controllers\Api\V1\Insight\ShowSoilHealthController;
 use App\Http\Controllers\Api\V1\Insight\ShowWeatherController;
+use App\Http\Controllers\Api\V1\Insight\StoreSectionNdviObservationController;
 use App\Http\Controllers\Api\V1\Insight\SummarizeSatelliteObservationController;
 use App\Http\Controllers\Api\V1\Integration\ListIntegrationController;
 use App\Http\Controllers\Api\V1\Integration\ResetIntegrationCircuitController;
@@ -132,8 +136,16 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('abilities:farms:read')->name('farms.satellite-observations.index');
         Route::get('/farms/{farm}/satellite-observations/summary', SummarizeSatelliteObservationController::class)
             ->middleware('abilities:farms:read')->name('farms.satellite-observations.summary');
+        Route::get('/farms/{farm}/productivity-zones', ShowProductivityZonesController::class)
+            ->middleware('abilities:farms:read')->name('farms.productivity-zones.show');
+        Route::post('/farms/{farm}/sections/{farmSection}/ndvi-observations', StoreSectionNdviObservationController::class)
+            ->middleware(['abilities:farms:write', 'throttle:writes'])->scopeBindings()->name('farms.sections.ndvi-observations.store');
         Route::get('/farms/{farm}/advisories', ListAdvisoryController::class)
             ->middleware('abilities:farms:read')->name('farms.advisories.index');
+        Route::get('/farms/{farm}/agronomy-advice', ListAgronomyAdviceController::class)
+            ->middleware('abilities:farms:read')->name('farms.agronomy-advice.index');
+        Route::post('/farms/{farm}/agronomy-advice', StoreAgronomyAdviceController::class)
+            ->middleware(['abilities:farms:write', 'throttle:agronomy'])->name('farms.agronomy-advice.store');
         Route::post('/farms/{farm}/advisories', StoreAdvisoryController::class)
             ->middleware(['abilities:farms:write', 'throttle:writes'])->name('farms.advisories.store');
         Route::get('/farms/{farm}/advisories/{advisory}', ShowAdvisoryController::class)
