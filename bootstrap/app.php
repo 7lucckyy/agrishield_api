@@ -55,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             $errors = $exception->errors();
+
             return ApiErrorResponse::make(
                 $request,
                 'Validation failed.',
