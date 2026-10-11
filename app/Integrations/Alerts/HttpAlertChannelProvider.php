@@ -6,6 +6,7 @@ namespace App\Integrations\Alerts;
 
 use App\Integrations\Contracts\AlertChannelProvider;
 use App\Models\AlertDelivery;
+use App\Models\FarmerAlertPreference;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -20,11 +21,12 @@ final class HttpAlertChannelProvider implements AlertChannelProvider
             throw new RuntimeException('The multi-channel alert gateway is not configured.');
         }
 
-        $delivery->loadMissing('advisory.farm');
+        $delivery->loadMissing('advisory.farm', 'user.alertPreference');
+        $alertPreference = $delivery->user->getRelation('alertPreference');
         $response = $this->client($token)->post($url, [
             'channel' => $delivery->channel,
             'destination' => $delivery->destination,
-            'language' => $delivery->user->alertPreference?->language ?? 'en',
+            'language' => $alertPreference instanceof FarmerAlertPreference ? $alertPreference->language : 'en',
             'message' => [
                 'title' => $delivery->advisory->title,
                 'body' => $delivery->advisory->summary,

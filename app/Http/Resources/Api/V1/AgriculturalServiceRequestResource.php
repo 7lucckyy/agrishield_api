@@ -30,7 +30,7 @@ final class AgriculturalServiceRequestResource extends JsonResource
             'requested_for' => $this->resource->requested_for?->toDateString(),
             'purpose' => $this->resource->purpose,
             'decision_note' => $this->resource->decision_note,
-            'submitted_at' => $this->resource->submitted_at?->toISOString(),
+            'submitted_at' => $this->resource->submitted_at->toISOString(),
             'farm' => ['id' => $this->resource->farm->uuid, 'name' => $this->resource->farm->name],
             'offer' => ['id' => $this->resource->offer->getKey(), 'title' => $this->resource->offer->title, 'partner' => $this->resource->offer->partner->name],
         ];

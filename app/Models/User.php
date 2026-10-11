@@ -35,6 +35,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, Farm> $farms
  * @property-read Collection<int, VoiceAssistanceRequest> $voiceAssistanceRequests
  * @property-read OrganizationMembership $membership
+ * @property-read FarmerAlertPreference|null $alertPreference
  */
 #[Fillable(['name', 'email', 'phone', 'password', 'locale'])]
 #[Hidden(['password', 'remember_token'])]

@@ -73,6 +73,6 @@ final class QueueAdvisoryAlertDeliveries
     {
         $rank = ['info' => 0, 'low' => 1, 'medium' => 2, 'high' => 3, 'critical' => 4];
 
-        return ($rank[$advisory->severity?->value ?? 'info'] ?? 0) >= ($rank[$preference->minimum_severity] ?? 2);
+        return $rank[$advisory->severity->value] >= ($rank[$preference->minimum_severity] ?? 2);
     }
 }
