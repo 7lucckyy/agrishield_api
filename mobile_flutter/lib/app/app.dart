@@ -6,13 +6,16 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../core/theme/app_theme.dart';
 import '../features/assist/assist_screens.dart';
 import '../features/assist/agronomy_screen.dart';
+import '../features/alerts/alert_settings_screen.dart';
 import '../features/auth/auth_screens.dart';
 import '../features/farms/farm_screens.dart';
 import '../features/farms/farm_sections_screen.dart';
 import '../features/finance/finance_screens.dart';
 import '../features/home/home_screen.dart';
+import '../features/ledger/farm_ledger_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/services/agricultural_services_screen.dart';
 import 'providers.dart';
 
 class AgriShieldApp extends ConsumerWidget {
@@ -117,6 +120,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/finance', builder: (_, _) => const FinanceScreen()),
+      GoRoute(
+        path: '/services',
+        builder: (_, _) => const AgriculturalServicesScreen(),
+      ),
+      GoRoute(
+        path: '/services/request/:id',
+        builder: (_, state) => AgriculturalServiceRequestScreen(
+          offerId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(path: '/ledger', builder: (_, _) => const FarmLedgerScreen()),
+      GoRoute(
+        path: '/ledger/:farmId/new',
+        builder: (_, state) =>
+            AddFarmLedgerEntryScreen(farmId: state.pathParameters['farmId']!),
+      ),
+      GoRoute(path: '/alerts', builder: (_, _) => const AlertSettingsScreen()),
       GoRoute(path: '/agronomy', builder: (_, _) => const AgronomyScreen()),
       GoRoute(path: '/loans', redirect: (_, _) => '/finance'),
       GoRoute(path: '/loans/request/:category', redirect: (_, _) => '/finance'),

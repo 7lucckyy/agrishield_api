@@ -41,8 +41,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
         const PageHeading(
           eyebrow: 'Farm equipment',
           title: 'Find a practical tool',
-          description:
-              'Suggestions use your farm size, active crop season, irrigation setup and recorded activity.',
+          description: 'Suggestions use your farm size, active crop season, irrigation setup and recorded activity.',
         ),
         const AgriCard(
           color: AgriColors.milletSoft,
@@ -144,9 +143,9 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                                 const SizedBox(height: 10),
                                 Text(
                                   application.productName,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
                                 ),
                                 Text(
                                   application.farmName,
@@ -296,8 +295,7 @@ class _FinanceApplyScreenState extends ConsumerState<FinanceApplyScreen> {
           const PageHeading(
             eyebrow: 'Request recorded',
             title: 'Track your request',
-            description:
-                'Your equipment request is awaiting review. Availability and terms will be confirmed before any agreement.',
+            description: 'Your equipment request is awaiting review. Availability and terms will be confirmed before any agreement.',
           ),
           FilledButton(
             onPressed: () => context.go('/finance'),
@@ -338,8 +336,7 @@ class _FinanceApplyScreenState extends ConsumerState<FinanceApplyScreen> {
             PageHeading(
               eyebrow: 'Equipment request',
               title: product.name,
-              description:
-                  'Choose how you would like to access this tool. This is a request, not an approved loan or lease.',
+              description: 'Choose how you would like to access this tool. This is a request, not an approved loan or lease.',
             ),
             const SectionHeading('Access option'),
             SegmentedButton<String>(

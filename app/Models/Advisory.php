@@ -60,6 +60,12 @@ final class Advisory extends Model
         return $this->hasMany(AdvisoryAcknowledgement::class);
     }
 
+    /** @return HasMany<AlertDelivery, $this> */
+    public function alertDeliveries(): HasMany
+    {
+        return $this->hasMany(AlertDelivery::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

@@ -77,6 +77,8 @@ void main() {
     final controller = await _pumpProfile(tester);
 
     await tester.scrollUntilVisible(find.text('Sign out'), 300);
+    await tester.drag(find.byType(ListView), const Offset(0, -100));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
     expect(find.text('Sign out of AgriShield?'), findsOneWidget);

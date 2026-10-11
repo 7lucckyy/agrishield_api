@@ -8,6 +8,7 @@ use App\Actions\Audit\RecordAuditLog;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Insight\StoreAdvisoryRequest;
 use App\Http\Resources\Api\V1\AdvisoryResource;
+use App\Jobs\QueueAdvisoryDeliveries;
 use App\Models\Advisory;
 use App\Models\Farm;
 use App\Models\User;
@@ -28,6 +29,7 @@ final class StoreAdvisoryController extends Controller
         $advisory->farm()->associate($farm);
         $advisory->issuedBy()->associate($user);
         $advisory->save();
+        QueueAdvisoryDeliveries::dispatch($advisory)->afterCommit();
         $recordAuditLog->execute('advisory.created', $advisory, ['after' => $advisory->only(['type', 'title', 'severity'])], $user);
         $advisory->setRelation('acknowledgements', collect());
 

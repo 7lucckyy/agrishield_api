@@ -83,7 +83,18 @@ final class ProcessVoiceAssistanceRequest implements ShouldQueue
                 fclose($destination);
             }
 
-            if ($request->purpose === 'general') {
+            if ($request->purpose === 'ledger') {
+                $transcription = $transcriber->transcribe($audioPath, $request->audio_mime, $request->source_language);
+                $request->update([
+                    'status' => VoiceAssistanceStatus::Completed,
+                    'transcript' => $transcription->transcript,
+                    'guidance' => 'Voice note transcribed. Review the amount and category before saving it to your farm money book.',
+                    'safety_note' => 'The farmer must confirm all financial details before the ledger entry is saved.',
+                    'provider_reference' => $transcription->reference,
+                    'failure_reason' => null,
+                    'completed_at' => now(),
+                ]);
+            } elseif ($request->purpose === 'general') {
                 $result = $provider->assist(
                     $audioPath,
                     $request->audio_mime,

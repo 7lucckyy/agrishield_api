@@ -145,6 +145,73 @@
         </div>
     </section>
 
+    <section class="gs-readiness" id="product-reality" aria-labelledby="product-reality-title">
+        <div class="gs-container">
+            <header class="gs-readiness-head">
+                <div>
+                    <p class="gs-context">{{ __('marketing.home.readiness.eyebrow') }}</p>
+                    <h2 id="product-reality-title">{{ __('marketing.home.readiness.title') }}</h2>
+                </div>
+                <p>{{ __('marketing.home.readiness.intro') }}</p>
+            </header>
+
+            <ol class="gs-transaction-path" aria-label="{{ __('marketing.home.readiness.path_label') }}">
+                @foreach(__('marketing.home.readiness.path') as $step)
+                    <li><span>{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span><strong>{{ $step }}</strong></li>
+                @endforeach
+            </ol>
+
+            <div class="gs-reality-desk">
+                <article class="gs-market-window">
+                    <header><span>{{ __('marketing.home.readiness.market.code') }}</span><b>{{ __('marketing.home.readiness.market.verified') }}</b></header>
+                    <div>
+                        <small>{{ __('marketing.home.readiness.market.partner') }}</small>
+                        <h3>{{ __('marketing.home.readiness.market.title') }}</h3>
+                        <p>{{ __('marketing.home.readiness.market.body') }}</p>
+                        <dl>
+                            @foreach(__('marketing.home.readiness.market.facts') as $fact)
+                                <div><dt>{{ $fact['label'] }}</dt><dd>{{ $fact['value'] }}</dd></div>
+                            @endforeach
+                        </dl>
+                        <div class="gs-capacity"><span style="--capacity: 68%"></span></div>
+                        <small>{{ __('marketing.home.readiness.market.capacity') }}</small>
+                    </div>
+                    <footer><span>{{ __('marketing.home.readiness.market.action') }}</span><b>{{ __('marketing.home.readiness.market.status') }}</b></footer>
+                </article>
+
+                <article class="gs-money-book">
+                    <header><span>{{ __('marketing.home.readiness.ledger.code') }}</span><b>{{ __('marketing.home.readiness.ledger.voice') }}</b></header>
+                    <div class="gs-profit-reading">
+                        <small>{{ __('marketing.home.readiness.ledger.profit_label') }}</small>
+                        <strong>{{ __('marketing.home.readiness.ledger.profit') }}</strong>
+                        <span>{{ __('marketing.home.readiness.ledger.margin') }}</span>
+                    </div>
+                    <div class="gs-ledger-lines">
+                        @foreach(__('marketing.home.readiness.ledger.entries') as $entry)
+                            <div><span>{{ $entry['type'] }}</span><p><strong>{{ $entry['title'] }}</strong><small>{{ $entry['source'] }}</small></p><b>{{ $entry['amount'] }}</b></div>
+                        @endforeach
+                    </div>
+                    <footer>{{ __('marketing.home.readiness.ledger.notice') }}</footer>
+                </article>
+
+                <aside class="gs-operations-proof">
+                    <section>
+                        <header><span>{{ __('marketing.home.readiness.alert.code') }}</span><b>{{ __('marketing.home.readiness.alert.severity') }}</b></header>
+                        <h3>{{ __('marketing.home.readiness.alert.title') }}</h3>
+                        <p>{{ __('marketing.home.readiness.alert.body') }}</p>
+                        <ul>@foreach(__('marketing.home.readiness.alert.channels') as $channel)<li>{{ $channel }}</li>@endforeach</ul>
+                    </section>
+                    <section>
+                        <header><span>{{ __('marketing.home.readiness.operations.code') }}</span><b>{{ __('marketing.home.readiness.operations.status') }}</b></header>
+                        <h3>{{ __('marketing.home.readiness.operations.title') }}</h3>
+                        <ol>@foreach(__('marketing.home.readiness.operations.checks') as $check)<li><i aria-hidden="true"></i>{{ $check }}</li>@endforeach</ol>
+                    </section>
+                </aside>
+            </div>
+            <p class="gs-readiness-note"><strong>{{ __('marketing.home.readiness.note_label') }}</strong> {{ __('marketing.home.readiness.note') }}</p>
+        </div>
+    </section>
+
     <section class="gs-field-story">
         <figure><img src="{{ asset('images/field/hawul-borno-farmland.webp') }}" alt="{{ __('marketing.home.field_image_alt') }}" width="1800" height="2047" loading="lazy" decoding="async"><figcaption>{{ __('marketing.home.field_image_caption') }}</figcaption></figure>
         <div><p class="gs-context">{{ __('marketing.home.field_eyebrow') }}</p><h2>{{ __('marketing.home.field_title') }}</h2><p>{{ __('marketing.home.field_body') }}</p><dl>@foreach(__('marketing.home.field_points') as $point)<div><dt>{{ $point['title'] }}</dt><dd>{{ $point['body'] }}</dd></div>@endforeach</dl></div>

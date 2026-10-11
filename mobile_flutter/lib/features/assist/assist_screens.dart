@@ -670,6 +670,8 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
       title: Text(
         widget.purpose == 'diagnosis_followup'
             ? 'Ask about this crop photo'
+            : widget.purpose == 'ledger'
+            ? 'Record a farm money note'
             : widget.purpose == 'agronomy'
             ? 'Ask the agronomist by voice'
             : 'Ask by voice',
@@ -683,6 +685,8 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
         title: 'Speak as you normally do',
         description: widget.purpose == 'diagnosis_followup'
             ? 'Ask a question about your crop photo. Your previous diagnosis and farm details will be considered.'
+            : widget.purpose == 'ledger'
+            ? 'Describe an expense, sale or harvest. AgriShield will return the transcript so you can check the amount before saving it to your private money book.'
             : widget.purpose == 'agronomy'
             ? 'Ask about your farm in English, Hausa, Yorùbá, or Igbo. Your answer will be saved in AI agronomist history.'
             : 'Ask in English, Hausa, Yorùbá, or Igbo. You can receive the guidance in a different supported language.',
@@ -772,6 +776,12 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> {
           language: _response,
           autoPlay: true,
         ),
+        if (widget.purpose == 'ledger')
+          FilledButton.icon(
+            onPressed: () => context.pop(_result),
+            icon: const Icon(Icons.check_rounded),
+            label: const Text('Use this voice note in money book'),
+          ),
         UserQuestionBubble(
           text: _result!.transcript ?? 'Voice question',
           caption: 'Voice note · ${_seconds}s · transcribed',

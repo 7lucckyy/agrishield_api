@@ -72,6 +72,12 @@ test('the landing page presents only accountable product evidence', function () 
         ->assertSee('Core platform')
         ->assertSee('Available now')
         ->assertSee('Deployment note.')
+        ->assertSee('From a field record to a completed farm transaction.')
+        ->assertSee('Maize buying window')
+        ->assertSee('Voice entry linked')
+        ->assertSee('WhatsApp')
+        ->assertSee('Audit trail on')
+        ->assertSee('Product reality.')
         ->assertSee('It keeps data freshness, provider status and human review visible.')
         ->assertSee('Does the platform invent advice when data is missing?')
         ->assertDontSee('Trusted by thousands')
@@ -99,6 +105,7 @@ test('the public website uses one restrained editorial design system', function 
         ->assertSee('class="gs-hero gs-container"', escape: false)
         ->assertSee('class="gs-capability-list"', escape: false)
         ->assertSee('class="gs-product-frame gs-product-desk"', escape: false)
+        ->assertSee('class="gs-reality-desk"', escape: false)
         ->assertDontSee('class="agri-kicker', escape: false)
         ->assertDontSee('class="audience-card', escape: false)
         ->assertDontSee('class="capability-module', escape: false);
@@ -112,6 +119,22 @@ test('the public website uses one restrained editorial design system', function 
     $this->get(route('solutions'))->assertSuccessful()->assertSee('class="gs-platform-hero"', escape: false);
     $this->get(route('partners'))->assertSuccessful()->assertSee('class="gs-partner-hero"', escape: false);
     $this->get(route('contact'))->assertSuccessful()->assertSee('class="gs-contact-intro gs-container"', escape: false);
+});
+
+test('the public product reality section presents implemented commercial workflows accessibly', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('id="product-reality"', escape: false)
+        ->assertSee('aria-labelledby="product-reality-title"', escape: false)
+        ->assertSeeInOrder([
+            'Choose a verified offer',
+            'Send a farm-linked request',
+            'Partner reviews the request',
+            'Record fulfilment and farm profit',
+        ])
+        ->assertSee('with illustrative data')
+        ->assertDontSee('Guaranteed buyer')
+        ->assertDontSee('Guaranteed profit');
 });
 
 test('the public product desk presents implemented workflows accessibly', function () {
@@ -264,7 +287,7 @@ test('every public company page is localized in Hausa and French', function (str
     'contact',
 ]);
 
-test('the product scope is crop only and keeps the startup offer focused', function () {
+test('the product scope connects crop intelligence to implemented farmer services', function () {
     $this->get(route('solutions'))
         ->assertSuccessful()
         ->assertSee('The AgriShield platform')
@@ -273,6 +296,9 @@ test('the product scope is crop only and keeps the startup offer focused', funct
         ->assertSee('Soil moisture and weather')
         ->assertSee('Image diagnosis and Field Voice')
         ->assertSee('Farm loans and services')
+        ->assertSee('Verified markets and group access')
+        ->assertSee('Voice money book and profitability')
+        ->assertSee('Farmer-controlled alerts')
         ->assertSee('Advisories and follow-through')
         ->assertSee('What is available today')
         ->assertSee('CORE / AVAILABLE')

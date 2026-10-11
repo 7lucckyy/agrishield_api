@@ -42,7 +42,7 @@ final class StoreVoiceAssistanceRequest extends FormRequest
             'source_language' => ['required', 'string', Rule::in(array_keys(config('voice-assistance.languages')))],
             'response_language' => ['required', 'string', Rule::in(array_keys(config('voice-assistance.response_languages')))],
             'farm_id' => ['nullable', 'uuid', 'exists:farms,uuid'],
-            'purpose' => ['sometimes', 'string', Rule::in(['general', 'agronomy', 'diagnosis_followup'])],
+            'purpose' => ['sometimes', 'string', Rule::in(['general', 'agronomy', 'diagnosis_followup', 'ledger'])],
             'diagnosis_id' => ['required_if:purpose,diagnosis_followup', 'nullable', 'uuid', 'exists:diagnosis_requests,uuid'],
         ];
     }

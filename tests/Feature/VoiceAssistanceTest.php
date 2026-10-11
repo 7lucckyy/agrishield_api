@@ -76,6 +76,37 @@ test('a farm voice question is transcribed into retained agronomy advice', funct
         ->and($response->json('data.guidance'))->toBe($advice->answer);
 });
 
+test('a ledger voice note is transcribed without generating agronomy advice', function () {
+    Storage::fake('private');
+    app()->bind(VoiceTranscriptionProvider::class, fn (): VoiceTranscriptionProvider => new class implements VoiceTranscriptionProvider
+    {
+        public function transcribe(string $absoluteAudioPath, string $mimeType, string $sourceLanguage): VoiceTranscriptionResult
+        {
+            return new VoiceTranscriptionResult('I paid thirty thousand naira for harvest labour.');
+        }
+
+        public function name(): string
+        {
+            return 'test';
+        }
+    });
+    $farmer = User::factory()->create();
+    $farm = Farm::factory()->for($farmer, 'owner')->create();
+
+    $this->actingAs($farmer)->post('/api/v1/voice-assistance', [
+        'audio' => UploadedFile::fake()->create('ledger.webm', 120, 'audio/webm'),
+        'source_language' => 'en',
+        'response_language' => 'en',
+        'farm_id' => $farm->uuid,
+        'purpose' => 'ledger',
+    ])->assertCreated()
+        ->assertJsonPath('data.purpose', 'ledger')
+        ->assertJsonPath('data.status', 'completed')
+        ->assertJsonPath('data.transcript', 'I paid thirty thousand naira for harvest labour.');
+
+    expect(AgronomyAdvice::query()->count())->toBe(0);
+});
+
 test('crop photo voice follow-up uses only a completed diagnosis from the selected farm', function () {
     Storage::fake('private');
     config()->set('agronomy.provider', 'fake');

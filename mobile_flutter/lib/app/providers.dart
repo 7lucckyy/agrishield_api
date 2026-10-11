@@ -221,3 +221,33 @@ final farmsProvider = FutureProvider.autoDispose<List<Farm>>((ref) async {
   final repository = await ref.read(farmRepositoryProvider.future);
   return (await repository.list()).farms;
 });
+
+final agriculturalOffersProvider = FutureProvider.autoDispose
+    .family<List<AgriculturalOffer>, String?>((ref, category) async {
+      final farms = await ref.watch(farmsProvider.future);
+      return ref
+          .read(apiClientProvider)
+          .agriculturalOffers(
+            category: category,
+            farmId: farms.firstOrNull?.id,
+          );
+    });
+
+final agriculturalServiceRequestsProvider =
+    FutureProvider.autoDispose<List<AgriculturalServiceRequest>>(
+      (ref) => ref.read(apiClientProvider).agriculturalServiceRequests(),
+    );
+
+final ledgerEntriesProvider = FutureProvider.autoDispose
+    .family<List<FarmLedgerEntry>, String>(
+      (ref, farmId) => ref.read(apiClientProvider).ledgerEntries(farmId),
+    );
+
+final farmProfitabilityProvider = FutureProvider.autoDispose
+    .family<FarmProfitability, String>(
+      (ref, farmId) => ref.read(apiClientProvider).farmProfitability(farmId),
+    );
+
+final alertPreferenceProvider = FutureProvider.autoDispose<AlertPreference>(
+  (ref) => ref.read(apiClientProvider).alertPreference(),
+);

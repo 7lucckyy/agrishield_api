@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\Organization\FarmController as OrganizationFarmCont
 use App\Http\Controllers\Web\Organization\ShowVoiceAudioController;
 use App\Http\Controllers\Web\Organization\TeamController as OrganizationTeamController;
 use App\Http\Controllers\Web\Organization\VoiceAssistanceController as OrganizationVoiceAssistanceController;
+use App\Http\Controllers\Web\Platform\AgriculturalCommerceController;
 use App\Http\Controllers\Web\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Web\Platform\EquipmentCatalogueController;
 use App\Http\Controllers\Web\Platform\EquipmentManagerRoleController;
@@ -41,6 +42,10 @@ Route::prefix('platform')->name('platform.')->middleware(['auth', 'can:accessPla
     Route::get('/users', PlatformUserController::class)->name('users');
     Route::patch('/users/{user}/equipment-manager', EquipmentManagerRoleController::class)->middleware('throttle:writes')->name('users.equipment-manager.update');
     Route::get('/operations', PlatformOperationsController::class)->name('operations');
+    Route::get('/commerce', [AgriculturalCommerceController::class, 'index'])->name('commerce.index');
+    Route::post('/commerce/partners', [AgriculturalCommerceController::class, 'storePartner'])->middleware('throttle:writes')->name('commerce.partners.store');
+    Route::post('/commerce/offers', [AgriculturalCommerceController::class, 'storeOffer'])->middleware('throttle:writes')->name('commerce.offers.store');
+    Route::patch('/commerce/requests/{agriculturalServiceRequest}', [AgriculturalCommerceController::class, 'updateRequest'])->middleware('throttle:writes')->name('commerce.requests.update');
 });
 
 Route::prefix('platform')->name('platform.')->middleware(['auth', 'can:manageEquipment'])->group(function (): void {

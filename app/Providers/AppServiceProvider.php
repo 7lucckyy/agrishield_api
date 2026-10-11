@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Enums\GlobalRole;
+use App\Integrations\Alerts\HttpAlertChannelProvider;
 use App\Integrations\Contracts\AgronomyAdvisor;
+use App\Integrations\Contracts\AlertChannelProvider;
 use App\Integrations\Contracts\CropDiagnosisProvider;
 use App\Integrations\Contracts\FarmerVoiceProvider;
 use App\Integrations\Contracts\FarmingInsightsProvider;
@@ -39,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(AlertChannelProvider::class, HttpAlertChannelProvider::class);
+
         $this->app->bind(AgronomyAdvisor::class, function (Application $application): AgronomyAdvisor {
             return match ((string) config('agronomy.provider')) {
                 'gemini' => $application->make(GeminiAgronomyAdvisor::class),

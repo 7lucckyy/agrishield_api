@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -68,6 +69,30 @@ class User extends Authenticatable
     public function voiceAssistanceRequests(): HasMany
     {
         return $this->hasMany(VoiceAssistanceRequest::class);
+    }
+
+    /** @return HasMany<FarmLedgerEntry, $this> */
+    public function farmLedgerEntries(): HasMany
+    {
+        return $this->hasMany(FarmLedgerEntry::class);
+    }
+
+    /** @return HasMany<AgriculturalServiceRequest, $this> */
+    public function agriculturalServiceRequests(): HasMany
+    {
+        return $this->hasMany(AgriculturalServiceRequest::class);
+    }
+
+    /** @return HasMany<AlertDelivery, $this> */
+    public function alertDeliveries(): HasMany
+    {
+        return $this->hasMany(AlertDelivery::class);
+    }
+
+    /** @return HasOne<FarmerAlertPreference, $this> */
+    public function alertPreference(): HasOne
+    {
+        return $this->hasOne(FarmerAlertPreference::class);
     }
 
     public function belongsToOrganization(Organization|int $organization): bool

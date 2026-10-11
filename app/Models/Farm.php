@@ -165,6 +165,18 @@ final class Farm extends Model
         return $this->hasMany(AssetFinanceApplication::class);
     }
 
+    /** @return HasMany<AgriculturalServiceRequest, $this> */
+    public function agriculturalServiceRequests(): HasMany
+    {
+        return $this->hasMany(AgriculturalServiceRequest::class);
+    }
+
+    /** @return HasMany<FarmLedgerEntry, $this> */
+    public function ledgerEntries(): HasMany
+    {
+        return $this->hasMany(FarmLedgerEntry::class);
+    }
+
     /**
      * @param  Builder<Farm>  $query
      * @return Builder<Farm>

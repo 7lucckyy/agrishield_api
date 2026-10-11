@@ -66,6 +66,24 @@ class Organization extends Model
         return $this->hasMany(AssetFinanceApplication::class);
     }
 
+    /** @return HasMany<AgriculturalPartner, $this> */
+    public function agriculturalPartners(): HasMany
+    {
+        return $this->hasMany(AgriculturalPartner::class);
+    }
+
+    /** @return HasMany<AgriculturalOffer, $this> */
+    public function agriculturalOffers(): HasMany
+    {
+        return $this->hasMany(AgriculturalOffer::class);
+    }
+
+    /** @return HasMany<AgriculturalServiceRequest, $this> */
+    public function agriculturalServiceRequests(): HasMany
+    {
+        return $this->hasMany(AgriculturalServiceRequest::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

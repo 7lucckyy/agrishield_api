@@ -6,6 +6,9 @@ use App\Http\Controllers\Api\V1\Advisory\ShowAdvisoryController;
 use App\Http\Controllers\Api\V1\Advisory\StoreAdvisoryController;
 use App\Http\Controllers\Api\V1\Agronomy\ListAgronomyAdviceController;
 use App\Http\Controllers\Api\V1\Agronomy\StoreAgronomyAdviceController;
+use App\Http\Controllers\Api\V1\Alert\ListAlertDeliveryController;
+use App\Http\Controllers\Api\V1\Alert\ShowAlertPreferenceController;
+use App\Http\Controllers\Api\V1\Alert\UpdateAlertPreferenceController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceApplicationController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListAssetFinanceProductController;
 use App\Http\Controllers\Api\V1\AssetFinance\ListFarmerAssetFinanceApplicationController;
@@ -20,6 +23,9 @@ use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\V1\Auth\RevokeAllTokensController;
+use App\Http\Controllers\Api\V1\Commerce\ListAgriculturalOfferController;
+use App\Http\Controllers\Api\V1\Commerce\ListAgriculturalServiceRequestController;
+use App\Http\Controllers\Api\V1\Commerce\StoreAgriculturalServiceRequestController;
 use App\Http\Controllers\Api\V1\Crop\DeactivateCropController;
 use App\Http\Controllers\Api\V1\Crop\ListCropController;
 use App\Http\Controllers\Api\V1\Crop\ShowCropController;
@@ -55,6 +61,9 @@ use App\Http\Controllers\Api\V1\Integration\ListIntegrationController;
 use App\Http\Controllers\Api\V1\Integration\ResetIntegrationCircuitController;
 use App\Http\Controllers\Api\V1\Integration\TestIntegrationController;
 use App\Http\Controllers\Api\V1\Integration\UpdateIntegrationController;
+use App\Http\Controllers\Api\V1\Ledger\ListFarmLedgerEntryController;
+use App\Http\Controllers\Api\V1\Ledger\ShowFarmProfitabilityController;
+use App\Http\Controllers\Api\V1\Ledger\StoreFarmLedgerEntryController;
 use App\Http\Controllers\Api\V1\Media\ShowDiagnosisImageController;
 use App\Http\Controllers\Api\V1\Media\ShowObservationMapController;
 use App\Http\Controllers\Api\V1\Organization\ListOrganizationController;
@@ -100,6 +109,13 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/me', ShowProfileController::class);
         Route::patch('/me', UpdateProfileController::class);
         Route::patch('/me/password', UpdatePasswordController::class);
+        Route::get('/me/alert-preferences', ShowAlertPreferenceController::class)->name('alert-preferences.show');
+        Route::put('/me/alert-preferences', UpdateAlertPreferenceController::class)->middleware('throttle:writes')->name('alert-preferences.update');
+        Route::get('/me/alert-deliveries', ListAlertDeliveryController::class)->name('alert-deliveries.index');
+
+        Route::get('/agricultural-offers', ListAgriculturalOfferController::class)->name('agricultural-offers.index');
+        Route::get('/agricultural-service-requests', ListAgriculturalServiceRequestController::class)->name('agricultural-service-requests.index');
+        Route::post('/agricultural-service-requests', StoreAgriculturalServiceRequestController::class)->middleware('throttle:writes')->name('agricultural-service-requests.store');
         Route::get('/voice-assistance', ListVoiceAssistanceController::class)->name('voice-assistance.index');
         Route::post('/voice-assistance', StoreVoiceAssistanceController::class)->middleware('throttle:voice-assistance')->name('voice-assistance.store');
         Route::get('/voice-assistance/{voiceAssistanceRequest}', ShowVoiceAssistanceController::class)->name('voice-assistance.show');
@@ -146,6 +162,12 @@ Route::prefix('v1')->group(function (): void {
             ->middleware('abilities:farms:read')->name('farms.agronomy-advice.index');
         Route::post('/farms/{farm}/agronomy-advice', StoreAgronomyAdviceController::class)
             ->middleware(['abilities:farms:write', 'throttle:agronomy'])->name('farms.agronomy-advice.store');
+        Route::get('/farms/{farm}/ledger-entries', ListFarmLedgerEntryController::class)
+            ->middleware('abilities:farms:read')->name('farms.ledger-entries.index');
+        Route::post('/farms/{farm}/ledger-entries', StoreFarmLedgerEntryController::class)
+            ->middleware(['abilities:farms:write', 'throttle:writes'])->name('farms.ledger-entries.store');
+        Route::get('/farms/{farm}/profitability', ShowFarmProfitabilityController::class)
+            ->middleware('abilities:farms:read')->name('farms.profitability.show');
         Route::post('/farms/{farm}/advisories', StoreAdvisoryController::class)
             ->middleware(['abilities:farms:write', 'throttle:writes'])->name('farms.advisories.store');
         Route::get('/farms/{farm}/advisories/{advisory}', ShowAdvisoryController::class)

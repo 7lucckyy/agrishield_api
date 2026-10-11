@@ -470,6 +470,119 @@ class ApiClient {
     }
   }
 
+  Future<List<AgriculturalOffer>> agriculturalOffers({
+    String? category,
+    String? farmId,
+  }) async {
+    try {
+      final data =
+          (await _dio.get(
+                '/agricultural-offers',
+                queryParameters: {
+                  'category': ?category,
+                  'farm_id': ?farmId,
+                  'per_page': 50,
+                },
+              )).data['data']
+              as List;
+      return data.whereType<Json>().map(AgriculturalOffer.fromJson).toList();
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<AgriculturalServiceRequest> requestAgriculturalService(
+    Json payload,
+  ) async {
+    try {
+      return AgriculturalServiceRequest.fromJson(
+        (await _dio.post(
+              '/agricultural-service-requests',
+              data: payload,
+            )).data['data']
+            as Json,
+      );
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<List<AgriculturalServiceRequest>> agriculturalServiceRequests() async {
+    try {
+      final data =
+          (await _dio.get(
+                '/agricultural-service-requests',
+                queryParameters: {'per_page': 50},
+              )).data['data']
+              as List;
+      return data
+          .whereType<Json>()
+          .map(AgriculturalServiceRequest.fromJson)
+          .toList();
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<List<FarmLedgerEntry>> ledgerEntries(String farmId) async {
+    try {
+      final data =
+          (await _dio.get(
+                '/farms/$farmId/ledger-entries',
+                queryParameters: {'per_page': 100},
+              )).data['data']
+              as List;
+      return data.whereType<Json>().map(FarmLedgerEntry.fromJson).toList();
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<FarmLedgerEntry> createLedgerEntry(String farmId, Json payload) async {
+    try {
+      return FarmLedgerEntry.fromJson(
+        (await _dio.post(
+              '/farms/$farmId/ledger-entries',
+              data: payload,
+            )).data['data']
+            as Json,
+      );
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<FarmProfitability> farmProfitability(String farmId) async {
+    try {
+      return FarmProfitability.fromJson(
+        (await _dio.get('/farms/$farmId/profitability')).data['data'] as Json,
+      );
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<AlertPreference> alertPreference() async {
+    try {
+      return AlertPreference.fromJson(
+        (await _dio.get('/me/alert-preferences')).data['data'] as Json,
+      );
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
+  Future<AlertPreference> updateAlertPreference(Json payload) async {
+    try {
+      return AlertPreference.fromJson(
+        (await _dio.put('/me/alert-preferences', data: payload)).data['data']
+            as Json,
+      );
+    } catch (error) {
+      _throw(error);
+    }
+  }
+
   Future<bool> health() async {
     try {
       await _dio.get('/health');

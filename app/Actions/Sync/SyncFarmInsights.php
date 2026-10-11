@@ -9,6 +9,7 @@ use App\DTOs\Provider\MetricReading;
 use App\Enums\MetricType;
 use App\Enums\SyncType;
 use App\Integrations\Contracts\FarmingInsightsProvider;
+use App\Jobs\QueueAdvisoryDeliveries;
 use App\Models\Advisory;
 use App\Models\Farm;
 use App\Models\SatelliteObservation;
@@ -157,6 +158,9 @@ final class SyncFarmInsights
                 'external_reference' => $item->externalReference,
             ]);
             $advisory->save();
+            if ($advisory->wasRecentlyCreated) {
+                QueueAdvisoryDeliveries::dispatch($advisory)->afterCommit();
+            }
             $written += (int) $wasRecentlyCreated;
         }
 

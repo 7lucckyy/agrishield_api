@@ -465,3 +465,204 @@ class FinanceApplication {
   final String purpose;
   final String? decisionNote;
 }
+
+class AgriculturalOffer {
+  const AgriculturalOffer({
+    required this.id,
+    required this.category,
+    required this.title,
+    required this.partnerName,
+    required this.partnerVerified,
+    this.description,
+    this.unitPrice,
+    this.currency = 'NGN',
+    this.unit,
+    this.minimumQuantity,
+    this.remainingQuantity,
+    this.state,
+    this.requirements = const [],
+    this.endsAt,
+  });
+
+  factory AgriculturalOffer.fromJson(Json json) {
+    final pricing = json['pricing'] as Json? ?? const {};
+    final partner = json['partner'] as Json? ?? const {};
+    final location = json['location'] as Json? ?? const {};
+    return AgriculturalOffer(
+      id: (json['id'] as num).toInt(),
+      category: json['category']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      partnerName: partner['name']?.toString() ?? 'Verified partner',
+      partnerVerified: partner['verified'] == true,
+      description: json['description']?.toString(),
+      unitPrice: (pricing['unit_price'] as num?)?.toDouble(),
+      currency: pricing['currency']?.toString() ?? 'NGN',
+      unit: pricing['unit']?.toString(),
+      minimumQuantity: (pricing['minimum_quantity'] as num?)?.toDouble(),
+      remainingQuantity: (pricing['remaining_quantity'] as num?)?.toDouble(),
+      state: location['state']?.toString(),
+      requirements: (json['requirements'] as List? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+      endsAt: json['ends_at']?.toString(),
+    );
+  }
+
+  final int id;
+  final String category;
+  final String title;
+  final String partnerName;
+  final bool partnerVerified;
+  final String? description;
+  final double? unitPrice;
+  final String currency;
+  final String? unit;
+  final double? minimumQuantity;
+  final double? remainingQuantity;
+  final String? state;
+  final List<String> requirements;
+  final String? endsAt;
+}
+
+class AgriculturalServiceRequest {
+  const AgriculturalServiceRequest({
+    required this.id,
+    required this.requestType,
+    required this.status,
+    required this.offerTitle,
+    required this.partnerName,
+    required this.farmName,
+    this.quantity,
+    this.unit,
+    this.decisionNote,
+  });
+  factory AgriculturalServiceRequest.fromJson(Json json) {
+    final offer = json['offer'] as Json? ?? const {};
+    final farm = json['farm'] as Json? ?? const {};
+    return AgriculturalServiceRequest(
+      id: json['id']?.toString() ?? '',
+      requestType: json['request_type']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'submitted',
+      offerTitle: offer['title']?.toString() ?? 'Agricultural service',
+      partnerName: offer['partner']?.toString() ?? 'Partner',
+      farmName: farm['name']?.toString() ?? 'Farm',
+      quantity: (json['quantity'] as num?)?.toDouble(),
+      unit: json['unit']?.toString(),
+      decisionNote: json['decision_note']?.toString(),
+    );
+  }
+  final String id;
+  final String requestType;
+  final String status;
+  final String offerTitle;
+  final String partnerName;
+  final String farmName;
+  final double? quantity;
+  final String? unit;
+  final String? decisionNote;
+}
+
+class FarmLedgerEntry {
+  const FarmLedgerEntry({
+    required this.id,
+    required this.entryType,
+    required this.category,
+    required this.occurredOn,
+    required this.description,
+    required this.amount,
+    required this.source,
+    this.quantity,
+    this.unit,
+    this.voiceTranscript,
+  });
+  factory FarmLedgerEntry.fromJson(Json json) => FarmLedgerEntry(
+    id: json['id']?.toString() ?? '',
+    entryType: json['entry_type']?.toString() ?? 'expense',
+    category: json['category']?.toString() ?? '',
+    occurredOn: json['occurred_on']?.toString() ?? '',
+    description: json['description']?.toString() ?? '',
+    amount: (json['amount'] as num?)?.toDouble() ?? 0,
+    source: json['source']?.toString() ?? 'manual',
+    quantity: (json['quantity'] as num?)?.toDouble(),
+    unit: json['unit']?.toString(),
+    voiceTranscript: json['voice_transcript']?.toString(),
+  );
+  final String id;
+  final String entryType;
+  final String category;
+  final String occurredOn;
+  final String description;
+  final double amount;
+  final String source;
+  final double? quantity;
+  final String? unit;
+  final String? voiceTranscript;
+}
+
+class FarmProfitability {
+  const FarmProfitability({
+    required this.income,
+    required this.expenses,
+    required this.grossProfit,
+    required this.harvestQuantity,
+    required this.entryCount,
+    required this.isComplete,
+    required this.notice,
+    this.grossMarginPercent,
+  });
+  factory FarmProfitability.fromJson(Json json) => FarmProfitability(
+    income: (json['income'] as num?)?.toDouble() ?? 0,
+    expenses: (json['expenses'] as num?)?.toDouble() ?? 0,
+    grossProfit: (json['gross_profit'] as num?)?.toDouble() ?? 0,
+    grossMarginPercent: (json['gross_margin_percent'] as num?)?.toDouble(),
+    harvestQuantity: (json['harvest_quantity'] as num?)?.toDouble() ?? 0,
+    entryCount: (json['entry_count'] as num?)?.toInt() ?? 0,
+    isComplete: json['is_complete'] == true,
+    notice: json['notice']?.toString() ?? '',
+  );
+  final double income;
+  final double expenses;
+  final double grossProfit;
+  final double? grossMarginPercent;
+  final double harvestQuantity;
+  final int entryCount;
+  final bool isComplete;
+  final String notice;
+}
+
+class AlertPreference {
+  const AlertPreference({
+    required this.inAppEnabled,
+    required this.pushEnabled,
+    required this.smsEnabled,
+    required this.whatsappEnabled,
+    required this.voiceCallEnabled,
+    required this.language,
+    required this.minimumSeverity,
+    required this.consent,
+    this.phone,
+    this.whatsappPhone,
+  });
+  factory AlertPreference.fromJson(Json json) => AlertPreference(
+    inAppEnabled: json['in_app_enabled'] == true,
+    pushEnabled: json['push_enabled'] == true,
+    smsEnabled: json['sms_enabled'] == true,
+    whatsappEnabled: json['whatsapp_enabled'] == true,
+    voiceCallEnabled: json['voice_call_enabled'] == true,
+    language: json['language']?.toString() ?? 'en',
+    minimumSeverity: json['minimum_severity']?.toString() ?? 'medium',
+    consent: json['consent'] == true,
+    phone: json['phone']?.toString(),
+    whatsappPhone: json['whatsapp_phone']?.toString(),
+  );
+  final bool inAppEnabled;
+  final bool pushEnabled;
+  final bool smsEnabled;
+  final bool whatsappEnabled;
+  final bool voiceCallEnabled;
+  final String language;
+  final String minimumSeverity;
+  final bool consent;
+  final String? phone;
+  final String? whatsappPhone;
+}
