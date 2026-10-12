@@ -1,0 +1,3 @@
+[submodule "agrishield-docs"]
+	path = agrishield-docs
+	url = https://github.com/projecthanif/agrishield-docs.git

@@ -2,13 +2,30 @@
 
 declare(strict_types=1);
 
+use App\Data\VoiceTranscriptionResult;
+use App\Integrations\Contracts\VoiceTranscriptionProvider;
 use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 uses(TestCase::class);
 
-test('N-ATLaS creates farmer guidance from an N-ATLaS transcript', function () {
+beforeEach(function (): void {
+    app()->bind(VoiceTranscriptionProvider::class, fn (): VoiceTranscriptionProvider => new class implements VoiceTranscriptionProvider
+    {
+        public function transcribe(string $absoluteAudioPath, string $mimeType, string $sourceLanguage): VoiceTranscriptionResult
+        {
+            return new VoiceTranscriptionResult('My maize leaves are yellow.', 'asr_123');
+        }
+
+        public function name(): string
+        {
+            return 'test';
+        }
+    });
+});
+
+test('N-ATLaS creates farmer guidance from a transcribed farmer prompt', function () {
     config()->set('voice-assistance.n_atlas.asr_endpoints.en', 'https://natlas.test/asr/english');
     config()->set('voice-assistance.n_atlas.chat_completions_url', 'https://natlas.test/v1/chat/completions');
     config()->set('voice-assistance.n_atlas.api_key', 'hf-test-key');

@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
