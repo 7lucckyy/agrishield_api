@@ -1,0 +1,2025 @@
+openapi: 3.1.0
+info:
+  title: AgriShield AI API
+  version: 1.1.0
+  description: |
+    Production API for AgriShield AI's crop-focused farming platform.
+    It covers authentication, farms, crop cycles, satellite insights,
+    advisories, OpenAI crop-image screening, N-ATLaS farmer guidance,
+    organisations, integrations and operational health.
+
+    Conventions:
+      - All responses are wrapped in `data` and `meta`.
+      - All timestamps are UTC ISO-8601.
+      - Public resource ids are UUIDs for farms, diagnosis requests and sync runs.
+      - Insight endpoints always carry a `meta.freshness` block.
+      - Reads never call the external provider; data arrives via scheduled jobs.
+  contact:
+    name: AgriShield Engineering
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://agrishield.ng/api/v1
+    description: Production
+  - url: http://localhost:8000/api/v1
+    description: Local
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+  - name: Profile
+  - name: Crops
+  - name: Organizations
+  - name: Farms
+  - name: Crop Cycles
+  - name: Soil Health
+  - name: Weather
+  - name: Satellite Observations
+  - name: Advisories
+  - name: Diagnosis
+  - name: Voice Assistance
+  - name: Sync
+  - name: Media
+  - name: Integrations
+  - name: Health
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a user, optionally binding them to an organisation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Exchange credentials for a Sanctum token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Revoke the presenting token
+      responses:
+        '204': { description: No Content }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/tokens/revoke-all:
+    post:
+      tags: [Authentication]
+      summary: Revoke every token for the authenticated user
+      responses:
+        '204': { description: No Content }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /asset-finance/products:
+    get:
+      tags: [Asset Finance]
+      summary: List active productive-asset programmes available to the farmer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AssetFinanceProduct' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /asset-finance/applications:
+    get:
+      tags: [Asset Finance]
+      summary: List applications submitted by the authenticated farmer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AssetFinanceApplication' }
+    post:
+      tags: [Asset Finance]
+      summary: Apply for a productive asset using a farm owned by the farmer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [farm_id, asset_finance_product_id, quantity, requested_amount, purpose, consent]
+              properties:
+                farm_id: { type: string, format: uuid }
+                farm_crop_cycle_id: { type: [integer, 'null'] }
+                asset_finance_product_id: { type: integer }
+                quantity: { type: integer, minimum: 1, maximum: 100 }
+                requested_amount: { type: number, minimum: 1 }
+                purpose: { type: string, minLength: 20, maxLength: 2000 }
+                consent: { type: boolean }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AssetFinanceApplication' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/password/forgot:
+    post:
+      tags: [Authentication]
+      summary: Request a password reset link
+      description: Always returns 202, whether or not the account exists.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202': { description: Accepted }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/password/reset:
+    post:
+      tags: [Authentication]
+      summary: Reset a password using an emailed token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, email, password, password_confirmation]
+              properties:
+                token: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, format: password }
+                password_confirmation: { type: string, format: password }
+      responses:
+        '200': { description: OK }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /me:
+    get:
+      tags: [Profile]
+      summary: Current user profile, roles and memberships
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [Profile]
+      summary: Update own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 2, maxLength: 255 }
+                phone: { type: string, maxLength: 32 }
+                locale: { type: string, maxLength: 10 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/UserProfile' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /me/password:
+    patch:
+      tags: [Profile]
+      summary: Change own password; revokes all other tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, password, password_confirmation]
+              properties:
+                current_password: { type: string, format: password }
+                password: { type: string, minLength: 8, format: password }
+                password_confirmation: { type: string, format: password }
+      responses:
+        '204': { description: No Content }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /crops:
+    get:
+      tags: [Crops]
+      summary: List catalogue crops
+      parameters:
+        - { name: 'filter[active]', in: query, schema: { type: boolean, default: true } }
+        - { name: 'filter[category]', in: query, schema: { type: string } }
+        - { name: 'filter[search]', in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Crop' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+    post:
+      tags: [Crops]
+      summary: Create a crop (platform admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CropWriteRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Crop' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /crops/{crop}:
+    parameters:
+      - { name: crop, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Crops]
+      summary: Show a crop
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Crop' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Crops]
+      summary: Update a crop (platform admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CropWriteRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Crop' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Crops]
+      summary: Deactivate a crop (platform admin)
+      responses:
+        '204': { description: No Content }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /organizations:
+    get:
+      tags: [Organizations]
+      summary: List organisations (platform admin)
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Organization' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Organizations]
+      summary: Create an organisation (platform admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 255 }
+                slug: { type: string, maxLength: 255 }
+                contact_email: { type: string, format: email }
+                contact_phone: { type: string }
+                country: { type: string, minLength: 2, maxLength: 2 }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Organization' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /organizations/{org}:
+    parameters:
+      - { name: org, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Organizations]
+      summary: Show an organisation
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Organization' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Organizations]
+      summary: Update an organisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                contact_email: { type: string, format: email }
+                contact_phone: { type: string }
+                status:
+                  type: string
+                  enum: [active, inactive, suspended]
+                  description: Platform admin only
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Organization' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /organizations/{org}/members:
+    parameters:
+      - { name: org, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Organizations]
+      summary: List organisation members
+      parameters:
+        - { name: 'filter[role]', in: query, schema: { $ref: '#/components/schemas/OrganizationRole' } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Membership' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /organizations/{org}/members/{user}:
+    parameters:
+      - { name: org, in: path, required: true, schema: { type: integer } }
+      - { name: user, in: path, required: true, schema: { type: integer } }
+    patch:
+      tags: [Organizations]
+      summary: Change a member's role within the organisation (audited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { $ref: '#/components/schemas/OrganizationRole' }
+                cluster_name:
+                  type: [string, 'null']
+                  description: Required when assigning the cluster_lead role; also groups farmers for cluster-scoped access.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Membership' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [Organizations]
+      summary: Remove a member from the organisation
+      responses:
+        '204': { description: No Content }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /organizations/{org}/farms:
+    parameters:
+      - { name: org, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Organizations, Farms]
+      summary: List every farm belonging to the organisation
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/FarmStatus' } }
+        - { name: 'filter[crop_id]', in: query, schema: { type: integer } }
+        - { name: 'filter[search]', in: query, schema: { type: string } }
+        - { name: 'filter[is_stale]', in: query, schema: { type: boolean } }
+        - { name: 'filter[provider_status]', in: query, schema: { $ref: '#/components/schemas/ProviderStatus' } }
+        - { name: sort, in: query, schema: { type: string, enum: [name, -name, area_hectares, -area_hectares, last_synced_at, -last_synced_at] } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FarmCollection' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /organizations/{org}/overview:
+    parameters:
+      - { name: org, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Organizations]
+      summary: Aggregate monitoring overview for the organisation
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/OrganizationOverview' }
+                  meta: { type: object }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /farms:
+    get:
+      tags: [Farms]
+      summary: List farms visible to the caller
+      parameters:
+        - { name: 'filter[organization_id]', in: query, schema: { type: integer } }
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/FarmStatus' } }
+        - { name: 'filter[crop_id]', in: query, schema: { type: integer } }
+        - { name: 'filter[search]', in: query, schema: { type: string } }
+        - { name: 'filter[provider_status]', in: query, schema: { $ref: '#/components/schemas/ProviderStatus' } }
+        - { name: include, in: query, schema: { type: string, example: 'active_crop_cycle,latest_observations' } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FarmCollection' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Farms]
+      summary: Create a farm from a geotagged boundary
+      description: |
+        Area and centroid are computed server-side from the geometry. Any
+        client-supplied area is ignored. Creation enqueues provider
+        registration and returns immediately with `provider_status: pending`.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FarmWriteRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Farm' }
+                  meta:
+                    type: object
+                    properties:
+                      message: { type: string }
+                      sync_run_id: { type: string, format: uuid }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /farms/{farm}:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Farms]
+      summary: Show a farm
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Farm' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Farms]
+      summary: Update a farm
+      description: Changing the boundary recomputes derived values and re-registers the farm with the provider.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FarmUpdateRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Farm' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Farms]
+      summary: Soft-delete a farm
+      responses:
+        '204': { description: No Content }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /farms/{farm}/sync:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    post:
+      tags: [Sync]
+      summary: Trigger an on-demand insight refresh
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                types:
+                  type: array
+                  items: { $ref: '#/components/schemas/SyncType' }
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SyncRunAccepted' }
+                  meta:
+                    type: object
+                    properties:
+                      poll_url: { type: string }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/ProviderUnavailable' }
+
+  /farms/{farm}/sync-runs:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Sync]
+      summary: Sync history for a farm
+      parameters:
+        - { name: 'filter[sync_type]', in: query, schema: { $ref: '#/components/schemas/SyncType' } }
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/SyncStatus' } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/SyncRun' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /farms/{farm}/crop-cycles:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Crop Cycles]
+      summary: List crop cycles for a farm
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/CropCycleStatus' } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CropCycle' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Crop Cycles]
+      summary: Attach a crop to the farm for a season
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CropCycleWriteRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/CropCycle' }
+                  meta: { type: object }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /farms/{farm}/crop-cycles/{cycle}:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+      - { name: cycle, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Crop Cycles]
+      summary: Show a crop cycle
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/CropCycle' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Crop Cycles]
+      summary: Update or transition a crop cycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                planting_date: { type: string, format: date }
+                expected_harvest_date: { type: string, format: date }
+                actual_harvest_date: { type: string, format: date }
+                season: { type: string, maxLength: 40 }
+                status: { $ref: '#/components/schemas/CropCycleStatus' }
+                notes: { type: string, maxLength: 2000 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/CropCycle' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Crop Cycles]
+      summary: Delete a planned crop cycle
+      responses:
+        '204': { description: No Content }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /farms/{farm}/soil-health:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Soil Health]
+      summary: Latest soil nutrient and pH values for the farm
+      description: |
+        Seasonal cadence (once per season, measured when the field is barren).
+        Returns 200 with an empty metric list and `meta.state = pending_first_sync`
+        when no observation exists yet.
+      parameters:
+        - { name: 'filter[metric_type]', in: query, schema: { type: string, example: 'soil_nitrogen,soil_ph' } }
+        - { name: history, in: query, schema: { type: boolean, default: false } }
+        - { name: 'filter[from]', in: query, schema: { type: string, format: date } }
+        - { name: 'filter[to]', in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SoilHealth' }
+                  meta: { $ref: '#/components/schemas/InsightMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /farms/{farm}/weather:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Weather]
+      summary: Up to 15 days of daily forecast for the farm
+      parameters:
+        - { name: 'filter[from]', in: query, schema: { type: string, format: date } }
+        - { name: 'filter[to]', in: query, schema: { type: string, format: date } }
+        - { name: include, in: query, schema: { type: string, enum: [hourly] } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/WeatherBundle' }
+                  meta: { $ref: '#/components/schemas/InsightMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /farms/{farm}/satellite-observations:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Satellite Observations]
+      summary: Time series of satellite-derived metrics (NDVI, LSWI, soil moisture, soil nutrients)
+      parameters:
+        - { name: 'filter[metric_type]', in: query, schema: { type: string, example: 'ndvi,lswi' } }
+        - { name: 'filter[from]', in: query, schema: { type: string, format: date } }
+        - { name: 'filter[to]', in: query, schema: { type: string, format: date } }
+        - { name: 'filter[quality]', in: query, schema: { $ref: '#/components/schemas/QualityFlag' } }
+        - { name: 'filter[crop_cycle_id]', in: query, schema: { type: integer } }
+        - { name: latest_only, in: query, schema: { type: boolean, default: false } }
+        - { name: include, in: query, schema: { type: string, example: 'statistics,map' } }
+        - { name: sort, in: query, schema: { type: string, enum: [captured_at, -captured_at], default: -captured_at } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/SatelliteObservation' }
+                  meta: { $ref: '#/components/schemas/InsightMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /farms/{farm}/satellite-observations/summary:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Satellite Observations]
+      summary: Compact time series for charting
+      parameters:
+        - { name: 'filter[metric_type]', in: query, schema: { type: string, example: 'ndvi,lswi' } }
+        - { name: 'filter[from]', in: query, schema: { type: string, format: date } }
+        - { name: 'filter[to]', in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          captured_at: { type: string, format: date-time }
+                          value: { type: number }
+                  meta: { type: object }
+
+  /farms/{farm}/advisories:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Advisories]
+      summary: Actionable recommendations for the farm
+      parameters:
+        - { name: 'filter[type]', in: query, schema: { type: string, example: 'pest_warning,irrigation' } }
+        - { name: 'filter[severity]', in: query, schema: { type: string, example: 'high,critical' } }
+        - { name: 'filter[crop_cycle_id]', in: query, schema: { type: integer } }
+        - { name: 'filter[active]', in: query, schema: { type: boolean } }
+        - { name: 'filter[unread]', in: query, schema: { type: boolean } }
+        - { name: 'filter[from]', in: query, schema: { type: string, format: date } }
+        - { name: 'filter[to]', in: query, schema: { type: string, format: date } }
+        - { name: sort, in: query, schema: { type: string, enum: [-observed_at, observed_at, -severity], default: -observed_at } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Advisory' }
+                  meta: { $ref: '#/components/schemas/AdvisoryMeta' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Advisories]
+      summary: Issue a manual advisory (agronomist or platform admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, title]
+              properties:
+                type: { $ref: '#/components/schemas/AdvisoryType' }
+                title: { type: string, maxLength: 255 }
+                summary: { type: string }
+                severity: { $ref: '#/components/schemas/AdvisorySeverity' }
+                payload: { type: object }
+                farm_crop_cycle_id: { type: integer }
+                valid_from: { type: string, format: date-time }
+                valid_until: { type: string, format: date-time }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Advisory' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /farms/{farm}/advisories/{advisory}:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+      - { name: advisory, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Advisories]
+      summary: Show one advisory with its full payload
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Advisory' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /farms/{farm}/advisories/{advisory}/acknowledge:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+      - { name: advisory, in: path, required: true, schema: { type: integer } }
+    post:
+      tags: [Advisories]
+      summary: Mark an advisory read and/or acted upon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                read: { type: boolean, default: true }
+                acted: { type: boolean, default: false }
+                feedback: { type: string, maxLength: 255 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Acknowledgement' }
+
+  /voice-assistance:
+    get:
+      tags: [Voice Assistance]
+      summary: List the authenticated user's farmer voice cases
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/VoiceAssistance' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+    post:
+      tags: [Voice Assistance]
+      summary: Transcribe, translate and prepare cautious N-ATLaS field guidance from a voice note
+      description: A language-specific N-ATLaS ASR endpoint transcribes the privately stored audio, then N-ATLaS prepares multilingual crop guidance. Automatic guidance does not replace a qualified local professional.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio, source_language, response_language]
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: MP3, MP4/M4A, WAV, OGG or WebM up to 20 MB.
+                source_language: { type: string, enum: [en, ha, yo, ig] }
+                response_language: { type: string, enum: [en, ha, yo, ig] }
+                farm_id: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/VoiceAssistance' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /voice-assistance/{voiceAssistanceRequest}:
+    parameters:
+      - { name: voiceAssistanceRequest, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Voice Assistance]
+      summary: Show one farmer voice case owned by the authenticated user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/VoiceAssistance' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /farms/{farm}/diagnosis-requests:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+    get:
+      tags: [Diagnosis]
+      summary: List diagnosis requests for the farm
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/DiagnosisStatus' } }
+        - { name: 'filter[crop_cycle_id]', in: query, schema: { type: integer } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/DiagnosisRequest' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+    post:
+      tags: [Diagnosis]
+      summary: Submit a crop photo for OpenAI visual screening
+      description: |
+        Asynchronous. Returns 202 immediately; clients should poll the returned
+        resource while OpenAI screens visible signs of crop disease, pest damage,
+        nutrient stress or environmental stress. Results are decision support,
+        not a laboratory diagnosis.
+        MIME type is verified from file content, not from the filename.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+                farm_crop_cycle_id: { type: integer }
+                note: { type: string, maxLength: 1000 }
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/DiagnosisRequest' }
+                  meta: { type: object }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /farms/{farm}/diagnosis-requests/{diagnosis}:
+    parameters:
+      - { $ref: '#/components/parameters/FarmId' }
+      - { name: diagnosis, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Diagnosis]
+      summary: Poll a diagnosis request
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/DiagnosisRequest' }
+                  meta: { type: object }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Diagnosis]
+      summary: Agronomist override of a diagnosis result (audited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                diagnosis: { type: string }
+                recommendation: { type: string }
+                confidence: { type: number, minimum: 0, maximum: 1 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/DiagnosisRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /media/obs/{observation}/map:
+    parameters:
+      - { name: observation, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Media]
+      summary: Proxy to a satellite map asset
+      description: Redirects to a short-lived signed URL. The provider's own URL is never exposed.
+      responses:
+        '302': { description: Redirect to signed URL }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /media/diagnosis/{diagnosis}/image:
+    parameters:
+      - { name: diagnosis, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Media]
+      summary: Proxy to an uploaded diagnosis image
+      responses:
+        '302': { description: Redirect to signed URL }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /integrations:
+    get:
+      tags: [Integrations]
+      summary: List provider integration accounts (platform admin)
+      description: Returns status telemetry only. Credentials are never included in any form.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/IntegrationAccount' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /integrations/{integration}:
+    parameters:
+      - { name: integration, in: path, required: true, schema: { type: integer } }
+    patch:
+      tags: [Integrations]
+      summary: Update non-secret integration configuration (audited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label: { type: string }
+                status: { type: string, enum: [active, inactive] }
+                config: { type: object, description: Non-secret configuration only }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/IntegrationAccount' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /integrations/{integration}/test:
+    parameters:
+      - { name: integration, in: path, required: true, schema: { type: integer } }
+    post:
+      tags: [Integrations]
+      summary: Health-check the provider
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      reachable: { type: boolean }
+                      latency_ms: { type: integer }
+                      checked_at: { type: string, format: date-time }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /integrations/{integration}/circuit/reset:
+    parameters:
+      - { name: integration, in: path, required: true, schema: { type: integer } }
+    post:
+      tags: [Integrations]
+      summary: Force the circuit breaker closed (audited)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/IntegrationAccount' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /health/detailed:
+    get:
+      tags: [Health]
+      summary: Detailed dependency health (platform admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      database: { type: string }
+                      cache: { type: string }
+                      queues:
+                        type: object
+                        additionalProperties: { type: integer }
+                      provider:
+                        type: object
+                        properties:
+                          circuit_state: { $ref: '#/components/schemas/CircuitState' }
+                          last_success_at: { type: string, format: date-time }
+                      failed_jobs: { type: integer }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum personal access token
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+    FarmId:
+      name: farm
+      in: path
+      required: true
+      description: Farm UUID
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Replays the original response for 24 hours when repeated.
+      schema: { type: string, maxLength: 120 }
+
+  responses:
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            message: Validation failed.
+            errors:
+              boundary_geojson: ["The boundary ring must be closed."]
+            error_code: validation_failed
+            request_id: 01J9X4Z8K2QF3H8T7Y6R5
+    Unauthorized:
+      description: Unauthenticated
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: State conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    RateLimited:
+      description: Too many requests
+      headers:
+        Retry-After:
+          schema: { type: integer }
+        X-RateLimit-Remaining:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    ProviderUnavailable:
+      description: Upstream provider unavailable
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+        error_code: { type: string }
+        request_id: { type: string }
+
+    PaginationMeta:
+      type: object
+      properties:
+        pagination:
+          type: object
+          properties:
+            current_page: { type: integer }
+            per_page: { type: integer }
+            total: { type: integer }
+            last_page: { type: integer }
+
+    Freshness:
+      type: object
+      properties:
+        observed_at: { type: [string, 'null'], format: date-time }
+        fetched_at: { type: [string, 'null'], format: date-time }
+        next_expected_update_at: { type: [string, 'null'], format: date-time }
+        is_stale: { type: boolean }
+        cadence_days: { type: integer }
+
+    InsightMeta:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            state:
+              type: string
+              enum: [ready, pending_first_sync, awaiting_provider, sla_breached]
+            degraded: { type: boolean }
+            source: { type: string }
+            freshness: { $ref: '#/components/schemas/Freshness' }
+
+    AdvisoryMeta:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            counts_by_type:
+              type: object
+              additionalProperties: { type: integer }
+            counts_by_severity:
+              type: object
+              additionalProperties: { type: integer }
+            unread: { type: integer }
+
+    OrganizationRole:
+      type: string
+      enum: [farmer, organization_admin, cluster_lead, agronomist]
+    FarmStatus:
+      type: string
+      enum: [active, inactive, archived]
+    ProviderStatus:
+      type: string
+      enum: [pending, registered, failed, unsupported]
+    CropCycleStatus:
+      type: string
+      enum: [planned, active, harvested, abandoned]
+    AdvisoryType:
+      type: string
+      enum: [pest_warning, disease_warning, irrigation, crop_practice, weather_action, nutrient, crop_health]
+    AdvisorySeverity:
+      type: string
+      enum: [info, low, medium, high, critical]
+    MetricType:
+      type: string
+      enum: [ndvi, lswi, soil_moisture, soil_nitrogen, soil_phosphorus, soil_potassium, soil_organic_carbon, soil_ph]
+    DiagnosisStatus:
+      type: string
+      enum: [queued, submitted, processing, completed, failed, expired]
+    VoiceAssistanceStatus:
+      type: string
+      enum: [processing, completed, failed]
+    SyncType:
+      type: string
+      enum: [farm_registration, soil_health, weather, crop_health, water_stress, soil_moisture, irrigation_advisory, pest_forewarning, crop_practices, diagnosis_submit, diagnosis_poll]
+    SyncStatus:
+      type: string
+      enum: [pending, running, succeeded, partial, failed, skipped]
+    QualityFlag:
+      type: string
+      enum: [good, partial_cloud, cloudy, unreliable]
+    CircuitState:
+      type: string
+      enum: [closed, open, half_open]
+
+    VoiceAssistance:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        farm:
+          type: [object, 'null']
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        source_language: { type: string }
+        response_language: { type: string }
+        status: { $ref: '#/components/schemas/VoiceAssistanceStatus' }
+        transcript: { type: [string, 'null'] }
+        translated_transcript: { type: [string, 'null'] }
+        guidance: { type: [string, 'null'] }
+        safety_note: { type: [string, 'null'] }
+        provider: { type: string, enum: [fake, n-atlas] }
+        completed_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+
+    RegisterRequest:
+      type: object
+      required: [name, phone, password, password_confirmation]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 255 }
+        phone: { type: string, pattern: '^\+[1-9]\d{7,14}$' }
+        password: { type: string, minLength: 8, format: password }
+        password_confirmation: { type: string, format: password }
+        locale: { type: string, maxLength: 10 }
+
+    LoginRequest:
+      type: object
+      required: [password]
+      properties:
+        email: { type: string, format: email }
+        phone: { type: string }
+        password: { type: string, format: password }
+        device_name: { type: string, default: api }
+
+    AuthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            user: { $ref: '#/components/schemas/UserProfile' }
+            organizations:
+              type: array
+              items: { $ref: '#/components/schemas/MembershipSummary' }
+            token: { type: string }
+            token_type: { type: string, example: Bearer }
+
+    UserProfile:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: [string, 'null'], format: email }
+        phone: { type: [string, 'null'] }
+        status: { type: string, enum: [active, suspended, pending_verification] }
+        locale: { type: string }
+        last_login_at: { type: [string, 'null'], format: date-time }
+        roles:
+          type: array
+          items: { type: string }
+        organizations:
+          type: array
+          items: { $ref: '#/components/schemas/MembershipSummary' }
+        stats:
+          type: object
+          properties:
+            farms_count: { type: integer }
+            active_crop_cycles: { type: integer }
+            unread_advisories: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    MembershipSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        role: { $ref: '#/components/schemas/OrganizationRole' }
+        cluster_name: { type: [string, 'null'] }
+        status: { type: string }
+
+    Membership:
+      type: object
+      properties:
+        user: { $ref: '#/components/schemas/UserProfile' }
+        role: { $ref: '#/components/schemas/OrganizationRole' }
+        cluster_name: { type: [string, 'null'] }
+        status: { type: string, enum: [active, invited, removed] }
+        joined_at: { type: [string, 'null'], format: date-time }
+
+    AssetFinanceProduct:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: string }
+        eligibility_summary: { type: [string, 'null'] }
+        minimum_amount: { type: [number, 'null'] }
+        maximum_amount: { type: [number, 'null'] }
+        currency: { type: string, example: NGN }
+        partner:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+
+    AssetFinanceApplication:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: [integer, 'null'] }
+        farm:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        product: { $ref: '#/components/schemas/AssetFinanceProduct' }
+        status: { type: string }
+        quantity: { type: integer }
+        requested_amount: { type: number }
+        purpose: { type: string }
+
+    Organization:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        status: { type: string, enum: [active, inactive, suspended] }
+        contact_email: { type: [string, 'null'], format: email }
+        contact_phone: { type: [string, 'null'] }
+        country: { type: [string, 'null'] }
+        counts:
+          type: object
+          properties:
+            members: { type: integer }
+            farms: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    OrganizationOverview:
+      type: object
+      properties:
+        farms:
+          type: object
+          properties:
+            total: { type: integer }
+            active: { type: integer }
+            pending_registration: { type: integer }
+            failed_registration: { type: integer }
+        area:
+          type: object
+          properties:
+            hectares: { type: number }
+            acres: { type: number }
+        crops:
+          type: array
+          items:
+            type: object
+            properties:
+              crop_id: { type: integer }
+              name: { type: string }
+              farms: { type: integer }
+              hectares: { type: number }
+        advisories_last_7_days:
+          type: object
+          additionalProperties: { type: integer }
+        data_health:
+          type: object
+          properties:
+            farms_with_stale_ndvi: { type: integer }
+            farms_never_synced: { type: integer }
+            last_successful_sync_at: { type: [string, 'null'], format: date-time }
+        diagnosis:
+          type: object
+          properties:
+            pending: { type: integer }
+            completed_last_30_days: { type: integer }
+
+    Crop:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        scientific_name: { type: [string, 'null'] }
+        code: { type: string }
+        category: { type: [string, 'null'] }
+        default_cycle_days: { type: [integer, 'null'] }
+        active: { type: boolean }
+
+    CropWriteRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name: { type: string, maxLength: 120 }
+        code: { type: string, maxLength: 32 }
+        scientific_name: { type: string, maxLength: 160 }
+        category:
+          type: string
+          enum: [cereal, pulse, oilseed, vegetable, fruit, fibre, other]
+        default_cycle_days: { type: integer, minimum: 1, maximum: 730 }
+        active: { type: boolean }
+
+    GeoJsonPolygon:
+      type: object
+      required: [type, coordinates]
+      description: A GeoJSON geometry object (not a Feature). Polygon or MultiPolygon only.
+      properties:
+        type:
+          type: string
+          enum: [Polygon, MultiPolygon]
+        coordinates:
+          type: array
+          description: |
+            Polygon: array of linear rings, each an array of [longitude, latitude]
+            positions with the first equal to the last.
+            MultiPolygon: array of polygons.
+          items: {}
+      example:
+        type: Polygon
+        coordinates:
+          - - [8.5150, 12.0022]
+            - [8.5190, 12.0022]
+            - [8.5190, 11.9990]
+            - [8.5150, 11.9990]
+            - [8.5150, 12.0022]
+
+    Farm:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        owner:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        organization:
+          type: [object, 'null']
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        boundary_geojson: { $ref: '#/components/schemas/GeoJsonPolygon' }
+        centroid:
+          type: object
+          properties:
+            latitude: { type: number }
+            longitude: { type: number }
+        area:
+          type: object
+          description: Server-computed. Client-supplied area is ignored.
+          properties:
+            hectares: { type: number }
+            acres: { type: number }
+        locality: { type: [string, 'null'] }
+        state: { type: [string, 'null'] }
+        country: { type: [string, 'null'] }
+        status: { $ref: '#/components/schemas/FarmStatus' }
+        provider_status: { $ref: '#/components/schemas/ProviderStatus' }
+        active_crop_cycle:
+          oneOf:
+            - $ref: '#/components/schemas/CropCycle'
+            - type: 'null'
+        last_synced_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+
+    FarmCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Farm' }
+        meta:
+          allOf:
+            - $ref: '#/components/schemas/PaginationMeta'
+            - type: object
+              properties:
+                totals:
+                  type: object
+                  properties:
+                    farms: { type: integer }
+                    hectares: { type: number }
+                    acres: { type: number }
+
+    FarmWriteRequest:
+      type: object
+      required: [name, boundary_geojson]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 255 }
+        boundary_geojson: { $ref: '#/components/schemas/GeoJsonPolygon' }
+        locality: { type: string, maxLength: 255 }
+        state: { type: string, maxLength: 255 }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        organization_id:
+          type: integer
+          description: Verified against the caller's memberships; ignored otherwise.
+
+    FarmUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 255 }
+        boundary_geojson: { $ref: '#/components/schemas/GeoJsonPolygon' }
+        locality: { type: string }
+        state: { type: string }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        status: { $ref: '#/components/schemas/FarmStatus' }
+
+    CropCycle:
+      type: object
+      properties:
+        id: { type: integer }
+        farm_id: { type: string, format: uuid }
+        crop: { $ref: '#/components/schemas/Crop' }
+        planting_date: { type: [string, 'null'], format: date }
+        expected_harvest_date: { type: [string, 'null'], format: date }
+        actual_harvest_date: { type: [string, 'null'], format: date }
+        season: { type: [string, 'null'] }
+        status: { $ref: '#/components/schemas/CropCycleStatus' }
+        notes: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+
+    CropCycleWriteRequest:
+      type: object
+      required: [crop_id, planting_date]
+      properties:
+        crop_id: { type: integer }
+        planting_date: { type: string, format: date }
+        expected_harvest_date: { type: string, format: date }
+        season: { type: string, maxLength: 40 }
+        status: { type: string, enum: [planned, active], default: active }
+        notes: { type: string, maxLength: 2000 }
+
+    SoilMetric:
+      type: object
+      properties:
+        metric_type: { $ref: '#/components/schemas/MetricType' }
+        label: { type: string }
+        value: { type: [number, 'null'] }
+        unit: { type: [string, 'null'] }
+        interpretation:
+          type: [string, 'null']
+          description: Server-side band label from configurable thresholds. Not provider-supplied.
+          enum: [low, adequate, optimal, high, 'null']
+        resolution_meters: { type: [integer, 'null'] }
+        captured_at: { type: string, format: date-time }
+        quality_flag: { $ref: '#/components/schemas/QualityFlag' }
+        statistics: { type: object }
+
+    SoilHealth:
+      type: object
+      properties:
+        farm_id: { type: string, format: uuid }
+        metrics:
+          type: array
+          items: { $ref: '#/components/schemas/SoilMetric' }
+        related_advisories:
+          type: array
+          items: { $ref: '#/components/schemas/AdvisorySummary' }
+
+    WeatherDay:
+      type: object
+      properties:
+        forecast_date: { type: string, format: date }
+        temperature_min: { type: [number, 'null'] }
+        temperature_max: { type: [number, 'null'] }
+        humidity: { type: [number, 'null'] }
+        rainfall: { type: [number, 'null'] }
+        rainfall_probability: { type: [number, 'null'] }
+        wind_speed: { type: [number, 'null'] }
+        wind_direction: { type: [number, 'null'] }
+        cloud_cover: { type: [number, 'null'] }
+        condition_code: { type: [string, 'null'] }
+
+    WeatherBundle:
+      type: object
+      properties:
+        farm_id: { type: string, format: uuid }
+        location:
+          type: object
+          properties:
+            latitude: { type: number }
+            longitude: { type: number }
+        days:
+          type: array
+          maxItems: 15
+          items: { $ref: '#/components/schemas/WeatherDay' }
+
+    SatelliteObservation:
+      type: object
+      properties:
+        id: { type: integer }
+        metric_type: { $ref: '#/components/schemas/MetricType' }
+        label: { type: string }
+        value: { type: [number, 'null'] }
+        unit: { type: [string, 'null'] }
+        resolution_meters: { type: [integer, 'null'] }
+        captured_at: { type: string, format: date-time }
+        quality_flag: { $ref: '#/components/schemas/QualityFlag' }
+        interpretation: { type: [string, 'null'] }
+        statistics: { type: object }
+        map_url:
+          type: [string, 'null']
+          description: Always an AgriShield-proxied URL, never the provider's own.
+        crop_cycle_id: { type: [integer, 'null'] }
+        source: { type: string }
+
+    AdvisorySummary:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/AdvisoryType' }
+        severity: { $ref: '#/components/schemas/AdvisorySeverity' }
+        title: { type: string }
+
+    Advisory:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/AdvisoryType' }
+        severity: { $ref: '#/components/schemas/AdvisorySeverity' }
+        title: { type: string }
+        summary: { type: [string, 'null'] }
+        payload: { type: object }
+        observed_at: { type: [string, 'null'], format: date-time }
+        valid_from: { type: [string, 'null'], format: date-time }
+        valid_until: { type: [string, 'null'], format: date-time }
+        source: { type: string }
+        crop_cycle_id: { type: [integer, 'null'] }
+        acknowledgement:
+          oneOf:
+            - $ref: '#/components/schemas/Acknowledgement'
+            - type: 'null'
+
+    Acknowledgement:
+      type: object
+      properties:
+        read_at: { type: [string, 'null'], format: date-time }
+        acted_at: { type: [string, 'null'], format: date-time }
+        feedback: { type: [string, 'null'] }
+
+    DiagnosisRequest:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        farm_id: { type: string, format: uuid }
+        crop_cycle_id: { type: [integer, 'null'] }
+        status: { $ref: '#/components/schemas/DiagnosisStatus' }
+        note: { type: [string, 'null'] }
+        image:
+          type: object
+          properties:
+            url: { type: string, description: Short-lived signed URL }
+            expires_at: { type: string, format: date-time }
+            mime: { type: string }
+            size_bytes: { type: integer }
+        diagnosis: { type: [string, 'null'] }
+        recommendation: { type: [string, 'null'] }
+        confidence: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        detected_labels:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              confidence: { type: number }
+        reviewed_by:
+          type: [object, 'null']
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        submitted_at: { type: [string, 'null'], format: date-time }
+        completed_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+
+    SyncRunAccepted:
+      type: object
+      properties:
+        sync_run_id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/SyncStatus' }
+        types:
+          type: array
+          items: { $ref: '#/components/schemas/SyncType' }
+        queued_at: { type: string, format: date-time }
+
+    SyncRun:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        sync_type: { $ref: '#/components/schemas/SyncType' }
+        status: { $ref: '#/components/schemas/SyncStatus' }
+        trigger: { type: string, enum: [schedule, manual, event, retry] }
+        started_at: { type: [string, 'null'], format: date-time }
+        completed_at: { type: [string, 'null'], format: date-time }
+        duration_ms: { type: [integer, 'null'] }
+        attempts: { type: integer }
+        records_written: { type: integer }
+        error_code: { type: [string, 'null'] }
+        error_message:
+          type: [string, 'null']
+          description: Returned to platform admins only.
+
+    IntegrationAccount:
+      type: object
+      description: Credentials and raw configuration are never exposed.
+      properties:
+        id: { type: integer }
+        provider: { type: string }
+        label: { type: [string, 'null'] }
+        status: { type: string, enum: [active, inactive, error] }
+        circuit_state: { $ref: '#/components/schemas/CircuitState' }
+        consecutive_failures: { type: integer }
+        last_success_at: { type: [string, 'null'], format: date-time }
+        last_failure_at: { type: [string, 'null'], format: date-time }

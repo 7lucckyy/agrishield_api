@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Symfony\Component\Yaml\Yaml;
 
 test('every OpenAPI operation has a registered route', function () {
-    $specification = Yaml::parseFile(base_path('agrishield-docs/openapi.yaml'));
+    $specification = Yaml::parseFile(base_path('tests/Fixtures/openapi.yaml'));
     $registered = collect(Route::getRoutes()->getRoutes())->flatMap(function ($route): array {
         $path = preg_replace('/\{[^}]+}/', '{param}', preg_replace('#^api/v1#', '', $route->uri()));
 
