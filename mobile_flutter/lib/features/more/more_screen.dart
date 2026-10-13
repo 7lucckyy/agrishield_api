@@ -140,12 +140,6 @@ class MoreScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: AgriSpacing.lg),
-        const Text(
-          'N-ATLaS is an initiative of Nigeria’s Federal Ministry of Communications, Innovation & Digital Economy, powered by Awarri Technologies.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AgriColors.muted, fontSize: 11, height: 1.5),
-        ),
       ],
     );
   }

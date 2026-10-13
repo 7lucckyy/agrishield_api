@@ -311,14 +311,16 @@ test('voice intake accepts the Android M4A recording format', function () {
     expect(VoiceAssistanceRequest::query()->sole()->audio_mime)->toBe('audio/mp4');
 });
 
-test('voice intake limits generated replies to N-ATLaS languages', function () {
+test('voice intake accepts Gemini translation languages', function () {
+    Storage::fake('private');
     $user = User::factory()->create();
 
     $this->actingAs($user)->post('/api/v1/voice-assistance', [
         'audio' => UploadedFile::fake()->create('question.webm', 100, 'audio/webm'),
         'source_language' => 'ff',
         'response_language' => 'ff',
-    ])->assertUnprocessable()->assertInvalid(['response_language']);
+    ])->assertCreated()
+        ->assertJsonPath('data.response_language', 'ff');
 });
 
 test('an organization member can use the field voice workspace', function () {

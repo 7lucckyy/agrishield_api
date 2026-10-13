@@ -24,7 +24,7 @@ void main() {
     expect(diagnosis.responseLanguage, 'ha');
   });
 
-  test('completed N-ATLaS voice request shows transcript and safety note', () {
+  test('completed Gemini voice request shows transcript and safety note', () {
     final request = VoiceRequest.fromJson({
       'id': 'voice-1',
       'status': 'completed',

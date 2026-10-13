@@ -49,5 +49,9 @@ return [
         'ha' => 'Hausa',
         'yo' => 'Yoruba',
         'ig' => 'Igbo',
+        'ff' => 'Fulfulde',
+        'kr' => 'Kanuri',
+        'pcm' => 'Nigerian Pidgin',
+        'ar' => 'Arabic',
     ],
 ];

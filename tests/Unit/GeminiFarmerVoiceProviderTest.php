@@ -9,29 +9,32 @@ use Tests\TestCase;
 
 uses(TestCase::class);
 
-test('Gemini returns guidance from an official N-ATLaS transcription', function () {
-    config()->set('voice-assistance.transcription_provider', 'n_atlas');
-    config()->set('voice-assistance.n_atlas.asr_endpoints.ha', 'http://127.0.0.1:8090/v1/transcriptions/ha');
-    config()->set('voice-assistance.n_atlas.api_key', 'local-development-key');
+test('Gemini transcribes and translates a farmer voice note', function () {
+    config()->set('voice-assistance.transcription_provider', 'gemini');
     config()->set('voice-assistance.gemini.api_key', 'gemini-test-key');
     config()->set('voice-assistance.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta');
-    config()->set('voice-assistance.gemini.model', 'gemini-test');
+    config()->set('voice-assistance.gemini.transcription_model', 'gemini-transcription-test');
+    config()->set('voice-assistance.gemini.model', 'gemini-guidance-test');
     $audioPath = tempnam(sys_get_temp_dir(), 'voice-test-');
     file_put_contents($audioPath, 'test audio');
 
     Http::preventStrayRequests();
     Http::fake([
-        'http://127.0.0.1:8090/v1/transcriptions/ha' => Http::response([
-            'text' => 'Ganyen masar ya fara canza launi.',
-        ], 200, ['x-request-id' => 'asr_123']),
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent' => Http::response([
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-transcription-test:generateContent' => Http::response([
+            'candidates' => [[
+                'content' => ['parts' => [[
+                    'audioTranscription' => ['text' => 'Ganyen masar ya fara canza launi.'],
+                ]]],
+            ]],
+        ], 200, ['x-request-id' => 'gemini_asr_123']),
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-guidance-test:generateContent' => Http::response([
             'candidates' => [[
                 'content' => [
                     'parts' => [[
                         'text' => json_encode([
-                            'translated_transcript' => 'My maize leaves have started changing colour.',
-                            'guidance' => 'Check whether the yellowing starts on older leaves and inspect soil moisture.',
-                            'safety_note' => 'This is not a confirmed diagnosis. Consult an extension worker before treatment.',
+                            'translated_transcript' => 'Lefɗe mais ɗen fuɗɗii waylude noone.',
+                            'guidance' => 'Ƴeewtu ndiyam leydi e kala puɗi ɓadii ɗoon.',
+                            'safety_note' => 'Ɗum wonaa tabbitinal. Naamno gollotooɗo demal hade peeje.',
                         ], JSON_THROW_ON_ERROR),
                     ]],
                 ],
@@ -39,16 +42,18 @@ test('Gemini returns guidance from an official N-ATLaS transcription', function 
         ], 200, ['x-request-id' => 'gemini_123']),
     ]);
 
-    $result = app(GeminiFarmerVoiceProvider::class)->assist($audioPath, 'audio/webm', 'ha', 'en', 'North Field, Borno');
+    $result = app(GeminiFarmerVoiceProvider::class)->assist($audioPath, 'audio/webm', 'ha', 'ff', 'North Field, Borno');
 
     expect($result->transcript)->toBe('Ganyen masar ya fara canza launi.')
-        ->and($result->translatedTranscript)->toContain('maize')
-        ->and($result->reference)->toBe('asr_123|gemini_123');
-    Http::assertSent(fn (Request $request): bool => $request->url() === 'http://127.0.0.1:8090/v1/transcriptions/ha'
-        && $request->hasHeader('Authorization', 'Bearer local-development-key'));
-    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://generativelanguage.googleapis.com/v1beta/models/gemini-test:generateContent'
+        ->and($result->translatedTranscript)->toContain('mais')
+        ->and($result->reference)->toBe('gemini_asr_123|gemini_123');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://generativelanguage.googleapis.com/v1beta/models/gemini-transcription-test:generateContent'
         && $request->hasHeader('x-goog-api-key', 'gemini-test-key')
-        && str_contains((string) $request->data()['contents'][0]['parts'][0]['text'], 'Ganyen masar'));
+        && $request->data()['contents'][0]['parts'][1]['inlineData']['mimeType'] === 'audio/webm');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://generativelanguage.googleapis.com/v1beta/models/gemini-guidance-test:generateContent'
+        && $request->hasHeader('x-goog-api-key', 'gemini-test-key')
+        && str_contains((string) $request->data()['contents'][0]['parts'][0]['text'], 'Ganyen masar')
+        && str_contains((string) $request->data()['contents'][0]['parts'][0]['text'], 'Respond in Fulfulde'));
 
     unlink($audioPath);
 });
