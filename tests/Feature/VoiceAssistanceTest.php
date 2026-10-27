@@ -311,7 +311,7 @@ test('voice intake accepts the Android M4A recording format', function () {
     expect(VoiceAssistanceRequest::query()->sole()->audio_mime)->toBe('audio/mp4');
 });
 
-test('voice intake accepts Gemini translation languages', function () {
+test('voice intake limits generated replies to N-ATLaS languages', function () {
     Storage::fake('private');
     $user = User::factory()->create();
 
@@ -319,8 +319,7 @@ test('voice intake accepts Gemini translation languages', function () {
         'audio' => UploadedFile::fake()->create('question.webm', 100, 'audio/webm'),
         'source_language' => 'ff',
         'response_language' => 'ff',
-    ])->assertCreated()
-        ->assertJsonPath('data.response_language', 'ff');
+    ])->assertUnprocessable()->assertInvalid(['source_language', 'response_language']);
 });
 
 test('an organization member can use the field voice workspace', function () {
@@ -337,7 +336,7 @@ test('an organization member can use the field voice workspace', function () {
 
     $this->actingAs($user)->post(route('organization.voice-assistance.store', $organization), [
         'audio' => UploadedFile::fake()->create('farmer-question.wav', 90, 'audio/wav'),
-        'source_language' => 'ff',
+        'source_language' => 'ha',
         'response_language' => 'en',
         'farm_id' => $farm->id,
     ])->assertRedirect(route('organization.voice-assistance.index', $organization));

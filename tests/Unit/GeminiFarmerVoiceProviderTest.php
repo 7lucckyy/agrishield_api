@@ -32,9 +32,9 @@ test('Gemini transcribes and translates a farmer voice note', function () {
                 'content' => [
                     'parts' => [[
                         'text' => json_encode([
-                            'translated_transcript' => 'Lefɗe mais ɗen fuɗɗii waylude noone.',
-                            'guidance' => 'Ƴeewtu ndiyam leydi e kala puɗi ɓadii ɗoon.',
-                            'safety_note' => 'Ɗum wonaa tabbitinal. Naamno gollotooɗo demal hade peeje.',
+                            'translated_transcript' => 'Ganyen masar ya fara canza launi.',
+                            'guidance' => 'Duba danshin ƙasa da tsire-tsiren da ke kusa.',
+                            'safety_note' => 'Wannan ba tabbataccen bincike ba ne. Tuntuɓi jami’in noma kafin magani.',
                         ], JSON_THROW_ON_ERROR),
                     ]],
                 ],
@@ -42,10 +42,10 @@ test('Gemini transcribes and translates a farmer voice note', function () {
         ], 200, ['x-request-id' => 'gemini_123']),
     ]);
 
-    $result = app(GeminiFarmerVoiceProvider::class)->assist($audioPath, 'audio/webm', 'ha', 'ff', 'North Field, Borno');
+    $result = app(GeminiFarmerVoiceProvider::class)->assist($audioPath, 'audio/webm', 'ha', 'ha', 'North Field, Borno');
 
     expect($result->transcript)->toBe('Ganyen masar ya fara canza launi.')
-        ->and($result->translatedTranscript)->toContain('mais')
+        ->and($result->translatedTranscript)->toContain('masar')
         ->and($result->reference)->toBe('gemini_asr_123|gemini_123');
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://generativelanguage.googleapis.com/v1beta/models/gemini-transcription-test:generateContent'
         && $request->hasHeader('x-goog-api-key', 'gemini-test-key')
@@ -53,7 +53,7 @@ test('Gemini transcribes and translates a farmer voice note', function () {
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://generativelanguage.googleapis.com/v1beta/models/gemini-guidance-test:generateContent'
         && $request->hasHeader('x-goog-api-key', 'gemini-test-key')
         && str_contains((string) $request->data()['contents'][0]['parts'][0]['text'], 'Ganyen masar')
-        && str_contains((string) $request->data()['contents'][0]['parts'][0]['text'], 'Respond in Fulfulde'));
+        && str_contains((string) $request->data()['contents'][0]['parts'][0]['text'], 'Respond in Hausa'));
 
     unlink($audioPath);
 });

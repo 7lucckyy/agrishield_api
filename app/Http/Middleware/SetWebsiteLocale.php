@@ -16,16 +16,24 @@ class SetWebsiteLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $supportedLocales = config('app.supported_locales', ['en']);
+        $supportedLocales = $request->routeIs('home', 'about', 'solutions', 'partners', 'resources', 'faqs', 'careers', 'contact')
+            ? ['en', 'fr']
+            : config('app.supported_locales', ['en']);
         $requestedLocale = $request->query('lang');
 
         if (is_string($requestedLocale) && in_array($requestedLocale, $supportedLocales, true)) {
             $request->session()->put('website_locale', $requestedLocale);
+        } elseif ($requestedLocale === 'ha' && $request->routeIs('home', 'about', 'solutions', 'partners', 'resources', 'faqs', 'careers', 'contact')) {
+            $request->session()->forget('website_locale');
         }
 
         $locale = $request->session()->get('website_locale')
             ?? $request->getPreferredLanguage($supportedLocales)
             ?? config('app.locale', 'en');
+
+        if (! in_array($locale, $supportedLocales, true)) {
+            $locale = $request->getPreferredLanguage($supportedLocales) ?? 'en';
+        }
 
         App::setLocale($locale);
 

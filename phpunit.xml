@@ -35,7 +35,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="VOICE_ASSISTANCE_PROVIDER" value="fake"/>
-        <env name="VOICE_TRANSCRIPTION_PROVIDER" value="gemini"/>
+        <env name="VOICE_TRANSCRIPTION_PROVIDER" value="n_atlas"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

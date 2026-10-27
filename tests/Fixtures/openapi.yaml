@@ -5,7 +5,7 @@ info:
   description: |
     Production API for AgriShield AI's crop-focused farming platform.
     It covers authentication, farms, crop cycles, satellite insights,
-    advisories, Gemini crop-image screening and multilingual farmer guidance,
+    advisories, Gemini crop-image screening, N-ATLaS farmer guidance,
     organisations, integrations and operational health.
 
     Conventions:
@@ -1032,8 +1032,8 @@ paths:
                   meta: { $ref: '#/components/schemas/PaginationMeta' }
     post:
       tags: [Voice Assistance]
-      summary: Transcribe, translate and prepare cautious Gemini field guidance from a voice note
-      description: Gemini transcribes the privately stored audio and prepares multilingual crop guidance in the selected response language. Automatic guidance does not replace a qualified local professional.
+      summary: Transcribe, translate and prepare cautious N-ATLaS field guidance from a voice note
+      description: A language-specific N-ATLaS ASR endpoint transcribes the privately stored audio, then the configured voice provider prepares multilingual crop guidance. Automatic guidance does not replace a qualified local professional.
       requestBody:
         required: true
         content:
@@ -1046,8 +1046,8 @@ paths:
                   type: string
                   format: binary
                   description: MP3, MP4/M4A, WAV, OGG or WebM up to 20 MB.
-                source_language: { type: string, enum: [auto, en, ha, yo, ig, ff, kr, pcm, ar] }
-                response_language: { type: string, enum: [en, ha, yo, ig, ff, kr, pcm, ar] }
+                source_language: { type: string, enum: [en, ha, yo, ig] }
+                response_language: { type: string, enum: [en, ha, yo, ig] }
                 farm_id: { type: string, format: uuid }
       responses:
         '201':
@@ -1522,7 +1522,7 @@ components:
         translated_transcript: { type: [string, 'null'] }
         guidance: { type: [string, 'null'] }
         safety_note: { type: [string, 'null'] }
-        provider: { type: string, enum: [fake, gemini] }
+        provider: { type: string, enum: [fake, gemini, n-atlas] }
         completed_at: { type: [string, 'null'], format: date-time }
         created_at: { type: string, format: date-time }
 

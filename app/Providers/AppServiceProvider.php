@@ -18,6 +18,8 @@ use App\Integrations\Gemini\GeminiAgronomyAdvisor;
 use App\Integrations\Gemini\GeminiCropDiagnosisProvider;
 use App\Integrations\Gemini\GeminiFarmerVoiceProvider;
 use App\Integrations\Gemini\GeminiVoiceTranscriptionProvider;
+use App\Integrations\NAtlas\NAtlasFarmerVoiceProvider;
+use App\Integrations\NAtlas\NAtlasVoiceTranscriptionProvider;
 use App\Integrations\OpenAI\OpenAICropDiagnosisProvider;
 use App\Integrations\OpenAI\OpenAIVoiceTranscriptionProvider;
 use App\Integrations\OpenWeather\OpenWeatherInsightsProvider;
@@ -54,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(VoiceTranscriptionProvider::class, function (Application $application): VoiceTranscriptionProvider {
             return match ((string) config('voice-assistance.transcription_provider')) {
                 'gemini' => $application->make(GeminiVoiceTranscriptionProvider::class),
+                'n_atlas' => $application->make(NAtlasVoiceTranscriptionProvider::class),
                 'openai' => $application->make(OpenAIVoiceTranscriptionProvider::class),
                 default => throw new InvalidArgumentException('Unknown voice transcription provider: '.config('voice-assistance.transcription_provider')),
             };
@@ -101,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
             if ($application->isProduction()) {
                 return match ((string) config('voice-assistance.provider')) {
                     'gemini' => $application->make(GeminiFarmerVoiceProvider::class),
+                    'n_atlas' => $application->make(NAtlasFarmerVoiceProvider::class),
                     default => throw new InvalidArgumentException('Unknown production voice assistance provider: '.config('voice-assistance.provider')),
                 };
             }
@@ -108,6 +112,7 @@ class AppServiceProvider extends ServiceProvider
             return match ((string) config('voice-assistance.provider')) {
                 'fake' => $application->make(FakeFarmerVoiceProvider::class),
                 'gemini' => $application->make(GeminiFarmerVoiceProvider::class),
+                'n_atlas' => $application->make(NAtlasFarmerVoiceProvider::class),
                 default => throw new InvalidArgumentException('Unknown voice assistance provider: '.config('voice-assistance.provider')),
             };
         });

@@ -9,7 +9,7 @@ return [
     ],
     'language' => ['label' => 'Harshe', 'current' => 'Hausa', 'en' => 'English', 'ha' => 'Hausa', 'fr' => 'Français'],
     'nav' => [
-        'explore' => 'Bincika AgriShield', 'home' => 'Farko', 'platform' => 'Dandali', 'field_voice' => 'Muryar Fili', 'how' => 'Tsarin aiki', 'about' => 'Kamfani', 'work' => 'Aiwatarwa', 'sign_in' => 'Shiga', 'open_platform' => 'Buɗe dandali', 'open_workspace' => 'Buɗe wurin aiki', 'plan' => 'Fara tattaunawa', 'menu' => 'Jeri', 'close' => 'Rufe', 'open_menu' => 'Buɗe babban jeri', 'close_menu' => 'Rufe babban jeri',
+        'explore' => 'Bincika AgriShield', 'home' => 'Farko', 'platform' => 'Dandali', 'field_voice' => 'Muryar Fili', 'how' => 'Yadda yake aiki', 'about' => 'Game da mu', 'work' => 'Haɗin gwiwa', 'sign_in' => 'Shiga', 'open_platform' => 'Buɗe dandali', 'open_workspace' => 'Buɗe wurin aiki', 'plan' => 'Tuntuɓe mu', 'menu' => 'Jeri', 'close' => 'Rufe', 'open_menu' => 'Buɗe babban jeri', 'close_menu' => 'Rufe babban jeri',
     ],
     'home' => [
         'eyebrow' => 'Bayanan noma na zamani ga kowace gona',
@@ -21,7 +21,7 @@ return [
             ['label' => 'Hanyar amfani', 'value' => 'Wayar hannu + yanar gizo'],
             ['label' => 'Harsuna', 'value' => 'Turanci · Hausa · Faransanci'],
         ],
-        'hero_image_alt' => 'Manomi yana duba amfanin gona a Jigawa, Najeriya', 'hero_caption' => 'Binciken fili · Jigawa, Najeriya',
+        'hero_image_alt' => 'Manoma suna aiki a gonar rogo',
         'field_plan' => 'Tsarin gona kai tsaye', 'field_model_title' => 'Tsara kowane ɓangaren gona bisa amfanin da aka shuka a wurin.', 'field_model_body' => 'Tsarin filin yana da wurinsa. Ƙayyade kowane sashe, sanya amfanin gona, sannan ka haɗa kowace alama da sashen da take bayyanawa.', 'field_name' => 'Gonar Arewa', 'context_ready' => 'Bayanai sun shirya',
         'sections' => [
             ['name' => 'Sashe A', 'crop' => 'Albasa', 'area' => '1.4 ha'],
@@ -30,13 +30,24 @@ return [
         ],
         'allocated' => 'An raba hekta 4.4 cikin 5.2',
         'proof_label' => 'Cikakken hoton aikin gona a wuri guda',
+        'conviction_label' => 'Ra’ayinmu game da fili',
+        'conviction_title' => 'Fili na iya canzawa cikin dare. Bai kamata muhimman bayanansa su ɓace da safe ba.',
+        'conviction_body' => 'AgriShield yana taimaka wa manoma da ƙungiyoyin fili su riƙe muhimman bayanan gona a bayyane, domin shawara a kan lokaci ta dogara da cikakken fahimta.',
+        'public_capabilities_title' => 'Bayani mai haske lokacin da ake bukata.',
+        'public_capabilities_intro' => 'Hanya mai sauƙi ta fahimtar abin da ke faruwa a fili ba tare da haɗa saƙonni da kayan aiki da suka watse ba.',
+        'public_capabilities' => [
+            ['title' => 'Sanin gona', 'body' => 'Duba gonaki, amfanin gona da lokutan noma tare da bayanan da suka dace.'],
+            ['title' => 'Gano sauyi', 'body' => 'Haɗa abubuwan da aka gani a fili da alamomin muhalli domin samun cikakken hoto.'],
+            ['title' => 'Sauraron manoma', 'body' => 'Riƙe tambayoyin manoma da shaidar amfanin gona kusa da masu iya amsawa.'],
+            ['title' => 'Bin diddigi', 'body' => 'Bayyana mataki na gaba kuma a ci gaba da tattaunawa.'],
+        ],
         'proof' => ['Sassan gona', 'Lokutan noma', 'Yanayi da ƙasa', 'Shaidar fili', 'Shawarwari'],
         'audience_eyebrow' => 'An gina shi domin masu aikin gona',
         'audience_title' => 'Manoma da ƙungiyoyin fili suna aiki daga rikodi guda.',
         'audience_intro' => 'Manoma suna bukatar amsoshi masu sauƙi a kan lokaci. Ƙungiyoyin shiri da jami’an faɗaɗa noma suna bukatar sahihan bayanai da bin diddigi. AgriShield yana haɗa su.',
         'audiences' => [
-            ['label' => 'Ga manoma', 'title' => 'Tsara gona sashe bayan sashe.', 'body' => 'Raba gona zuwa sassan da kake bukata, sanya amfanin gona ga kowanne, sannan ka haɗa yanayi, ƙasa da binciken amfanin gona da wurin da ya dace.', 'items' => ['Sanya wa kowane sashe suna', 'Zaɓi albasa, tumatir, masara ko wani amfanin gona', 'Duba filin da aka raba da wanda ya rage']],
-            ['label' => 'Ga ƙungiyoyin noma', 'title' => 'Gano inda ake bukatar taimako.', 'body' => 'Duba shaidar fili, fahimci halin amfanin gona, sannan a tura matsala ga jami’in da ya dace ba tare da sake haɗa bayanai daga saƙonni ba.', 'items' => ['Jerin abubuwan da suka fi gaggawa', 'Shaida a haɗe da gona', 'Bita da amincewa a bayyane']],
+            ['label' => 'Ga manoma', 'title' => 'Fahimci gonarka sosai.', 'body' => 'San abin da ke faruwa a gona kuma ka samu tallafin da ya dace da amfanin gona da lokacin noma.', 'items' => []],
+            ['label' => 'Ga ƙungiyoyin noma', 'title' => 'Gano inda ake bukatar taimako.', 'body' => 'Gano bukatu, haɗa mutanen da suka dace, sannan a kula da sakamakon.', 'items' => []],
         ],
         'capabilities_eyebrow' => 'Bayanan fili masu amfani', 'capabilities_title' => 'Alamomi da ayyukan da ke goyon bayan kowace shawarar gona.', 'capabilities_intro' => 'AgriShield yana haɗa bayanan tauraron ɗan adam, shaidar manomi da ayyukan tallafi a rikodin gona guda. Ana nuna tushe, matsayi da mataki na gaba.', 'capabilities_note_label' => 'Bayanin aiwatarwa.', 'capabilities_note' => 'Alamomin masu samar da bayanai da shawarwarin atomatik suna aiki ne idan an saita hidimar da ta dace. Rikodin gona, shaidar fili da tafiyar aiki suna ci gaba da samuwa.',
         'capabilities' => [
@@ -75,7 +86,7 @@ return [
             ['title' => 'Cikakken bayani', 'body' => 'Kowace alama tana haɗe da gona, amfanin gona da lokacin noma.'],
             ['title' => 'Aiki mai alhaki', 'body' => 'Matsayin bita, wanda ke da alhaki da amincewa suna bayyane.'],
         ],
-        'field_image_alt' => 'Gonakin noma a Hawul, Jihar Borno', 'field_image_caption' => 'Gonakin noma · Hawul, Jihar Borno',
+        'field_image_alt' => 'Manoma suna kula da amfanin gona',
         'language_eyebrow' => 'Harshe yana cikin samun dama', 'language_title' => 'Cikakken labarin fili iri ɗaya a Turanci, Hausa da Faransanci.', 'language_body' => 'Ƙungiyoyi za su iya nuna shafin a harshen da ya fi dacewa da manoma, abokan hulɗa da shirye-shiryen yanki—ba tare da canza ma’anar samfurin ba.',
         'language_cards' => [
             ['code' => 'EN', 'name' => 'English', 'sample' => 'See every field. Know what needs attention.'],
@@ -93,7 +104,7 @@ return [
     'pages' => [
         'common' => ['cta_eyebrow' => 'Fara da tsarin amfanin gona guda', 'cta_title' => 'Faɗa mana inda tallafin fili yake samun tsaiko.', 'cta_body' => 'Ku kawo mana amfanin gona guda, yanki guda ko ƙalubalen aikin faɗaɗa noma.', 'cta_action' => 'Fara tattaunawa'],
         'about' => [
-            'meta_title' => 'Game da mu | AgriShield AI', 'meta_description' => 'Dalilin da ya sa AgriShield ke gina bayanan noma masu alhaki.', 'eyebrow' => 'Game da AgriShield', 'title' => 'Tallafin amfanin gona yana bukatar tarihin aiki.', 'intro' => 'Muna gina bayanan gona masu amfani ga masu fahimtar fili da bin mataki na gaba.',
+            'meta_title' => 'Game da mu | AgriShield AI', 'meta_description' => 'Dalilin da ya sa AgriShield ke gina bayanan noma masu alhaki.', 'eyebrow' => 'Game da AgriShield', 'title' => 'Ziyarar gona ta gaba ta fara daga inda aka tsaya.', 'intro' => 'Muna haɗa iyakokin sassa, bayanan amfanin gona, saƙonnin muryar manoma da bin diddigi a rikodi guda domin ƙungiyoyin fili su ci gaba daga ziyarar ƙarshe.',
             'statement_label' => 'Dalilin wannan samfurin', 'statement_title' => 'Muhimman bayanan fili kada su ɓace tsakanin saƙonni.', 'statement_body' => ['Iyakokin gona, sassan amfanin gona, bayanan tauraron ɗan adam, murya da hotuna sukan watse a wurare daban-daban.', 'AgriShield yana haɗa su a rikodin gona guda domin a ga abin da ya canza, abin da aka duba da mataki na gaba.'],
             'principles_label' => 'Tsarin samfur', 'principles_title' => 'Ka’idoji huɗu ne ke jagorantar samfurin.', 'principles' => [
                 ['code' => 'FILI', 'title' => 'Bayanan fili a gaba', 'body' => 'Kowace alama tana haɗe da gona, sashe da lokacin noma.'],
@@ -104,7 +115,7 @@ return [
             'team_label' => 'Aikin da ke bayan AgriShield', 'team_title' => 'Aikin noma, ingantaccen software da aiwatarwa a hankali ne ke tsara aikin.', 'team_body' => 'Samfurin yana haɗa kwarewar fili da amintaccen injiniyanci da tallafin farawa.',
         ],
         'solutions' => [
-            'meta_title' => 'Dandali | AgriShield AI', 'meta_description' => 'Bincika bayanan tauraron ɗan adam, sassan gona, hoto, murya, danshin ƙasa, yanayi da kuɗin gona.', 'eyebrow' => 'Dandalin AgriShield', 'title' => 'Riƙe kowace alamar gona a cikin rikodin aiki guda.', 'intro' => 'Cikakken hoton aiki na gonaki, sassa, bayanan nesa, shaidar manomi da bin diddigi.',
+            'meta_title' => 'Dandali | AgriShield AI', 'meta_description' => 'Ga yadda AgriShield ke taimaka wa manoma da ƙungiyoyin fili su fahimci sauyi kuma su yanke shawara da tabbaci.', 'eyebrow' => 'Dandalin AgriShield', 'title' => 'Rikodin gona da ya san inda kowace irin shuka take.', 'intro' => 'Yi taswirar kowane sashe, duba alamomin amfanin gonarsa, sannan a haɗa rahotanni da matakan gaba wuri guda.',
             'overview_label' => 'Haɗaɗɗun bayanan gona', 'overview_title' => 'Ga filin, fahimci alama, mallaki mataki na gaba.', 'overview_body' => 'Kowane aiki yana shiga rikodin gona guda maimakon wani dandali dabam.',
             'features' => [
                 ['code' => '01 / TASWIRA', 'title' => 'Gonaki da sassan amfanin gona', 'body' => 'Ƙirƙiri sassan da ake bukata, sanya amfanin gona da bibiyar fili.', 'items' => ['Tabbatattun iyaka', 'Amfanin gona na sashe', 'Tarihin lokaci']],
@@ -125,7 +136,7 @@ return [
                 ['status' => 'SAITI / ANA BUKATA', 'title' => 'Haɗaɗɗun bayanai', 'body' => 'Tauraron ɗan adam, ƙasa, yanayi, binciken hoto, rubutun murya, fassara da shawara sun danganta da masu samar da sabis da aka saita.'],
                 ['status' => 'AIWATARWA / AN HAƊA', 'title' => 'Farawa mai alhaki', 'body' => 'Ana fayyace harshe, mai kula da fili, sabuntar bayanai, mai bita da hanyar tura matsala tare da kowace ƙungiya.'],
             ],
-            'provider_label' => 'An tsara shi da sanin masu samarwa', 'provider_title' => 'Ayyuka na musamman suna haɗuwa ba tare da ɓoye tushensu ba.', 'provider_body' => 'Tauraron ɗan adam, harshe, binciken amfanin gona, yanayi da kuɗi suna nuna samuwa da matsayinsu. Rikodin gona yana ci gaba da amfani idan sabis na waje bai samu ba.',
+            'provider_label' => 'Amfani mai alhaki', 'provider_title' => 'Mutane ne ke yanke shawara.', 'provider_body' => 'AgriShield yana sauƙaƙa gani da raba bayanai. Samuwar bayanai da shawarwari sun danganta da kowace aiwatarwa kuma ƙungiyoyin da ke da alhaki suna duba su.',
         ],
         'impact' => [
             'meta_title' => 'Yadda yake aiki | AgriShield AI', 'meta_description' => 'Daga rajistar gona zuwa shaida, bita, shawara da amincewa.', 'eyebrow' => 'Tsarin aiki', 'title' => 'Daga rikodin gona zuwa aikin da aka amince da shi.', 'intro' => 'Tsari mai sauƙi yana haɗa muhimman matakan tallafin amfanin gona tare da nuna gibin bayanai da matsayin bita.',
@@ -137,9 +148,9 @@ return [
             ],
         ],
         'partners' => [
-            'meta_title' => 'Yi aiki da AgriShield | AgriShield AI', 'meta_description' => 'Shirya amfani da AgriShield ga shirin noma ko ƙungiyar faɗaɗa noma.', 'eyebrow' => 'Yi aiki da mu', 'title' => 'Fara da aikin fili da ƙungiyarku ta riga ta mallaka.', 'intro' => 'Muna aiki mafi kyau da ƙungiyoyi masu al’ummar manoma, ƙungiyar fili da alhakin bin diddigi.',
-            'starting_label' => 'Wuraren farawa', 'starting_title' => 'Fara da gibin aiki guda.', 'starting_body' => 'Aiki mai mayar da hankali yana fayyace alhaki, tushen bayanai da ma’aunin nasara.', 'starting_points' => ['Gina ingantaccen rajistar gonaki da sassa', 'Sa ido kan tauraron ɗan adam, ƙasa ko yanayi', 'Tura rahoton murya da hoto ga ƙungiyar da ta dace', 'Haɗa manoman da suka cancanta da abokan kuɗi', 'Buga shawarwari da rubuta amincewa'],
-            'proof_label' => 'Bayyanannun rawar aiki', 'proof_title' => 'Kowane fara aiki yana da sunayen masu alhaki.', 'proof_body' => 'Kafin aikin fili ya fara, ƙungiyar tana amincewa da iyaka, hanyoyin bayanai, masu samar da sabis, masu bita da hanyar tura matsala.',
+            'meta_title' => 'Yi aiki da AgriShield | AgriShield AI', 'meta_description' => 'Shirya amfani da AgriShield ga shirin noma ko ƙungiyar faɗaɗa noma.', 'eyebrow' => 'Yi aiki da mu', 'title' => 'Fara da gonakin da ƙungiyarku ke yi wa aiki yanzu.', 'intro' => 'Ku gaya mana amfanin gonarku, yankinku, ƙungiyar filinku da inda shawara ke samun tsaiko. Za mu tsara fara aiki mai mayar da hankali a kan wannan.',
+            'starting_label' => 'Wuraren farawa', 'starting_title' => 'Fara inda ingantaccen bayani zai kawo bambanci.', 'starting_body' => 'Muna tsara aikin bisa mutane da ƙalubalen noma da ke gabanmu.', 'starting_points' => ['Tallafa wa manoma da bayanan amfanin gona a kan lokaci', 'Taimaka wa ƙungiyoyin fili su amsa da cikakken fahimta', 'Bincika haɗin gwiwa mai alhaki da ayyukan noma'],
+            'proof_label' => 'Alhaki tare', 'proof_title' => 'Haɗin gwiwa mai kyau yana farawa da alhaki tare.', 'proof_body' => 'Muna amincewa da manufa da alhaki tare kafin aikin fili ya fara.',
         ],
         'team' => [
             'meta_title' => 'Ƙungiya | AgriShield AI', 'meta_description' => 'Kwarewar da ke bayan AgriShield.', 'eyebrow' => 'Ƙungiya', 'title' => 'Kwarewar noma, bayanai da aikin fili suna aiki tare.', 'intro' => 'Masu aikin shirye-shiryen noma, bayanan taswira, injiniyan samfur da aiwatar da aikin fili ne suke gina AgriShield.',
@@ -165,5 +176,5 @@ return [
             'panel_badge' => 'Wurin aikin ƙungiya mai tsaro', 'panel_title' => 'Ana iya karɓar murya yanzu', 'panel_body' => 'Rubutawa, fassara da samar da shawara suna aiki idan an saita mai samar da murya.', 'panel_action' => 'Buɗe Muryar Fili', 'panel_signin' => 'Shiga don ci gaba', 'bounds_label' => 'Iyaka a bayyane', 'bounds_title' => 'Abin da aikin yake yi—da abin da ya dogara da mai samarwa.', 'core_title' => 'Babban dandali', 'core_items' => ['Karɓa da kunna sauti a sirri', 'Zaɓin gona da harshe', 'Tarihin ƙungiya', 'Bayyanar matsayi da gazawa'], 'provider_title' => 'Mai samarwa da aka saita', 'provider_items' => ['Rubuta magana', 'Fassarar harshe', 'Samar da shawarar amfanin gona', 'Alamomin tura matsala'],
         ],
     ],
-    'footer' => ['eyebrow' => 'AgriShield / Arewacin Najeriya', 'title' => 'Rikodi guda daga tambayar fili zuwa bin diddigi.', 'body' => 'Amintattun bayanan amfanin gona, tambayoyin manoma da isar da shawara mai alhaki ga ƙungiyoyin fili.', 'product' => 'Samfuri', 'company' => 'Kamfani', 'about' => 'Kamfani', 'team' => 'Ƙungiya', 'work' => 'Aiwatarwa', 'contact' => 'Tuntuɓa', 'disclaimer' => 'ƙwararrun masana yankin su duba shawarar amfanin gona.'],
+    'footer' => ['eyebrow' => 'AgriShield / Arewacin Najeriya', 'title' => 'Rikodi guda daga tambayar fili zuwa bin diddigi.', 'body' => 'Amintattun bayanan amfanin gona, tambayoyin manoma da isar da shawara mai alhaki ga ƙungiyoyin fili.', 'product' => 'Samfuri', 'company' => 'Game da mu', 'connect' => 'Tuntuɓe mu', 'about' => 'Labarinmu', 'team' => 'Ƙungiya', 'work' => 'Haɗin gwiwa', 'contact' => 'Tuntuɓa', 'disclaimer' => 'ƙwararrun masana yankin su duba shawarar amfanin gona.'],
 ];

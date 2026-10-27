@@ -34,3 +34,7 @@ Thumbs.db
 /artifacts
 /tmp/
 /agrishield-docs/
+/output/
+/outputs/
+/video/**/node_modules/
+/video/**/out/

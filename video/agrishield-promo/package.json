@@ -1,0 +1,25 @@
+{
+  "name": "agrishield-promo-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "remotion studio src/index.ts",
+    "build": "remotion render src/index.ts AgriShieldPromo out/agrishield-ai-promo.mp4 --codec=h264 --crf=16 --pixel-format=yuv420p",
+    "poster": "remotion still src/index.ts AgriShieldPoster out/agrishield-ai-poster.png",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/fonts": "latest",
+    "@remotion/transitions": "latest",
+    "remotion": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@remotion/cli": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
+  }
+}

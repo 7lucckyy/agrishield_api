@@ -35,6 +35,9 @@ class PublicMetadataController extends Controller
                 ['name' => 'solutions', 'changeFrequency' => 'monthly', 'priority' => '0.9'],
                 ['name' => 'about', 'changeFrequency' => 'monthly', 'priority' => '0.7'],
                 ['name' => 'partners', 'changeFrequency' => 'monthly', 'priority' => '0.6'],
+                ['name' => 'resources', 'changeFrequency' => 'monthly', 'priority' => '0.6'],
+                ['name' => 'faqs', 'changeFrequency' => 'monthly', 'priority' => '0.5'],
+                ['name' => 'careers', 'changeFrequency' => 'monthly', 'priority' => '0.5'],
                 ['name' => 'contact', 'changeFrequency' => 'yearly', 'priority' => '0.6'],
             ],
         ])->header('Content-Type', 'application/xml; charset=UTF-8')
