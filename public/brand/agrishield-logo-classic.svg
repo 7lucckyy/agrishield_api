@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title description" shape-rendering="geometricPrecision">
+  <title id="title">AgriShield</title>
+  <desc id="description">White AgriShield leaf-and-shield emblem and serif wordmark on a deep green background.</desc>
+
+  <rect width="1600" height="900" fill="#043019"/>
+
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="7" d="M800 202c35 29 73 43 121 43 7 0 14-.3 21-1v104c0 72-30 128-70 170-27 29-55 48-72 58-17-10-45-29-72-58-40-42-70-98-70-170V244c7 .7 14 1 21 1 48 0 86-14 121-43Z"/>
+
+    <path fill="#FFFFFF" stroke="none" d="M776 383c-43-1-72-31-70-79 41 4 71 28 70 79Z"/>
+    <path fill="#FFFFFF" stroke="none" d="M795 437c-6-67 28-117 91-139 13 74-23 133-91 139Z"/>
+
+    <path stroke-width="7" d="M799 512c-2-78 28-140 80-190"/>
+    <path stroke-width="7" d="M798 472c-7-61-34-107-81-145"/>
+
+    <path stroke="#043019" stroke-width="4" d="M718 323c24 16 43 35 57 57"/>
+    <path stroke="#043019" stroke-width="4" d="M876 317c-34 26-60 59-78 101"/>
+  </g>
+
+  <text x="800" y="682" fill="#FFFFFF" text-anchor="middle" font-family="Didot, 'Bodoni 72', 'Bodoni MT', Georgia, serif" font-size="112" font-weight="400" letter-spacing="-4">AgriShield</text>
+</svg>

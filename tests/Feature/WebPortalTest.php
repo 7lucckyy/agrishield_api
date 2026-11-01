@@ -23,6 +23,7 @@ test('the public product website explains the agrishield proposition', function 
         ->assertSee('Follow through')
         ->assertSee('cassava-field.webp')
         ->assertSee('jos-farmers.webp')
+        ->assertSee('agrishield-social-cover.png')
         ->assertSee('favicon.svg')
         ->assertSee('site.webmanifest')
         ->assertSee('aria-label="Primary navigation"', escape: false)
@@ -321,12 +322,18 @@ test('production brand assets are present', function (string $asset) {
         ->and(filesize($path))->toBeGreaterThan(0);
 })->with([
     'brand mark' => 'brand/agrishield-mark.svg',
+    'reversed brand mark' => 'brand/agrishield-mark-reversed.svg',
+    'horizontal brand logo' => 'brand/agrishield-logo-horizontal.svg',
+    'reversed horizontal brand logo' => 'brand/agrishield-logo-reversed.svg',
+    'stacked brand logo' => 'brand/agrishield-logo-stacked.svg',
     'favicon' => 'favicon.svg',
     'legacy favicon' => 'favicon.ico',
     'small favicon' => 'favicon-32x32.png',
     'apple touch icon' => 'apple-touch-icon.png',
     'web app icon' => 'icons/icon-192.png',
     'large web app icon' => 'icons/icon-512.png',
+    'social profile image' => 'images/agrishield-ai-social-profile.png',
+    'social cover image' => 'images/agrishield-social-cover.png',
     'web manifest' => 'site.webmanifest',
     'Kano field work' => 'images/field/commons/kano-farmer-tending-field.webp',
     'Kano rice harvest' => 'images/field/commons/kano-rice-harvest.webp',
@@ -335,6 +342,93 @@ test('production brand assets are present', function (string $asset) {
     'Bauchi solar rice farm' => 'images/field/commons/bauchi-solar-rice.webp',
     'Bauchi irrigation workers' => 'images/field/commons/bauchi-watering-workers.webp',
 ]);
+
+test('the website uses the current agrishield identity system', function () {
+    $brandMark = file_get_contents(public_path('brand/agrishield-mark.svg'));
+    $horizontalLogo = file_get_contents(public_path('brand/agrishield-logo-horizontal.svg'));
+    $manifest = file_get_contents(public_path('site.webmanifest'));
+
+    expect($brandMark)
+        ->toContain('#38E75E')
+        ->toContain('Two growing leaves')
+        ->toContain('fill-rule="evenodd"')
+        ->and($horizontalLogo)
+        ->toContain('AgriShield')
+        ->toContain('#00A86B')
+        ->toContain('#38E75E')
+        ->not->toContain('>AI</text>')
+        ->and($manifest)
+        ->toContain('#006837')
+        ->toContain('#F6F0E3');
+});
+
+test('social identity assets contain no generative provenance metadata', function () {
+    foreach (['images/agrishield-ai-social-profile.png', 'images/agrishield-social-cover.png'] as $asset) {
+        $contents = file_get_contents(public_path($asset));
+
+        expect($contents)
+            ->not->toContain('c2pa')
+            ->not->toContain('dcterms:provenance')
+            ->not->toContain('Content Credentials')
+            ->not->toContain('Adobe Photoshop');
+    }
+});
+
+test('active social campaign graphics contain no generative provenance metadata', function (string $asset) {
+    $contents = file_get_contents(public_path('images/social/'.$asset));
+
+    expect($contents)
+        ->not->toContain('c2pa')
+        ->not->toContain('dcterms:provenance')
+        ->not->toContain('Content Credentials')
+        ->not->toContain('Adobe Photoshop')
+        ->not->toContain('OpenAI');
+})->with([
+    'field context' => 'agrishield-social-pro-01-field-context.png',
+    'field work' => 'agrishield-social-pro-02-field-work.png',
+    'field to action' => 'agrishield-social-pro-03-field-to-action.png',
+    'progress context' => 'agrishield-social-pro-04-progress-context.png',
+    'enumerator recruitment' => 'agrishield-hiring-field-enumerators-2026-11-04-pro.png',
+    'field intelligence campaign' => 'agrishield-social-01-field-intelligence.png',
+    'crop health campaign' => 'agrishield-social-02-crop-health.png',
+    'weather field action campaign' => 'agrishield-social-03-weather-field-action.png',
+    'farmer first campaign' => 'agrishield-social-04-farmer-first.png',
+    'enumerator recruitment original' => 'agrishield-hiring-field-enumerators-2026-11-04.png',
+    'enumerator recruitment version two' => 'agrishield-hiring-field-enumerators-2026-11-04-v2.png',
+    'enumerator recruitment version three' => 'agrishield-hiring-field-enumerators-2026-11-04-v3.png',
+    'creative field patterns' => 'agrishield-creative-01-field-patterns.png',
+    'creative crop evidence' => 'agrishield-creative-02-crop-evidence.png',
+    'creative weather action' => 'agrishield-creative-03-weather-action.png',
+    'creative farmer stories' => 'agrishield-creative-04-farmer-stories.png',
+    'human farmer behind the data' => 'agrishield-human-01-farmer-behind-data.png',
+    'human every harvest' => 'agrishield-human-02-every-harvest.png',
+    'human field reality' => 'agrishield-human-03-field-reality.png',
+    'human whole field' => 'agrishield-human-04-whole-field.png',
+]);
+
+test('the twenty-post social campaign is complete and metadata clean', function () {
+    $pngAssets = glob(public_path('images/social/campaign-20/*.png')) ?: [];
+    $jpgAssets = glob(public_path('images/social/campaign-20/*.jpg')) ?: [];
+
+    expect($pngAssets)->toHaveCount(20)
+        ->and($jpgAssets)->toHaveCount(20);
+
+    foreach (array_merge($pngAssets, $jpgAssets) as $asset) {
+        $dimensions = getimagesize($asset);
+        $contents = file_get_contents($asset);
+
+        expect($dimensions)
+            ->not->toBeFalse()
+            ->and($dimensions[0])->toBe(1350)
+            ->and($dimensions[1])->toBe(1350)
+            ->and($contents)
+            ->not->toContain('c2pa')
+            ->not->toContain('dcterms:provenance')
+            ->not->toContain('Content Credentials')
+            ->not->toContain('Adobe Photoshop')
+            ->not->toContain('OpenAI');
+    }
+});
 
 test('public pages use distinct field photographs without visible source captions', function () {
     $photos = [];

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="@yield('description', __('marketing.meta.description'))">
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-    <meta name="theme-color" content="#123B2A">
+    <meta name="theme-color" content="#006837">
     <link rel="canonical" href="{{ url()->current() }}">
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon-32x32.png') }}" sizes="32x32" type="image/png">
@@ -17,14 +17,14 @@
     <meta property="og:title" content="@yield('title', __('marketing.meta.title'))">
     <meta property="og:description" content="@yield('description', __('marketing.meta.description'))">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image" content="{{ asset('images/field/cassava-field.webp') }}">
-    <meta property="og:image:width" content="1600">
-    <meta property="og:image:height" content="1067">
+    <meta property="og:image" content="{{ asset('images/agrishield-social-cover.png') }}">
+    <meta property="og:image:width" content="1640">
+    <meta property="og:image:height" content="624">
     <meta property="og:image:alt" content="{{ __('website.a11y.social_image') }}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('title', __('marketing.meta.title'))">
     <meta name="twitter:description" content="@yield('description', __('marketing.meta.description'))">
-    <meta name="twitter:image" content="{{ asset('images/field/cassava-field.webp') }}">
+    <meta name="twitter:image" content="{{ asset('images/agrishield-social-cover.png') }}">
     <title>@yield('title', __('marketing.meta.title'))</title>
     <script type="application/ld+json">
         {
@@ -52,8 +52,7 @@
     <header class="gs-header" data-header>
         <div class="gs-container gs-header-inner">
             <a class="gs-brand" href="{{ route('home') }}" aria-label="{{ __('website.a11y.home') }}">
-                <img src="{{ asset('brand/agrishield-mark.svg') }}" alt="" width="42" height="42">
-                <span><strong>AgriShield</strong><small>AGRICULTURAL INTELLIGENCE</small></span>
+                <img src="{{ asset('brand/agrishield-logo-horizontal.svg') }}?v=20261030" alt="AgriShield" width="175" height="44">
             </a>
             <nav class="gs-nav" id="primary-navigation" aria-label="{{ __('website.a11y.primary_navigation') }}">
                 <a href="{{ route('solutions') }}" @class(['active' => request()->routeIs('solutions')]) @if(request()->routeIs('solutions')) aria-current="page" @endif>{{ __('website.nav.solutions') }}</a>
